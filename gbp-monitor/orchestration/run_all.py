@@ -580,7 +580,7 @@ def _preflight_checks(fixtures_mode: bool) -> list[str]:
         except Exception:
             pass
 
-    # --- 6. Fixture coverage ---
+    # --- 6. Fixture coverage + integrity ---
     if fixtures_mode:
         try:
             listings = json.loads(_LISTINGS_PATH.read_text(encoding="utf-8"))
@@ -606,6 +606,14 @@ def _preflight_checks(fixtures_mode: bool) -> list[str]:
                 )
         except Exception:
             pass
+
+        from tests.fixtures.validate import validate_all_fixtures
+        val_results = validate_all_fixtures()
+        failed_val = [(name, errs) for name, errs in val_results.items() if errs]
+        if failed_val:
+            for name, errs in failed_val:
+                for e in errs:
+                    warnings.append(f"FIXTURE INTEGRITY: {name} — {e}")
 
     return warnings
 
@@ -752,16 +760,27 @@ def run(fixtures_mode: bool = False) -> dict:
     if not fixtures_mode:
         from harness.selector_tracker import SelectorTracker
         selector_tracker = SelectorTracker()
-
     context = None
     browser_handles = None
     browser_launch_duration = 0.0
 
     if not fixtures_mode:
         from harness.browser import get_browser_context
+        from harness.acquisition import (
+            STORAGE_STATE_PATH,
+            persist_storage_state,
+            valid_storage_state_path,
+            warm_up,
+        )
+
+        # M8: reuse a previously warmed NID storage_state if one exists;
+        # otherwise the context starts fresh and is warmed up after launch.
+        reuse_state = valid_storage_state_path(STORAGE_STATE_PATH)
         try:
             t0 = time.time()
-            browser_handles = get_browser_context()
+            browser_handles = get_browser_context(
+                storage_state=str(reuse_state) if reuse_state else None
+            )
             context = browser_handles[2]
             browser_launch_duration = round(time.time() - t0, 2)
             _structured_log(rid, "browser_launch", duration_s=browser_launch_duration)
@@ -777,6 +796,28 @@ def run(fixtures_mode: bool = False) -> dict:
             _finish_and_write_summary(summary, run_id=rid)
             _release_lock()
             return summary
+
+        # M8: if we could not reuse a persisted jar, warm up a fresh context
+        # (Google-domain visit issues NID ~2-3s) and persist it for next run.
+        if reuse_state is None:
+            t0 = time.time()
+            warmed = warm_up(context)
+            warmed_duration = round(time.time() - t0, 2)
+            if warmed:
+                persist_storage_state(context, STORAGE_STATE_PATH)
+                logger.info(
+                    "ACQUISITION: NID warm-up succeeded in %.1fs — storage_state "
+                    "persisted for reuse", warmed_duration,
+                )
+            else:
+                logger.warning(
+                    "ACQUISITION: no NID cookie after warm-up — Google will likely "
+                    "serve the REDUCED variant (see docs/validation/M7_FULL_ACQUISITION.md)"
+                )
+            _structured_log(rid, "acquisition_warm_up",
+                            succeeded=warmed, duration_s=warmed_duration)
+        else:
+            _structured_log(rid, "acquisition_reuse", storage_state=str(reuse_state))
 
     try:
         processed = 0
@@ -890,6 +931,10 @@ def _process_one_listing(
         return
 
     _structured_log(run_id, "listing_start", competitor=comp_id, branch=branch_id)
+
+    from harness.instrument import PipelineInstrument
+    instrument = PipelineInstrument(competitor_id=comp_id)
+
     stages: dict[str, float] = {}
     failed_stage: str | None = None
     start_wall = time.time()
@@ -917,7 +962,7 @@ def _process_one_listing(
         if fixtures_mode:
             html = fixtures_path(comp_id).read_text(encoding="utf-8")
         else:
-            html = _capture_with_retries(context, gmaps_url, selectors, comp_id, tracker=tracker)
+            html = _capture_with_retries(context, gmaps_url, selectors, comp_id, tracker=tracker, instrument=instrument)
         stages["capture_s"] = round(time.time() - t0, 2)
         failed_stage = None
 
@@ -929,7 +974,7 @@ def _process_one_listing(
         from storage.snapshot_store import load_snapshot, save_snapshot
         from storage.delta import compute_new_reviews
 
-        parsed = parse_reviews(html, comp_id, branch_id, selectors)
+        parsed = parse_reviews(html, comp_id, branch_id, selectors, instrument=instrument)
         parsed_dicts = [review_to_dict(r) for r in parsed]
         stages["parse_s"] = round(time.time() - t0, 2)
         failed_stage = None
@@ -942,6 +987,9 @@ def _process_one_listing(
                 logger.warning("LOW_CONTENT[%s]: HTML is %d bytes", comp_id, html_size)
             else:
                 logger.info("NO_REVIEWS[%s]: HTML is %d bytes", comp_id, html_size)
+
+        # Compute collection efficiency and verdict.
+        _compute_collection_metrics(comp_id, instrument)
 
         # Step 3 — delta.
         failed_stage = "delta"
@@ -988,9 +1036,95 @@ def _process_one_listing(
                      comp_id, failed_stage or "unknown", gmaps_url, elapsed, e, cause)
         _structured_log(run_id, "listing_fail", competitor=comp_id,
                         branch=branch_id, url=gmaps_url,
-                        stage=failed_stage or "unknown",
+                        failed_stage=failed_stage or "unknown",
                         error=str(e), error_type=type(e).__name__,
                         probable_cause=cause, elapsed_s=elapsed)
+
+
+def _compute_collection_metrics(comp_id: str, instrument) -> None:
+    """Compute parser efficiency, collection efficiency, and pipeline verdict.
+
+    Uses instrument.business_metadata, instrument.review_stats, and
+    instrument.scroll_progress to determine whether review loss occurred
+    and where.
+    """
+    meta = instrument.business_metadata or {}
+    stats = instrument.review_stats or {}
+    progress = instrument.scroll_progress or []
+
+    google_count_raw = meta.get("google_review_count")
+    google_count = None
+    if google_count_raw is not None:
+        try:
+            google_count = int(str(google_count_raw).replace(",", "").replace(".", ""))
+        except (ValueError, TypeError):
+            google_count = None
+
+    dom_nodes = stats.get("visible_cards", 0)
+    parsed = stats.get("parsed", 0)
+    exported = stats.get("exported", 0)
+    max_visible = max((s.get("visible_cards", 0) for s in progress), default=dom_nodes)
+    max_dom = max((s.get("dom_nodes", 0) for s in progress), default=dom_nodes)
+
+    actual_dom = max(dom_nodes, max_dom, max_visible)
+
+    # Parser efficiency (dom_nodes -> parsed -> exported)
+    parser_eff = 100.0
+    if actual_dom > 0:
+        parser_eff = round((exported / max(actual_dom, 1)) * 100, 1)
+
+    parser_efficiency = {
+        "google_review_count": google_count_raw,
+        "dom_review_nodes": actual_dom,
+        "parsed_reviews": parsed,
+        "exported_reviews": exported,
+        "parser_efficiency": parser_eff,
+    }
+    instrument.set_parser_efficiency(parser_efficiency)
+
+    # Collection efficiency (google_count -> dom_nodes)
+    collection_pct = None
+    if google_count is not None and google_count > 0 and actual_dom > 0:
+        collection_pct = round((actual_dom / google_count) * 100, 2)
+
+    # Pipeline verdict
+    verdict_status = "PASS"
+    verdict_reason_parts = []
+
+    if google_count is not None and actual_dom < google_count:
+        if collection_pct is not None and collection_pct < 50:
+            verdict_status = "FAIL"
+            verdict_reason_parts.append(
+                f"Browser only collected {actual_dom} of {google_count} Google reviews "
+                f"({collection_pct}%)"
+            )
+        else:
+            verdict_reason_parts.append(
+                f"Browser collected {actual_dom}/{google_count} Google reviews "
+                f"({collection_pct}%)"
+            )
+    elif google_count is not None and actual_dom >= google_count:
+        verdict_reason_parts.append(
+            f"DOM nodes ({actual_dom}) >= Google count ({google_count}) — all visible"
+        )
+
+    if actual_dom > 0 and exported < actual_dom:
+        verdict_status = "FAIL"
+        verdict_reason_parts.append(
+            f"Parser loss: {actual_dom - exported} of {actual_dom} DOM nodes not exported"
+        )
+    elif actual_dom > 0:
+        verdict_reason_parts.append(
+            f"All {actual_dom} DOM reviews parsed successfully"
+        )
+
+    if actual_dom == 0:
+        verdict_status = "FAIL"
+        verdict_reason_parts.append("No review DOM nodes found — page may not have loaded reviews")
+
+    reason = " | ".join(verdict_reason_parts) if verdict_reason_parts else "Unknown"
+    verdict = {"status": verdict_status, "reason": reason, "collection_percent": collection_pct}
+    instrument.set_collection_verdict(verdict)
 
 
 _FAILURE_DIAGNOSES: dict[str, dict[str, str]] = {
@@ -1034,6 +1168,7 @@ def _capture_with_retries(
     comp_id: str,
     screenshot_dir: str | None = None,
     tracker=None,
+    instrument=None,
 ) -> str:
     """Call `capture_listing_html` with up to 2 retries on transient errors.
 
@@ -1065,6 +1200,7 @@ def _capture_with_retries(
                 context, url, selectors, screenshot_dir,
                 tracker=tracker, comp_id=comp_id,
                 total_timeout_s=_CAPTURE_TOTAL_TIMEOUT_S,
+                instrument=instrument,
             )
         except SelectorNotFoundError:
             raise
@@ -1256,15 +1392,25 @@ def run_verify(url_override: str | None = None) -> dict:
 
     from harness.selector_tracker import SelectorTracker
     from harness.browser import get_browser_context
+    from harness.instrument import PipelineInstrument
+    from harness.acquisition import (
+        STORAGE_STATE_PATH,
+        persist_storage_state,
+        valid_storage_state_path,
+        warm_up,
+    )
 
     tracker = SelectorTracker()
     context = None
     browser_handles = None
     browser_launch_duration = 0.0
 
+    reuse_state = valid_storage_state_path(STORAGE_STATE_PATH)
     try:
         t0 = time.time()
-        browser_handles = get_browser_context()
+        browser_handles = get_browser_context(
+            storage_state=str(reuse_state) if reuse_state else None
+        )
         context = browser_handles[2]
         browser_launch_duration = round(time.time() - t0, 2)
         report["browser_launch_s"] = browser_launch_duration
@@ -1283,6 +1429,27 @@ def run_verify(url_override: str | None = None) -> dict:
         )
         return report
 
+    if reuse_state is None:
+        t0 = time.time()
+        warmed = warm_up(context)
+        warmed_duration = round(time.time() - t0, 2)
+        if warmed:
+            persist_storage_state(context, STORAGE_STATE_PATH)
+            logger.info(
+                "ACQUISITION: NID warm-up succeeded in %.1fs — storage_state "
+                "persisted for reuse", warmed_duration,
+            )
+        else:
+            logger.warning(
+                "ACQUISITION: no NID cookie after warm-up — Google will likely "
+                "serve the REDUCED variant (see docs/validation/M7_FULL_ACQUISITION.md)"
+            )
+        _structured_log(rid, "acquisition_warm_up",
+                        succeeded=warmed, duration_s=warmed_duration)
+    else:
+        _structured_log(rid, "acquisition_reuse", storage_state=str(reuse_state))
+
+    all_pipeline_summaries: list[dict] = []
     try:
         processed = 0
         for branch in listings.get("branches", []):
@@ -1312,6 +1479,7 @@ def run_verify(url_override: str | None = None) -> dict:
                     continue
 
                 comp_dir = str(verify_root / safe_id)
+                instrument = PipelineInstrument(competitor_id=comp_id)
                 result = {
                     "competitor_id": comp_id,
                     "branch_id": branch_id,
@@ -1323,10 +1491,17 @@ def run_verify(url_override: str | None = None) -> dict:
 
                 t0 = time.time()
                 try:
-                    _capture_with_retries(
+                    html = _capture_with_retries(
                         context, url, selectors, comp_id,
                         screenshot_dir=comp_dir, tracker=tracker,
+                        instrument=instrument,
                     )
+                    # Parse the captured HTML and compute collection metrics
+                    # so parser_efficiency.json / collection_verdict.json are
+                    # populated in verify mode too (M5 live validation).
+                    from parser.review_parser import parse_reviews
+                    parse_reviews(html, comp_id, branch_id, selectors, instrument=instrument)
+                    _compute_collection_metrics(comp_id, instrument)
                     result["status"] = "PASS"
                     result["capture_s"] = round(time.time() - t0, 2)
                     report["passed"] += 1
@@ -1341,6 +1516,40 @@ def run_verify(url_override: str | None = None) -> dict:
                                     error=str(e), duration_s=result["capture_s"])
 
                 report["results"].append(result)
+
+                comp_path = Path(comp_dir)
+                comp_path.mkdir(parents=True, exist_ok=True)
+
+                inst_data = instrument.to_dict()
+                (comp_path / "browser_log.json").write_text(
+                    json.dumps(inst_data, indent=2, ensure_ascii=False), encoding="utf-8"
+                )
+                (comp_path / "review_statistics.json").write_text(
+                    json.dumps(instrument.review_stats or {"status": "not_parsed"}, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                (comp_path / "scroll_progress.json").write_text(
+                    json.dumps(instrument.scroll_progress, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                (comp_path / "business_metadata.json").write_text(
+                    json.dumps(instrument.business_metadata or {"status": "not_extracted"}, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                (comp_path / "parser_efficiency.json").write_text(
+                    json.dumps(instrument.parser_efficiency or {"status": "not_computed"}, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                (comp_path / "collection_verdict.json").write_text(
+                    json.dumps(instrument.collection_verdict or {"status": "not_computed"}, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+
+                psum = instrument.pipeline_summary()
+                all_pipeline_summaries.append(psum)
+                (comp_path / "pipeline_summary.json").write_text(
+                    json.dumps(psum, indent=2, ensure_ascii=False), encoding="utf-8"
+                )
     finally:
         if browser_handles is not None:
             p, browser, ctx = browser_handles
@@ -1368,6 +1577,18 @@ def run_verify(url_override: str | None = None) -> dict:
     (verify_root / "selector_report.json").write_text(
         json.dumps(sel_report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+    if all_pipeline_summaries:
+        combined = {
+            "run_id": rid,
+            "timestamp": started_at,
+            "overall": "PASS" if all(s["overall"] == "PASS" for s in all_pipeline_summaries) else "FAIL",
+            "total_listings": len(all_pipeline_summaries),
+            "total_passed": sum(1 for s in all_pipeline_summaries if s["overall"] == "PASS"),
+            "listings": all_pipeline_summaries,
+        }
+        (verify_root / "pipeline_summary.json").write_text(
+            json.dumps(combined, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
     _structured_log(rid, "verify_done",
                     passed=report["passed"], failed=report["failed"],
                     total=report["total"])

@@ -27,7 +27,7 @@ SUMMARY_PATH = DATA_DIR / "run_summary.json"
 LOG_PATH = DATA_DIR / "run.log"
 
 EXPECTED_SNAPSHOTS = {"comp-canggu-01", "comp-seminyak-01", "comp-ubud-01"}
-EXPECTED_TOTAL_REVIEWS = 10
+EXPECTED_TOTAL_REVIEWS = 20  # ubud=7 (8 items - 1 skip), seminyak=7, canggu=6
 
 PASS = 0
 FAIL = 0
@@ -115,8 +115,8 @@ def verify_artifacts() -> None:
             f"got {summary.get('skipped')}",
         )
         check(
-            "total_reviews is 10",
-            summary.get("total_reviews") == 10,
+            "total_reviews is 20",
+            summary.get("total_reviews") == 20,
             f"got {summary.get('total_reviews')}",
         )
 
@@ -311,6 +311,193 @@ def _verify_security() -> None:
     check("sec: --validate-config exits cleanly", result.returncode in (0, 1))
 
 
+# ── M8 Acquisition offline tests ────────────────────────────────────
+
+
+def _verify_gmbe_parity() -> None:
+    """Run offline checks for the GMBE-PARITY field extensions.
+
+    Exercises the pure helpers (no browser):
+    - relative_date -> (iso_date, epoch) resolution for ID + EN strings
+    - like-count extraction from the like button aria-label
+    - Review serialization carries the new optional fields
+    """
+    print("\n[Phase 6] GMBE-parity parser tests...")
+
+    from datetime import datetime, timezone
+
+    from parser.relative_date import resolve_relative_date
+    from parser.schema import Review, review_to_dict
+
+    now = datetime(2026, 8, 13, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Resolver: Indonesian.
+    iso, ep = resolve_relative_date("7 tahun lalu", now)
+    check("gmbe: 7 tahun lalu resolves to ISO", iso == "2019-08-13", f"got {iso}")
+    check("gmbe: 7 tahun lalu resolves to epoch", ep is not None and ep < now.timestamp(), f"got {ep}")
+
+    iso, _ = resolve_relative_date("sebulan lalu", now)
+    check("gmbe: sebulan lalu -> YYYY-MM-DD", iso is not None and len(iso) == 10 and iso.endswith("-13"), f"got {iso}")
+
+    iso, _ = resolve_relative_date("2 minggu lalu", now)
+    check("gmbe: 2 minggu lalu resolves", iso is not None, f"got {iso}")
+
+    iso, _ = resolve_relative_date("Diedit 6 tahun lalu", now)
+    check("gmbe: 'Diedit N tahun lalu' strips prefix", iso == "2020-08-13", f"got {iso}")
+
+    iso, _ = resolve_relative_date("baru saja", now)
+    check("gmbe: baru saja resolves to scraped date", iso == now.strftime("%Y-%m-%d"), f"got {iso}")
+
+    # Resolver: English.
+    iso, _ = resolve_relative_date("a month ago", now)
+    check("gmbe: 'a month ago' resolves", iso == "2026-07-13", f"got {iso}")
+
+    iso, _ = resolve_relative_date("5 days ago", now)
+    check("gmbe: '5 days ago' resolves", iso == "2026-08-08", f"got {iso}")
+
+    iso, _ = resolve_relative_date("yesterday", now)
+    check("gmbe: 'yesterday' resolves", iso == "2026-08-12", f"got {iso}")
+
+    iso, ep = resolve_relative_date("nonsense text here", now)
+    check("gmbe: unparseable -> (None, None)", iso is None and ep is None, f"got {(iso, ep)}")
+
+    iso, ep = resolve_relative_date("", now)
+    check("gmbe: empty -> (None, None)", iso is None and ep is None, f"got {(iso, ep)}")
+
+    # Like count extraction via the real parser path.
+    from parser.review_parser import parse_reviews
+
+    like_html = """<html><body>
+<div class="jftiEf fontBodyMedium" data-review-id="abc123">
+  <button aria-label="Suka" class="gllhef"><span class="NlVald"><span>Suka</span></span></button>
+  <span class="rsqaWe">3 days ago</span>
+  <span class="wiI7pd">Great service</span>
+  <span class="kvMYJc" role="img" aria-label="4 bintang"></span>
+</div>
+<div class="jftiEf fontBodyMedium" data-review-id="def456">
+  <button aria-label="12 suka" class="gllhef"><span class="NlVald"><span>12</span></span></button>
+  <span class="rsqaWe">a month ago</span>
+  <span class="wiI7pd">Nice food</span>
+  <span class="kvMYJc" role="img" aria-label="5 bintang"></span>
+</div>
+</body></html>"""
+    like_selectors = {
+        "review_item": "div.jftiEf.fontBodyMedium",
+        "review_id_attr": "data-review-id",
+        "review_text_selector": "span.wiI7pd",
+        "rating_selector": "span.kvMYJc",
+        "rating_attr": "aria-label",
+        "relative_date_selector": "span.rsqaWe",
+    }
+    parsed = parse_reviews(like_html, "comp-x", "b", like_selectors)
+    by_id = {r.review_id: r for r in parsed}
+    check("gmbe: like=0 when button shows no count",
+          by_id.get("abc123") and by_id["abc123"].review_like_count == 0,
+          f"got {by_id.get('abc123').review_like_count if 'abc123' in by_id else None}")
+    check("gmbe: like=12 when aria-label has count",
+          by_id.get("def456") and by_id["def456"].review_like_count == 12,
+          f"got {by_id.get('def456').review_like_count if 'def456' in by_id else None}")
+
+    # Serialization carries the new fields.
+    rev = Review(
+        review_id="r1", competitor_id="c", branch_id="b", reviewer_name="n",
+        rating=5.0, text="t", relative_date="a month ago", scraped_at="x",
+        review_date="2026-07-13", review_date_epoch=1783911330.0, review_like_count=7,
+    )
+    d = review_to_dict(rev)
+    check("gmbe: review_to_dict includes review_date",
+          d.get("review_date") == "2026-07-13", str(d))
+    check("gmbe: review_to_dict includes review_like_count",
+          d.get("review_like_count") == 7, str(d))
+
+    # Decay: successful fixture run must still yield date+epoch on real data.
+    import json
+    import subprocess
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+    selectors = json.loads(
+        (repo_root / "config" / "selectors.json").read_text(encoding="utf-8")
+    )
+    fixture = repo_root / "tests" / "fixtures" / "comp-canggu-01.html"
+    fixture_reviews = parse_reviews(
+        fixture.read_text(encoding="utf-8"), "comp-canggu-01", "x", selectors
+    )
+    dated = [r for r in fixture_reviews if r.review_date is not None and r.review_date_epoch is not None]
+    check("gmbe: fixture reviews get resolved dates",
+          len(fixture_reviews) > 0 and len(dated) == len(fixture_reviews),
+          f"{len(dated)}/{len(fixture_reviews)} dated")
+
+
+def _verify_acquisition() -> None:
+    """Run offline checks for the M8 NID acquisition module.
+
+    Only pure helpers are tested (no browser/network). The warm-up and
+    storage-state reuse paths are exercised by a live run; these checks pin
+    the cookie-inspection and storage_state-validation logic.
+    """
+    print("\n[Phase 5] M8 acquisition offline tests...")
+
+    from harness.acquisition import (
+        has_nid_cookie,
+        valid_storage_state_path,
+        NID_COOKIE_NAME,
+    )
+
+    nid_cookie = {
+        "name": NID_COOKIE_NAME,
+        "value": "abc123",
+        "domain": ".google.com",
+        "path": "/",
+        "httpOnly": True,
+        "secure": True,
+        "sameSite": "None",
+    }
+    other_cookie = {"name": "AEC", "value": "x", "domain": ".google.com"}
+    blank_cookie = {"name": NID_COOKIE_NAME, "value": "", "domain": ".google.com"}
+
+    check("acq: NID cookie detected", has_nid_cookie([nid_cookie]))
+    check("acq: non-NID cookie not detected", not has_nid_cookie([other_cookie]))
+    check("acq: empty NID value rejected", not has_nid_cookie([blank_cookie]))
+    check("acq: empty jar has no NID", not has_nid_cookie([]))
+
+    # valid_storage_state_path against a temp dir.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        good = Path(td) / "good.json"
+        good.write_text(
+            '{"cookies": [{"name": "NID", "value": "abc", "domain": ".google.com"}]}',
+            encoding="utf-8",
+        )
+        check(
+            "acq: valid storage_state accepted",
+            valid_storage_state_path(good) == good,
+        )
+
+        no_nid = Path(td) / "no_nid.json"
+        no_nid.write_text(
+            '{"cookies": [{"name": "AEC", "value": "x", "domain": ".google.com"}]}',
+            encoding="utf-8",
+        )
+        check(
+            "acq: storage_state without NID rejected",
+            valid_storage_state_path(no_nid) is None,
+        )
+
+        broken = Path(td) / "broken.json"
+        broken.write_text("not json", encoding="utf-8")
+        check(
+            "acq: unreadable storage_state rejected",
+            valid_storage_state_path(broken) is None,
+        )
+
+        missing = Path(td) / "missing.json"
+        check(
+            "acq: missing storage_state rejected",
+            valid_storage_state_path(missing) is None,
+        )
+
+
 def main() -> int:
     print("=" * 60)
     print("GBP Monitor -- Baseline Verification")
@@ -335,6 +522,12 @@ def main() -> int:
 
     # M13B: Security regression tests.
     _verify_security()
+
+    # M8: NID acquisition offline tests.
+    _verify_acquisition()
+
+    # GMBE-PARITY: relative-date/like-count offline tests.
+    _verify_gmbe_parity()
 
     print("\n" + "=" * 60)
     print(f"Results: {PASS} passed, {FAIL} failed")

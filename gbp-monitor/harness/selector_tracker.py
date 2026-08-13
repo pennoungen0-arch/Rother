@@ -131,12 +131,10 @@ class SelectorTracker:
             effective_found = found_count + expected_missing_count
             confidence = round(effective_found / total_attempts, 3) if total_attempts > 0 else 0.0
 
-            if found_count == len(entries):
+            if effective_found == len(entries):
                 status = "healthy"
             elif found_count > 0:
                 status = "degraded"
-            elif expected_missing_count == len(entries):
-                status = "healthy"
             else:
                 status = "broken"
 

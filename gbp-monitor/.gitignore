@@ -3,7 +3,7 @@
 # Per GBP_MONITOR_PLAN.md Section 3 the raw_html/ directory is gitignored
 # (raw captured pages are too large + may contain reviewer PII). The
 # snapshots/ and reviews_new/ directories ARE committed (they're the
-# dashboard's data source) — see schedule/.github/workflows/scrape.yml
+# dashboard's data source) — see .github/workflows/scrape.yml
 # which `git add`s them.
 
 # Python
@@ -28,6 +28,9 @@ data/verify/
 
 # Runtime logs (large, transient)
 data/run.log
+
+# Persisted Google cookie jar (NID warm-up, M8) — real cookies, never commit
+data/storage_state.json
 
 # Backup archives (never commit)
 data/backups/

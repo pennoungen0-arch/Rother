@@ -1,5 +1,26 @@
 # SELECTOR_CHANGELOG — M10 Selector Audit & Certification
 
+## 2026-08-12 — GMBE-PARITY selector additions
+
+### Re-introduced selectors
+
+| Selector | Reason | Evidence |
+|----------|--------|----------|
+| `reviews_tab_button` (`button[role='tab'][aria-label^='Ulasan']`, `...^='Reviews']`) | M10 marked this obsolete because the initial page embeds 3 reviews. The **full** virtualized list (230 unique IDs for Crate Cafe) requires clicking the Reviews tab. Best-effort open, graceful degrade. | LIVE probe 20260812 — tab view scrollHeight 6416 vs embedded ~647 |
+
+### Added selectors
+
+| Selector | Value | Purpose |
+|----------|-------|---------|
+| `review_like_selector` | `button.gllhef` | Per-review like count (aria-label or inner text) |
+| `review_list_container` | `div.m6QErb.XiKgde` | Documented tab-view list container (resolution is JS-hunt based, this is the observed class for reference) |
+
+### Configuration version
+
+- `config/selectors.json` schema version: 4 → 5
+- Added 3 top-level keys.
+- `scroll.py` resolves the review container by **JS hunt** (most distinct `data-review-id`, validated path) before falling back to configured CSS tiers — no static selector change required for the tab view.
+
 ## 2026-07-24 — M10 Targeted Improvements
 
 ### Removed selectors (obsolete)

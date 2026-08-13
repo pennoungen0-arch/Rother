@@ -21,6 +21,11 @@ class Review:
     text: str | None
     relative_date: str | None
     scraped_at: str  # ISO 8601, UTC preferred
+    # GMB-style extras (added in GMBE-PARITY work). All optional so historical
+    # records and fixtures without the fields still parse/serialize cleanly.
+    review_date: str | None = None  # ISO 8601 date, approximated from relative_date
+    review_date_epoch: float | None = None  # UTC epoch seconds, approximated
+    review_like_count: int | None = None  # 0 when the like button shows no count; None when no button rendered
 
 
 def review_to_dict(review: Review) -> dict:

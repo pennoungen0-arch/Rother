@@ -184,7 +184,7 @@ _USER_AGENT_DATA_INIT_SCRIPT = """
 )
 
 
-def get_browser_context():
+def get_browser_context(storage_state: str | None = None):
     """Launch a headless Chromium browser and return (playwright, browser, context).
 
     The caller owns the lifecycle: it MUST call `context.close()`,
@@ -197,6 +197,12 @@ def get_browser_context():
     mechanisms (extra_http_headers + CDP setUserAgentOverride + a JS init
     script). See the module docstring for the arXiv:2606.14525 evidence and
     the rationale for each layer.
+
+    M8 (production acquisition): ``storage_state`` optionally loads a
+    previously warmed Google cookie jar (containing ``NID``) onto the new
+    context, so the Maps navigation is served the FULL variant directly
+    (see ``docs/validation/M7_FULL_ACQUISITION.md`` §5 and
+    ``harness/acquisition.py``). Pass ``None`` to start with a fresh jar.
     """
     # Imported lazily so that `--fixtures` mode (which never touches Playwright)
     # does not pay the import cost or trigger Playwright's subprocess bootstrap
@@ -222,6 +228,9 @@ def get_browser_context():
         # Python (verified via `inspect.signature(browser.new_context)` before
         # writing — per Rule 3, do not assume from memory).
         extra_http_headers=_EXTRA_HTTP_HEADERS,
+        # M8: load a previously warmed Google cookie jar (with NID) so Maps
+        # is served the FULL variant directly. None = fresh anonymous jar.
+        storage_state=storage_state,
     )
 
     # Fix A mechanism 2 of 3: CDP `Network.setUserAgentOverride` with

@@ -101,3 +101,42 @@ Tier 1 (`[data-review-id]`) wins on real Google Maps HTML — 33 matches, all wi
 | `expand_text_button` tier 2 | **Obsolete** ("See more" not found) | Remove |
 | All parser selectors | **Stable** (100% match rate) | No changes needed |
 | Locator tiers 2, 4 | **Obsolete** (`role='article'` removed) | Remove |
+
+---
+
+# GMBE-PARITY Appendices (2026-08-12)
+
+**Evidence source:** `data/verify/20260812T073304Z/*/page.html` (12 real listings, live Google Maps) + Playwright probes under the opencode temp dir (NOT shipped). All captures served to the hardened context (NID cookie, en-US/id-ID, Indonesia).
+
+## Appendix A — Reviews-tab full-list capture
+
+**Facts (verified by live Playwright probes):**
+- The initial business page renders only **3** embedded review cards (`data-review-id` in initial HTML). This is what M10 documented.
+- Clicking the Reviews tab (`button[role='tab'][aria-label^='Ulasan']`) loads a **full virtualized list**: Crate Cafe's tab view grew to **230 unique review IDs** after 25 scrolls on the list container.
+- The tab-view list container is `div.m6QErb.XiKgde` — scrollHeight 6416px vs clientHeight 647px. It is a *different* element from the `div.m6QErb[role='region']` used as `review_container` tier 0.
+- M10's "reviews_tab_button obsolete" verdict was correct **for the embedded-3-capture goal**, but the tab is REQUIRED for full-list capture. The selector is re-introduced as `reviews_tab_button`.
+
+**Implementation:** `harness/scroll.py` resolves the review container via a JS hunt (most distinct `data-review-id` among `div.m6QErb`, validated CSS path) instead of relying on static tiers, so scrolling targets the correct list in both views. `harness/capture.py` opens the tab best-effort before scrolling.
+
+## Appendix B — Per-review like count & date resolution
+
+- Like button: `button.gllhef[aria-label='Suka']` with inner label `span.NlVald`. **All observed labels were plain "Suka" (count 0)** — no numeric counts appeared in any captured page. Parser therefore returns `0` when the button shows no number, `None` when no button is rendered.
+- Date: `span.rsqaWe` is **relative-only** ("7 tahun lalu", "Diedit 6 tahun lalu"). **No absolute timestamp attribute** (`title`/`datetime`) exists in the served DOM. Dates are resolved approximately from relative strings by `parser/relative_date.py` (ID + EN), yielding an ISO date + epoch anchored to `scraped_at`.
+
+## Appendix C — Business overview metadata
+
+- Address: `button[data-item-id="address"]` (`aria-label="Alamat: ..."`, inner `.Io6YTe`). Present on the initial business page; **hidden in the Reviews-tab view** — must be captured before the tab opens.
+- Category: `button[jsaction*="category"]` (e.g. "Kafe").
+- Rating block: `div.F7nice` → `"4,2\n(5.272)"`.
+- Review count: `role="img" aria-label="5.272 ulasan"`.
+- Phone/website: `[data-item-id="telephone"]`, `[data-item-id="website"] a`. **Conditional** — Crate Cafe renders neither.
+- Per-star breakdown: `tr.BHOKXe[role="img"][aria-label="Bintang 5,3.242 ulasan"]` — 5 rows, only rendered in the Reviews-tab view.
+
+## Appendix D — Confirmed ABSENT (not fabricated, per Rule 3)
+
+| Feature | Search evidence | Verdict |
+|---------|-----------------|---------|
+| Owner replies | 0 hits for `Pemilik balasan`, `Balasan pemilik`, `Response from the owner`, `ownerResponse`, `balasan` across ~170 pages + 10 probes (incl. lowest-rating sort showing 10x 1-star reviews, AYANA Resort search+tab flow, 230-review deep scroll) | **Not rendered by this Maps variant** — no reply selector exists in captured DOM |
+| JSON-LD structured data | 0 `application/ld+json` blocks in any captured page | `_capture_business_metadata` JSON-LD strategy never fires for this variant |
+| Absolute review timestamps | no `title`/`datetime` attribute on `span.rsqaWe` | Dates must be approximated from relative strings |
+| Absolute business timestamps (busy hours etc.) | not present in captured DOM | out of scope |

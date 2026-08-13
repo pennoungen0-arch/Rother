@@ -1,12 +1,12 @@
 {
   "verified_by": "browser_agent",
-  "last_verified": "20260724T200000Z",
-  "_verification_note": "M10-SelectorAudit: Removed cookie_reject_button + reviews_tab_button (obsolete — no cookie banner in Indonesia, reviews embedded in initial HTML). Restructured review_container (role='region' promoted to tier 0). Removed obsolete expand_text_button tier 2 + locator tiers 2/4 (role='article' removed by Google). All evidence in docs/engineering/DOM_AUDIT.md.",
+  "last_verified": "20260812T120000Z",
+  "_verification_note": "GMBE-PARITY (2026-08-12): re-introduced reviews_tab_button (full-list capture), added review_like_selector + review_list_container, schema v5. See docs/engineering/DOM_AUDIT.md Appendices A-D + SELECTOR_CHANGELOG.md.",
   "_meta": {
-    "last_verified": "20260724T200000Z",
+    "last_verified": "20260812T120000Z",
     "verified_by": "browser_agent",
-    "schema_version": 4,
-    "_verification_note": "M10-SelectorAudit: Removed cookie_reject_button + reviews_tab_button (obsolete — no cookie banner in Indonesia, reviews embedded in initial HTML). Restructured review_container (role='region' promoted to tier 0). Removed obsolete expand_text_button tier 2 + locator tiers 2/4 (role='article' removed by Google). All evidence in docs/engineering/DOM_AUDIT.md.",
+    "schema_version": 5,
+    "_verification_note": "GMBE-PARITY (2026-08-12): re-introduced reviews_tab_button (full-list capture), added review_like_selector + review_list_container, schema v5. See docs/engineering/DOM_AUDIT.md Appendices A-D + SELECTOR_CHANGELOG.md.",
     "_documentation_url": "https://github.com/anomalyco/gbp-monitor/wiki/Selector-Maintenance",
     "descriptions": {
       "review_container": "Scrollable review list container (feed region)",
@@ -17,7 +17,10 @@
       "rating_selector": "CSS selector for star rating element",
       "rating_attr": "HTML attribute holding numeric star rating value",
       "relative_date_selector": "CSS selector for relative date text (e.g. '2 weeks ago')",
-      "expand_text_button": "Expand/See-more button on truncated review cards"
+      "expand_text_button": "Expand/See-more button on truncated review cards",
+      "reviews_tab_button": "Reviews tab button that opens the full virtualized review list",
+      "review_like_selector": "Review like button element (aria-label or inner text carries the count)",
+      "review_list_container": "Tab-view review list container class (JS-hunt resolution, documented for reference)"
     },
     "selector_types": {
       "review_container": "css",
@@ -28,7 +31,10 @@
       "rating_selector": "css",
       "rating_attr": "attribute",
       "relative_date_selector": "css",
-      "expand_text_button": "css"
+      "expand_text_button": "css",
+      "reviews_tab_button": "css",
+      "review_like_selector": "css",
+      "review_list_container": "css"
     },
     "fallback_notes": {
       "review_container": "Tier 0 uses role='region' (semantic, stable across redesigns). Tier 1 uses the 2023-vintage CSS class triple (may change — demoted from tier 0 after auto-generated class fragility was confirmed in M10 audit).",
@@ -218,5 +224,11 @@
   "expand_text_button": [
     "button.w8nwRe.kyuRq",
     "button:has-text('More')"
-  ]
+  ],
+  "reviews_tab_button": [
+    "button[role='tab'][aria-label^='Ulasan']",
+    "button[role='tab'][aria-label^='Reviews']"
+  ],
+  "review_like_selector": "button.gllhef",
+  "review_list_container": "div.m6QErb.XiKgde"
 }

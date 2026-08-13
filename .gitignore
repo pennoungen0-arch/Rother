@@ -22,6 +22,10 @@ node_modules
 
 # misc
 .DS_Store
+Thumbs.db
+
+# build output (covered by vitest exclude; safeguard for git)
+/dist
 *.pem
 
 # debug
@@ -29,6 +33,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# lockfile — standardised on npm
+bun.lock
 
 # env files (can opt-in for committing if needed)
 .env*

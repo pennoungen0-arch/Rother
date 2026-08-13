@@ -23,6 +23,7 @@ import {
   GBP_SELECTORS_PATH,
   GBP_SNAPSHOTS_DIR,
 } from "./paths";
+import { validateCompetitorId } from "./validate";
 
 /** Strip `, original` suffix from a reviewer name if present. */
 function cleanReviewerName(name: string | null): string | null {
@@ -72,6 +73,7 @@ export async function readRunSummary(): Promise<RunSummary | null> {
 async function readLatestSnapshot(
   competitorId: string,
 ): Promise<Review[]> {
+  validateCompetitorId(competitorId);
   const compDir = path.join(GBP_SNAPSHOTS_DIR, competitorId);
   // Try versioned layout first
   const latestPtr = path.join(compDir, "latest.json");
@@ -141,6 +143,7 @@ export interface SnapshotEntry {
 export async function listSnapshots(
   competitorId: string,
 ): Promise<SnapshotEntry[]> {
+  validateCompetitorId(competitorId);
   const compDir = path.join(GBP_SNAPSHOTS_DIR, competitorId);
   try {
     const files = await fs.readdir(compDir);
@@ -171,6 +174,7 @@ export async function readSnapshotAt(
   competitorId: string,
   timestamp: string,
 ): Promise<Review[]> {
+  validateCompetitorId(competitorId);
   if (timestamp === "latest") {
     return readLatestSnapshot(competitorId);
   }

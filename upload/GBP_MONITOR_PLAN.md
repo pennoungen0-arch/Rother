@@ -83,7 +83,7 @@ possibly `parser/review_parser.py` need to change — not the whole pipeline.
     __init__.py
     run_all.py
   /schedule
-    .github/workflows/scrape.yml
+    .github/workflows/scrape.yml  # moved to repo-root .github/workflows/ (M16)
   /data
     raw_html/          # gitignored
     snapshots/
@@ -489,7 +489,7 @@ just a loud log line that's easy to grep for.
 
 ---
 
-## 7. Scheduling — `schedule/.github/workflows/scrape.yml`
+## 7. Scheduling — `.github/workflows/scrape.yml` (repo root)
 
 ```yaml
 name: GBP Review Monitor

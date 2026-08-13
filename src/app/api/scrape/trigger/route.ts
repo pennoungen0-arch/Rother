@@ -29,7 +29,21 @@ export async function POST(request?: Request) {
 
   let runId: string;
   try {
-    runId = await scrapeRunManager.start(mode as "fixtures" | "live");
+    const result = await scrapeRunManager.start(mode as "fixtures" | "live");
+    if (result === null) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "A scrape run is already in progress. Wait for it to complete before triggering another.",
+          stderr: "",
+          stage: "concurrent_run",
+          probable_cause: "A previous scrape run is still active.",
+          suggested_fix: "Wait for the current run to finish, or check /api/scrape/status for progress.",
+        } satisfies ScrapeTriggerErrorResponse,
+        { status: 409 },
+      );
+    }
+    runId = result;
   } catch (err) {
     return NextResponse.json(
       {

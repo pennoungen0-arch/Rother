@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -7,9 +8,9 @@ from harness.selectors import resolve_selectors
 
 logger = logging.getLogger("gbp-monitor.scroll")
 
-MAX_SCROLLS = 40
+MAX_SCROLLS = 400
 STABLE_THRESHOLD = 3
-SCROLL_WAIT_MS = 2500
+SCROLL_WAIT_MS = 1200
 
 
 class SelectorNotFoundError(Exception):
@@ -243,6 +244,44 @@ def _collect_dom_stats(page, container_selector: str) -> dict:
         return {"total": 0, "visible": 0, "raw_attr_matches": 0, "has_data_review_id": 0}
 
 
+# JS extractor that snapshots every distinct review card currently rendered
+# in the container. Google virtualizes the list (DOM caps at ~350 distinct
+# ``data-review-id`` values even as the container keeps growing), so a single
+# end-of-run ``page.content()`` only ever contains the LAST rendered cards.
+# Harvesting the card HTML on every scroll iteration BEFORE the old cards are
+# unmounted lets us accumulate the FULL review set instead of the tail window.
+_JS_HARVEST_REVIEW_CARDS = """(container) => {
+  const byId = new Map();
+  container.querySelectorAll('[data-review-id]').forEach((el) => {
+    const id = el.getAttribute('data-review-id');
+    if (!id || byId.has(id)) return;
+    byId.set(id, el.outerHTML);
+  });
+  const out = [];
+  byId.forEach((html, id) => out.push({ id, html }));
+  return JSON.stringify(out);
+}"""
+
+
+def _harvest_review_cards(page, container_selector: str) -> list[dict]:
+    """Snapshot all distinct review cards currently rendered in the container.
+
+    Returns a list of ``{"id": <data-review-id>, "html": <outerHTML>}`` in
+    document order, deduped by id (Google maps the same id onto multiple
+    nested nodes). Best-effort: any failure returns ``[]`` so the scroll
+    loop degrades gracefully to the old DOM-count-only behavior.
+    """
+    try:
+        raw = page.eval_on_selector(container_selector, _JS_HARVEST_REVIEW_CARDS)
+        if not raw:
+            return []
+        parsed = json.loads(raw) if isinstance(raw, str) else raw
+        return [item for item in parsed if item.get("id") and item.get("html")]
+    except Exception as e:
+        logger.debug("_harvest_review_cards failed: %s", e)
+        return []
+
+
 def _detect_bottom(page, container_selector: str, previous_height: int, previous_dom: int) -> str | None:
     """Explicitly detect whether we have reached the bottom of the review list.
 
@@ -327,14 +366,16 @@ def scroll_review_container(
     overall_start = time.time()
     scroll_progress: list[dict] = []
     bottom_reason: str | None = None
+    harvested: dict[str, str] = {}
+    max_harvested = 0
 
     for i in range(MAX_SCROLLS):
         if deadline is not None and time.time() >= deadline:
             bottom_reason = "timeout"
             logger.warning(
                 "scroll[%s]: deadline exceeded after %d scroll(s) — "
-                "returning partial data",
-                comp_id, i,
+                "returning partial data (harvested %d reviews)",
+                comp_id, i, len(harvested),
             )
             break
 
@@ -359,6 +400,20 @@ def scroll_review_container(
         visible = dom_stats.get("visible", 0)
         dom_nodes = dom_stats.get("total", 0)
 
+        # Incremental harvest: snapshot every distinct review card now in the
+        # DOM BEFORE older cards get virtualized away. Because Google keeps
+        # only ~350 distinct cards mounted at once, the union across scroll
+        # iterations is the ONLY way to capture the full review list.
+        new_cards = _harvest_review_cards(page, container_selector)
+        added = 0
+        for card in new_cards:
+            rid = card["id"]
+            if rid not in harvested:
+                harvested[rid] = card["html"]
+                added += 1
+        harvested_total = len(harvested)
+        max_harvested = max(max_harvested, harvested_total)
+
         iter_duration = time.time() - iter_start
 
         bottom = _detect_bottom(page, container_selector, previous_height, previous_dom)
@@ -370,6 +425,8 @@ def scroll_review_container(
             "height": current_height,
             "visible_cards": visible,
             "dom_nodes": dom_nodes,
+            "new_harvested": added,
+            "harvested_total": harvested_total,
             "stable": stable_count,
             "bottom_reason": bottom_reason,
             "duration_s": round(iter_duration, 3),
@@ -380,11 +437,13 @@ def scroll_review_container(
                 iteration=i + 1, height=current_height,
                 visible_cards=visible, dom_nodes=dom_nodes,
                 stable=stable_count, bottom_reason=bottom_reason,
+                new_harvested=added, harvested_total=harvested_total,
             )
 
         detail = (
             f"height={current_height} visible_cards={visible} "
-            f"dom_nodes={dom_nodes} stable={stable_count}/{STABLE_THRESHOLD}"
+            f"dom_nodes={dom_nodes} harvested={harvested_total} "
+            f"stable={stable_count}/{STABLE_THRESHOLD}"
         )
 
         if current_height == previous_height:
@@ -394,8 +453,8 @@ def scroll_review_container(
                 if instrument:
                     instrument.end_phase("success", detail=f"{detail} — STABILIZED (bottom={bottom_reason})")
                 logger.info(
-                    "SCROLL[%s] iteration %d stabilized (height=%s, visible=%d, dom=%d, %.2fs)",
-                    comp_id, i + 1, current_height, visible, dom_nodes, iter_duration,
+                    "SCROLL[%s] iteration %d stabilized (height=%s, visible=%d, dom=%d, harvested=%d, %.2fs, +%d new)",
+                    comp_id, i + 1, current_height, visible, dom_nodes, harvested_total, iter_duration, added,
                 )
                 break
             if instrument:
@@ -410,27 +469,29 @@ def scroll_review_container(
 
         if bottom_reason:
             logger.info(
-                "SCROLL[%s] iteration %d bottom detected: %s (height=%s, visible=%d, dom=%d, %.2fs)",
-                comp_id, i + 1, bottom_reason, current_height, visible, dom_nodes, iter_duration,
+                "SCROLL[%s] iteration %d bottom detected: %s (height=%s, visible=%d, dom=%d, harvested=%d, %.2fs)",
+                comp_id, i + 1, bottom_reason, current_height, visible, dom_nodes, harvested_total, iter_duration,
             )
             break
 
         logger.debug(
-            "SCROLL[%s] iteration %d height=%s visible=%d dom=%d (%.2fs)",
-            comp_id, i + 1, current_height, visible, dom_nodes, iter_duration,
+            "SCROLL[%s] iteration %d height=%s visible=%d dom=%d harvested=%d (%.2fs, +%d new)",
+            comp_id, i + 1, current_height, visible, dom_nodes, harvested_total, iter_duration, added,
         )
     else:
         bottom_reason = "max_scroll"
         logger.info(
             "SCROLL[%s] hit MAX_SCROLLS=%d without stabilizing "
-            "(final height=%s, last visible=%d, dom=%d) — results may be truncated",
+            "(final height=%s, last visible=%d, dom=%d, harvested=%d) — results may be truncated",
             comp_id, MAX_SCROLLS, previous_height,
             scroll_progress[-1]["visible_cards"] if scroll_progress else 0,
             scroll_progress[-1]["dom_nodes"] if scroll_progress else 0,
+            harvested_total,
         )
 
     total_scrolls = len(scroll_progress)
     max_visible = max((s["visible_cards"] for s in scroll_progress), default=0)
+    max_dom = max((s["dom_nodes"] for s in scroll_progress), default=0)
 
     if bottom_reason is None:
         bottom_reason = "unknown"
@@ -438,12 +499,12 @@ def scroll_review_container(
     if instrument:
         instrument.phase_result(
             "scroll_complete", "success",
-            detail=f"{total_scrolls} scrolls, max visible={max_visible}, final height={previous_height}, bottom={bottom_reason}",
+            detail=f"{total_scrolls} scrolls, max visible={max_visible}, max dom={max_dom}, harvested={len(harvested)}, bottom={bottom_reason}",
         )
 
     logger.info(
-        "SCROLL_COMPLETE[%s] %d scroll(s), max_visible=%d, final_height=%s, bottom=%s, %.2fs total",
-        comp_id, total_scrolls, max_visible, previous_height,
+        "SCROLL_COMPLETE[%s] %d scroll(s), max_visible=%d, max_dom=%d, harvested=%d, final_height=%s, bottom=%s, %.2fs total",
+        comp_id, total_scrolls, max_visible, max_dom, len(harvested), previous_height,
         bottom_reason, time.time() - overall_start,
     )
 
@@ -454,4 +515,8 @@ def scroll_review_container(
         "max_visible_cards": max_visible,
         "final_height": previous_height,
         "total_duration_s": round(time.time() - overall_start, 3),
+        "harvested_reviews": [
+            {"id": rid, "html": html} for rid, html in harvested.items()
+        ],
+        "harvested_count": len(harvested),
     }

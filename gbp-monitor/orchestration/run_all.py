@@ -113,7 +113,11 @@ _LIVE_POLITE_DELAY_S = (5.0, 10.0)
 
 # Timeout for the full capture step (per-competitor) — if a single listing
 # takes longer than this, the capture is aborted and counted as a failure.
-_CAPTURE_TOTAL_TIMEOUT_S = 90
+# Raised from 90s to 360s (2026-08-13) to give large listings room to
+# scroll+harvest their full review list (e.g. Crate Cafe ~5k reviews needs
+# hundreds of scroll iterations at ~1.2s each). Small listings still exit
+# early via stable/bottom detection, so the cap only binds on big lists.
+_CAPTURE_TOTAL_TIMEOUT_S = 360
 
 # Lock file stale threshold: if a lock file is older than this, it's
 # considered stale (previous run crashed without cleanup).
@@ -1065,8 +1069,13 @@ def _compute_collection_metrics(comp_id: str, instrument) -> None:
     exported = stats.get("exported", 0)
     max_visible = max((s.get("visible_cards", 0) for s in progress), default=dom_nodes)
     max_dom = max((s.get("dom_nodes", 0) for s in progress), default=dom_nodes)
+    max_harvested = max((s.get("harvested_total", 0) for s in progress), default=0)
 
-    actual_dom = max(dom_nodes, max_dom, max_visible)
+    # The harvested union (every distinct card seen during scroll) is the
+    # authoritative "how many reviews did the browser actually collect".
+    # Pre-harvest this was max_visible (the virtualization cap, ~350); with
+    # incremental harvest it is the full list seen across all scrolls.
+    actual_dom = max(dom_nodes, max_dom, max_visible, max_harvested)
 
     # Parser efficiency (dom_nodes -> parsed -> exported)
     parser_eff = 100.0

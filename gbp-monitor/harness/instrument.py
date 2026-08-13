@@ -110,7 +110,7 @@ class PipelineInstrument:
             stats.get("exported", 0),
         )
 
-    def record_scroll_iteration(self, iteration: int, height: int, visible_cards: int, dom_nodes: int, stable: int, bottom_reason: str | None = None) -> None:
+    def record_scroll_iteration(self, iteration: int, height: int, visible_cards: int, dom_nodes: int, stable: int, bottom_reason: str | None = None, new_harvested: int = 0, harvested_total: int = 0) -> None:
         entry = {
             "iteration": iteration,
             "height": height,
@@ -118,11 +118,13 @@ class PipelineInstrument:
             "dom_nodes": dom_nodes,
             "stable": stable,
             "bottom_reason": bottom_reason,
+            "new_harvested": new_harvested,
+            "harvested_total": harvested_total,
         }
         self.scroll_progress.append(entry)
         logger.info(
-            "SCROLL_ITER[%s] iter=%d height=%d visible=%d dom=%d stable=%d%s",
-            self.competitor_id, iteration, height, visible_cards, dom_nodes, stable,
+            "SCROLL_ITER[%s] iter=%d height=%d visible=%d dom=%d harvested=%d stable=%d%s",
+            self.competitor_id, iteration, height, visible_cards, dom_nodes, harvested_total, stable,
             f" bottom={bottom_reason}" if bottom_reason else "",
         )
 

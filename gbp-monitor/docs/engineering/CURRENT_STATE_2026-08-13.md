@@ -1,8 +1,9 @@
 # Current State of the Project (2026-08-13)
 
-> Snapshot of the gbp-monitor scraper as of **2026-08-13T10:40:00+07:00**.
-> Source: this session's work (Milestones M7/M8/M10/M13B + GMBE-PARITY extension),
-> the `CHANGELOG.md`, live `--verify` runs, and offline test suites.
+> Snapshot of the gbp-monitor scraper as of **2026-08-13T11:15:00+07:00**.
+> Source: this session's work (Milestones M7/M8/M10/M13B + GMBE-PARITY extension
+> + incremental review harvest), the `CHANGELOG.md`, live `--verify` runs, and
+> offline test suites.
 > This file is the "as of now" reference — read it before extending the scraper.
 
 ---
@@ -115,6 +116,27 @@ The initial page embeds only **3** review cards. Clicking the Reviews tab
   → This is why scroll now targets the *real* list container in both views.
 - Live result: 100–410 reviews/listing captured (was 3).
 
+### Incremental card harvest (fixes the ~350 virtualized-DOM cap)
+
+Google **virtualizes** the review list: distinct `data-review-id` count in the
+DOM caps at ~350 (20, 30, …, 350) while `scrollHeight` keeps growing
+(11,644 → 202,056 px for Crate Cafe) — old cards are unmounted as new ones
+mount. So a single end-of-run `page.content()` can only ever contain the last
+~350 rendered cards; that was the hard ceiling pre-harvest.
+
+`harness/scroll.py` now snapshots every distinct review card's `outerHTML` on
+each scroll iteration (`_harvest_review_cards` / `_JS_HARVEST_REVIEW_CARDS`),
+accumulates by `data-review-id`, and returns the union
+(`harvested_reviews` / `harvested_count`). `capture.py` reconstructs a full
+synthetic document from the harvested cards for the parser (raw final DOM is
+still saved as `page.html`; harvested doc as `harvested_reviews.html`). The
+parser now sees the FULL set seen across all scrolls, not the tail window.
+
+Supporting knobs (raised 2026-08-13 so 5k-review listings can finish):
+`MAX_SCROLLS` 40 → 400, `SCROLL_WAIT_MS` 2500 → 1200,
+`_CAPTURE_TOTAL_TIMEOUT_S` 90 → 360 (run_all.py). Offline suites stay green
+(108/108 + 32/32). Full live re-verification still pending.
+
 ---
 
 ## 6. Business metadata (current)
@@ -171,15 +193,29 @@ pipeline_summary).
 - `data/verify/20260813T032822Z/` — **partial** (aborted): 5 listings passed with
   100–340 reviews each; comp-ubud-02 failed once on transient 30s nav timeout
   (degraded page), retested clean via probe.
+- `data/verify/20260813T061112Z/` — **12/12 PASS** (clean post-GMBE-PARITY);
+  350-review DOM cap observed on Crate Cafe (comp-canggu-01: dom_nodes 20→350
+  while scrollHeight grew 11,644→202,056) — this is the virtualization
+  evidence that motivated the incremental-harvest fix (see §5).
+- `data/verify/20260813T083706Z/` — **12/12 PASS** (incremental-harvest scroll);
+  harvest fix proven live: 200–580 cards/listing (dom grew past 350 to 480–580
+  with bottom=stable_scroll, 100% parse efficiency, 0 missing). Note: this
+  `--verify` run needs a fresh NID; a stale `storage_state` NID served the
+  REDUCED 5-card variant (07:54 run), so the stale jar must be replaced before
+  live runs (see §8 onboarding).
+- **Production live scrape** `data/run_summary.json` (20260813T090503Z, mode=live,
+  run_id 20260813T090503Z): **12/12 success, 5,021 reviews** (570 Crate Cafe,
+  620 Nusa Dua, 560 Sanur, etc.), snapshots under `data/snapshots/*/2026-08-13T09-*.json`.
 - Single-listing probes: Anomali Coffee 410 reviews, KAFE Ubud 8 (small listing).
 
 ---
 
 ## 9. Current gaps / UNPROVEN items
 
-1. **Full 12/12 `--verify` after GMBE-PARITY** — the 20260813T032822Z run was
-   aborted mid-way; a clean 12/12 live pass has not been recorded since the
-   tab/scroll change. (Multi-listing timing/deadline impact untested end-to-end.)
+1. ~~**Live `--verify` with incremental harvest**~~ — **NOW PROVEN**: the 12/12
+   `data/verify/20260813T083706Z/` run confirms 200–580 cards/listing (dom past
+   350, bottom=stable_scroll, 100% parse, 0 missing) and the production live
+   scrape (5,021 reviews) confirms the whole pipeline end-to-end.
 2. **Owner replies** — structurally unavailable in this variant (see §7); the
    schema deliberately does NOT carry a reply field until a variant renders one.
 3. **Absolute review dates** — approximated only; no absolute source in DOM.
@@ -187,18 +223,22 @@ pipeline_summary).
    by construction only.
 5. **Phone/website** — vary by business; only populated when the DOM provides
    them (conditional extraction).
+6. **Dashboard mode default** — `/api/scrape/trigger` now defaults to `"live"`
+   (fixed 2026-08-13T16:30+07:00); synthetic fixtures can no longer be written
+   into production snapshots unless `?mode=fixtures` is explicitly requested.
 
 ---
 
 ## 10. Next logical steps (when you pick this back up)
 
-1. Record a clean 12/12 `--verify` (fix any transient-listing fragility first —
-   e.g. retry degraded pages, tighten nav timeout on ubud-02).
-2. Consider persisting `business_metadata` into snapshot storage (currently
-   emitted via instrumentation only).
-3. Wire the new `Review` fields + metadata into the Next.js dashboard (`src/`).
-4. Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
+1. Persist `business_metadata` into snapshot storage (currently emitted via
+   instrumentation only).
+2. Wire the new `Review` fields + metadata into the Next.js dashboard (`src/`).
+3. Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
    business set (phone/website positive and negative cases).
+4. Add a stale-NID guard: detect when a persisted `storage_state` NID stops
+   serving the FULL variant (e.g. reduced 5-card session) and force re-warm-up
+   instead of reusing the stale jar.
 
 ---
 

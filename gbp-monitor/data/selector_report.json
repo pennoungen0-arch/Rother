@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-25T04:36:11.272737+00:00",
-  "selectors_configured": 9,
-  "selectors_tested": 4,
+  "generated_at": "2026-08-13T09:28:22.942890+00:00",
+  "selectors_configured": 12,
+  "selectors_tested": 2,
   "selectors_not_tested": [
     "review_item",
     "review_id_attr",
@@ -9,98 +9,104 @@
     "review_text_selector",
     "rating_selector",
     "rating_attr",
-    "relative_date_selector"
+    "relative_date_selector",
+    "reviews_tab_button",
+    "review_like_selector",
+    "review_list_container"
   ],
   "healthy": 1,
   "degraded": 1,
   "broken": 0,
-  "not_evaluated": 7,
-  "avg_confidence": 0.521,
+  "not_evaluated": 10,
+  "avg_confidence": 0.928,
   "by_selector": {
     "review_container": {
       "selector_value": [
         "div.m6QErb[role='region']",
         "div.m6QErb.DxyBCb.kA9KIf.dS8AEf"
       ],
-      "status": "healthy",
-      "confidence": 1.0,
-      "total_lookups": 12,
+      "status": "degraded",
+      "confidence": 0.857,
+      "total_lookups": 14,
       "times_found": 12,
-      "times_not_found": 0,
+      "times_not_found": 2,
       "expected_missing_count": 0,
-      "avg_duration_ms": 1436.3,
-      "error_examples": [],
+      "avg_duration_ms": 5006.8,
+      "error_examples": [
+        "Page.wait_for_selector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"div.m6QErb[role='region']\") to be visible\n",
+        "Page.wait_for_selector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"div.m6QErb[role='region']\") to be visible\n"
+      ],
       "per_competitor": {
         "comp-seminyak-01": {
           "found": true,
           "match_count": 1,
-          "duration_ms": 92.3,
+          "duration_ms": 6.4,
           "error": null
         },
         "comp-seminyak-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 2015.2,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-canggu-01": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1174.7,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-canggu-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1513.8,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-ubud-01": {
           "found": true,
           "match_count": 1,
-          "duration_ms": 1527.0,
+          "duration_ms": 7.1,
           "error": null
         },
         "comp-ubud-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1497.7,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-uluwatu-01": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1639.8,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-uluwatu-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1778.2,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-nusadua-01": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1516.2,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-nusadua-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1495.0,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-sanur-01": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1492.9,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         },
         "comp-sanur-02": {
           "found": true,
-          "match_count": 1,
-          "duration_ms": 1493.0,
+          "match_count": 10,
+          "duration_ms": 0.0,
           "error": null
         }
       }
@@ -152,119 +158,129 @@
         "button.w8nwRe.kyuRq",
         "button:has-text('More')"
       ],
-      "status": "degraded",
-      "confidence": 0.042,
-      "total_lookups": 24,
-      "times_found": 1,
-      "times_not_found": 23,
+      "status": "healthy",
+      "confidence": 1.0,
+      "total_lookups": 12,
+      "times_found": 12,
+      "times_not_found": 0,
       "expected_missing_count": 0,
-      "avg_duration_ms": 25.5,
+      "avg_duration_ms": 38379.5,
       "error_examples": [],
       "per_competitor": {
         "comp-seminyak-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 14.7,
+          "found": true,
+          "match_count": 304,
+          "duration_ms": 32959.4,
           "error": null
         },
         "comp-seminyak-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 12.2,
+          "found": true,
+          "match_count": 88,
+          "duration_ms": 7825.8,
           "error": null
         },
         "comp-canggu-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 31.5,
+          "found": true,
+          "match_count": 527,
+          "duration_ms": 58326.1,
           "error": null
         },
         "comp-canggu-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 11.6,
+          "found": true,
+          "match_count": 349,
+          "duration_ms": 36096.2,
           "error": null
         },
         "comp-ubud-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 9.0,
+          "found": true,
+          "match_count": 19,
+          "duration_ms": 1187.2,
           "error": null
         },
         "comp-ubud-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 12.1,
+          "found": true,
+          "match_count": 524,
+          "duration_ms": 58363.9,
           "error": null
         },
         "comp-uluwatu-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 18.2,
+          "found": true,
+          "match_count": 366,
+          "duration_ms": 35184.1,
           "error": null
         },
         "comp-uluwatu-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 13.2,
+          "found": true,
+          "match_count": 121,
+          "duration_ms": 7197.2,
           "error": null
         },
         "comp-nusadua-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 10.8,
+          "found": true,
+          "match_count": 433,
+          "duration_ms": 48023.2,
           "error": null
         },
         "comp-nusadua-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 9.8,
+          "found": true,
+          "match_count": 31,
+          "duration_ms": 2029.1,
           "error": null
         },
         "comp-sanur-01": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 10.2,
+          "found": true,
+          "match_count": 1001,
+          "duration_ms": 115880.7,
           "error": null
         },
         "comp-sanur-02": {
-          "found": false,
-          "match_count": 0,
-          "duration_ms": 10.5,
+          "found": true,
+          "match_count": 552,
+          "duration_ms": 57481.7,
           "error": null
         }
       }
+    },
+    "reviews_tab_button": {
+      "selector_value": [
+        "button[role='tab'][aria-label^='Ulasan']",
+        "button[role='tab'][aria-label^='Reviews']"
+      ],
+      "status": "not_evaluated",
+      "note": "verify mode did not exercise this selector",
+      "total_lookups": 0
+    },
+    "review_like_selector": {
+      "selector_value": "button.gllhef",
+      "status": "not_evaluated",
+      "note": "verify mode did not exercise this selector",
+      "total_lookups": 0
+    },
+    "review_list_container": {
+      "selector_value": "div.m6QErb.XiKgde",
+      "status": "not_evaluated",
+      "note": "verify mode did not exercise this selector",
+      "total_lookups": 0
     }
   },
   "details": [
     {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
+      "selector_key": "review_container",
+      "selector_value": "div.m6QErb[role='region']",
       "found": false,
       "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
+      "duration_ms": 10011.9,
+      "error": "Page.wait_for_selector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"div.m6QErb[role='region']\") to be visible\n",
       "expected_missing": false,
       "competitor_id": "comp-seminyak-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-seminyak-01",
-      "phase": "click_reviews_tab"
+      "phase": "scroll"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.m6QErb.DxyBCb.kA9KIf.dS8AEf",
       "found": true,
       "match_count": 1,
-      "duration_ms": 92.3,
+      "duration_ms": 6.4,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-seminyak-01",
@@ -273,53 +289,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 28.4,
+      "found": true,
+      "match_count": 304,
+      "duration_ms": 32959.4,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-seminyak-01",
       "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 14.7,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-seminyak-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-seminyak-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-seminyak-02",
-      "phase": "click_reviews_tab"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 2015.2,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-seminyak-02",
@@ -328,53 +311,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 13.0,
+      "found": true,
+      "match_count": 88,
+      "duration_ms": 7825.8,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-seminyak-02",
       "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 12.2,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-seminyak-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-01",
-      "phase": "click_reviews_tab"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1174.7,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-canggu-01",
@@ -384,52 +334,19 @@
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
       "found": true,
-      "match_count": 3,
-      "duration_ms": 317.4,
+      "match_count": 527,
+      "duration_ms": 58326.1,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-canggu-01",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 31.5,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-02",
-      "phase": "click_reviews_tab"
-    },
-    {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(4)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1513.8,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-canggu-02",
@@ -438,53 +355,31 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.2,
+      "found": true,
+      "match_count": 349,
+      "duration_ms": 36096.2,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-canggu-02",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
+      "selector_key": "review_container",
+      "selector_value": "div.m6QErb[role='region']",
       "found": false,
       "match_count": 0,
-      "duration_ms": 11.6,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-canggu-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
+      "duration_ms": 10001.8,
+      "error": "Page.wait_for_selector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"div.m6QErb[role='region']\") to be visible\n",
       "expected_missing": false,
       "competitor_id": "comp-ubud-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-ubud-01",
-      "phase": "click_reviews_tab"
+      "phase": "scroll"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.m6QErb.DxyBCb.kA9KIf.dS8AEf",
       "found": true,
       "match_count": 1,
-      "duration_ms": 1527.0,
+      "duration_ms": 7.1,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-ubud-01",
@@ -493,53 +388,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 9.1,
+      "found": true,
+      "match_count": 19,
+      "duration_ms": 1187.2,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-ubud-01",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 9.0,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-ubud-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-ubud-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-ubud-02",
-      "phase": "click_reviews_tab"
-    },
-    {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(4)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1497.7,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-ubud-02",
@@ -548,53 +410,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 9.1,
+      "found": true,
+      "match_count": 524,
+      "duration_ms": 58363.9,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-ubud-02",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 12.1,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-ubud-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-01",
-      "phase": "click_reviews_tab"
-    },
-    {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1639.8,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-uluwatu-01",
@@ -603,53 +432,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.6,
+      "found": true,
+      "match_count": 366,
+      "duration_ms": 35184.1,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-uluwatu-01",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 18.2,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-02",
-      "phase": "click_reviews_tab"
-    },
-    {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(4)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1778.2,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-uluwatu-02",
@@ -658,53 +454,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 11.2,
+      "found": true,
+      "match_count": 121,
+      "duration_ms": 7197.2,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-uluwatu-02",
       "phase": "expand"
     },
     {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 13.2,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-uluwatu-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-01",
-      "phase": "click_reviews_tab"
-    },
-    {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1516.2,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-nusadua-01",
@@ -713,53 +476,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.5,
+      "found": true,
+      "match_count": 433,
+      "duration_ms": 48023.2,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-nusadua-01",
       "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.8,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-02",
-      "phase": "click_reviews_tab"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1495.0,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-nusadua-02",
@@ -768,53 +498,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 8.9,
+      "found": true,
+      "match_count": 31,
+      "duration_ms": 2029.1,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-nusadua-02",
       "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 9.8,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-nusadua-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-01",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-01",
-      "phase": "click_reviews_tab"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1492.9,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-sanur-01",
@@ -823,53 +520,20 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.8,
+      "found": true,
+      "match_count": 1001,
+      "duration_ms": 115880.7,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-sanur-01",
       "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.2,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-01",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "cookie_reject_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-02",
-      "phase": "dismiss_cookie"
-    },
-    {
-      "selector_key": "reviews_tab_button",
-      "selector_value": null,
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 0.0,
-      "error": "not configured",
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-02",
-      "phase": "click_reviews_tab"
     },
     {
       "selector_key": "review_container",
-      "selector_value": "div.m6QErb[role='region']",
+      "selector_value": "div.g2LZJb:nth-of-type(9) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)",
       "found": true,
-      "match_count": 1,
-      "duration_ms": 1493.0,
+      "match_count": 10,
+      "duration_ms": 0.0,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-sanur-02",
@@ -878,26 +542,110 @@
     {
       "selector_key": "expand_text_button",
       "selector_value": "button.w8nwRe.kyuRq",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 8.8,
-      "error": null,
-      "expected_missing": false,
-      "competitor_id": "comp-sanur-02",
-      "phase": "expand"
-    },
-    {
-      "selector_key": "expand_text_button",
-      "selector_value": "button:has-text('More')",
-      "found": false,
-      "match_count": 0,
-      "duration_ms": 10.5,
+      "found": true,
+      "match_count": 552,
+      "duration_ms": 57481.7,
       "error": null,
       "expected_missing": false,
       "competitor_id": "comp-sanur-02",
       "phase": "expand"
     }
   ],
-  "run_id": "20260725T043144Z",
-  "run_timestamp": "2026-07-25T04:31:44.718451+00:00"
+  "drift": {
+    "healthy_delta": -1,
+    "degraded_delta": 1,
+    "broken_delta": 0,
+    "confidence_delta": -0.072,
+    "newly_broken": [],
+    "newly_degraded": [],
+    "recovered": [],
+    "per_selector": {
+      "review_container": {
+        "previous_status": "not_evaluated",
+        "current_status": "degraded",
+        "status_change": "not_evaluated→degraded",
+        "confidence_change": 0.857,
+        "alert": false
+      },
+      "review_item": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "review_id_attr": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "reviewer_name_attr": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "review_text_selector": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "rating_selector": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "rating_attr": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "relative_date_selector": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "expand_text_button": {
+        "previous_status": "not_evaluated",
+        "current_status": "healthy",
+        "status_change": "not_evaluated→healthy",
+        "confidence_change": 1.0,
+        "alert": false
+      },
+      "reviews_tab_button": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "review_like_selector": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      },
+      "review_list_container": {
+        "previous_status": "not_evaluated",
+        "current_status": "not_evaluated",
+        "status_change": null,
+        "confidence_change": null,
+        "alert": false
+      }
+    }
+  },
+  "run_id": "20260813T090503Z",
+  "run_timestamp": "2026-08-13T09:05:03.302085+00:00"
 }

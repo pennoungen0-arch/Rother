@@ -558,6 +558,8 @@ def capture_listing_html(
                         dom_nodes=entry["dom_nodes"],
                         stable=entry["stable"],
                         bottom_reason=entry.get("bottom_reason"),
+                        new_harvested=entry.get("new_harvested", 0),
+                        harvested_total=entry.get("harvested_total", 0),
                     )
 
         if screenshot_dir and spath:
@@ -579,11 +581,33 @@ def capture_listing_html(
 
         if instrument:
             instrument.start_phase("html_capture")
-        html = page.content()
+
+        raw_html = page.content()
+
+        # Reconstruct the FULL review list from the cards harvested during
+        # scrolling. Google virtualizes the review DOM (only ~350 distinct
+        # cards stay mounted; the rest are unmounted as you scroll), so the
+        # single end-of-run page.content() only contains the LAST window.
+        # Wrapping every harvested card's outerHTML into one container gives
+        # the parser the complete set while keeping raw_html as evidence.
+        harvested = (scroll_result or {}).get("harvested_reviews", []) or []
+        html = raw_html
+        if harvested:
+            cards_html = "".join(card["html"] for card in harvested)
+            html = (
+                "<html><head><meta charset='utf-8'></head><body>"
+                "<div id='harvested-reviews' class='m6QErb'>"
+                + cards_html
+                + "</div></body></html>"
+            )
 
         _validate_capture_output(html, comp_id, logger)
         if instrument:
-            instrument.end_phase("success", detail=f"{len(html)} bytes captured")
+            instrument.end_phase(
+                "success",
+                detail=f"{len(html)} bytes captured "
+                       f"(harvested {len(harvested)} distinct review cards)",
+            )
 
         if instrument:
             instrument.start_phase("business_metadata")
@@ -594,7 +618,9 @@ def capture_listing_html(
         if spath:
             spath.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(spath / "page.png"), full_page=True)
-            spath.joinpath("page.html").write_text(html, encoding="utf-8")
+            spath.joinpath("page.html").write_text(raw_html, encoding="utf-8")
+            if harvested:
+                spath.joinpath("harvested_reviews.html").write_text(html, encoding="utf-8")
 
         logger.info("capture[%s] phases: %s", comp_id, ", ".join(f"{k}={v}s" for k, v in phase_timings.items()))
         return html

@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request?: Request) {
-  let mode = "fixtures";
+  let mode = "live";
   if (request) {
     const url = new URL(request.url);
-    mode = url.searchParams.get("mode") || "fixtures";
+    mode = url.searchParams.get("mode") || "live";
   }
   if (mode !== "fixtures" && mode !== "live") {
     return NextResponse.json(

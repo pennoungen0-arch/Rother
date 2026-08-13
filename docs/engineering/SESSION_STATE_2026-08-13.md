@@ -97,6 +97,63 @@ Everything else is committed.
 
 ---
 
+## 3b. Change log: before → now (summary of all work)
+
+Everything that changed from the pre-session state (`b7b45de`) to now (`b9fedfd`),
+categorized.
+
+### gbp-monitor scraper — commit `9eb2c64` (M8 + GMBE parity)
+
+**New**
+- `harness/acquisition.py` — real-network acquisition, `NID` cookie warm-up,
+  `data/storage_state.json` reuse
+- `harness/instrument.py` — proper phase-stack instrumentation
+- `variant_framework/` — full DOM-variant investigation module (classifier,
+  context_builder, evidence, reporting, runner, spec)
+- `parser/relative_date.py` — relative date → ISO + epoch resolution
+- `tests/verify_variant_framework.py`, `tests/fixtures/validate.py` + validation docs
+
+**Fixed**
+- Scraper crashes masked by fixtures mode: `UnboundLocalError: spath` (live) and
+  `TypeError: _structured_log() got multiple values for argument 'stage'`
+- Spurious `expand_text_button` "degraded" in selector report (false-negative health)
+- "end_phase without matching start_phase" warning on every listing
+- Mock `place_id`s → all 12 competitors got verified real `place_id`s
+- Removed dead `cookie_reject_button` / `reviews_tab_button` code paths (M10 audit)
+
+**Updated**
+- Reviews tab auto-open + JS-hunt scroll container → captures full virtualized list
+  (~100–410) instead of 3 embedded cards
+- Review fields: `review_date`, `review_date_epoch`, `review_like_count`,
+  per-star `review_breakdown`, business `address/category/phone/website`
+- Workflow files relocated into `.github/workflows/`
+
+### Dashboard — commit `afe1785` (v0.2.0)
+
+**Fixed**
+- TOCTOU race in `ScrapeRunManager` (atomic `start()` mutex, no duplicate scraper spawns)
+- Path traversal via `competitor_id` → new `validateCompetitorId()` guard
+- Progress reporting (stderr JSONLOG parsing)
+
+**Updated**
+- Bun → npm (single package manager), cross-platform `build.mjs`, `GBP_ROOT` env
+  replaces hardcoded paths
+- ESLint re-enabled (37 errors + 43 warnings fixed), `vitest.config.mjs` added
+- `health-trend` JSONLOG parser endpoint + test suite
+- Pruned unused shadcn/ui components and matching deps (~40 files deleted)
+- Rate limiting, graceful shutdown, version 0.0.1 → 0.2.0
+
+### Docs — commit `b9fedfd`
+
+- `docs/engineering/SESSION_STATE_2026-08-13.md` — this reference doc
+- 11 release docs (CHANGELOG, RELEASE_NOTES, KNOWN_LIMITATIONS, RELEASE_CHECKLIST,
+  FINAL_*, validation reports, project-manifest, tree)
+
+**Intentionally NOT changed:** 32 `gbp-monitor/data/` runtime files (snapshot
+deletions + run JSON) remain uncommitted.
+
+---
+
 ## 4. Verification commands
 
 Python (run from `gbp-monitor/`):

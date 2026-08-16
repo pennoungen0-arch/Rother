@@ -152,6 +152,16 @@ Supporting knobs (raised 2026-08-13 so 5k-review listings can finish):
 | `phone` / `website` | `[data-item-id="telephone"]` / `...website] a` | **NEW** — conditional (Crate has neither) |
 | `review_breakdown` | `tr.BHOKXe` `aria-label="Bintang 5,3.242 ulasan"` | **NEW** — per-star, tab view only |
 
+**Persistence (2026-08-16):** metadata is now persisted alongside each snapshot
+as a `{ts}.metadata.json` sidecar (`storage/snapshot_store.py`) — the scraper
+passes `instrument.business_metadata` through `save_snapshot`. Dashboard reads
+it via `readLatestBusinessMetadata`/`readAllBusinessMetadata`
+(`src/lib/gbp/server-data.ts`) and surfaces address/category in the competitor
+leaderboard and metadata per-competitor in `/api/overview` + `/api/branches`.
+The 12 production snapshots were backfilled from the `20260813T083706Z` verify
+evidence. Note: `phone`/`website` were absent in that verify capture (conditional
+DOM), so those fields are null until a live capture renders them.
+
 Evidence + exact DOM: `docs/engineering/DOM_AUDIT.md` Appendix C.
 
 ---
@@ -231,14 +241,23 @@ pipeline_summary).
 
 ## 10. Next logical steps (when you pick this back up)
 
-1. Persist `business_metadata` into snapshot storage (currently emitted via
-   instrumentation only).
-2. Wire the new `Review` fields + metadata into the Next.js dashboard (`src/`).
+1. ~~**Persist `business_metadata` into snapshot storage**~~ — **DONE 2026-08-16**:
+   sidecar `{ts}.metadata.json` files written by `save_snapshot`; dashboard
+   reads + surfaces them.
+2. ~~**Wire the new `Review` fields + metadata into the Next.js dashboard**~~ —
+   **DONE 2026-08-16**: `Review` now carries `review_date`/`review_date_epoch`/
+   `review_like_count`; "Likes" column in the reviews table; metadata shown in
+   the competitor leaderboard + `/api/overview` + `/api/branches`.
 3. Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
    business set (phone/website positive and negative cases).
 4. Add a stale-NID guard: detect when a persisted `storage_state` NID stops
    serving the FULL variant (e.g. reduced 5-card session) and force re-warm-up
    instead of reusing the stale jar.
+5. **Productization (self-hosted tool):** genericize Copenhagen Bali coupling
+   (branch prefix strip in `charts.tsx`, Bali stopwords in
+   `review-word-cloud.tsx`, example listings), shipped place_id lookup helper,
+   stale-NID guard for onboarding, proactive alerts (webhook/email on new
+   reviews), generic README/first-run flow.
 
 ---
 

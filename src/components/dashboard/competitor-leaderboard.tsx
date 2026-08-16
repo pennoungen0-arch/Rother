@@ -245,6 +245,16 @@ function LeaderboardRow({
         <div className="truncate text-[10px] text-muted-foreground">
           {shortBranch}
         </div>
+        {comp.business_metadata && (
+          <div className="truncate text-[10px] text-muted-foreground/80">
+            {[
+              comp.business_metadata.category,
+              comp.business_metadata.address,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        )}
       </div>
 
       {/* Star rating (compact) */}

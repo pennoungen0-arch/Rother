@@ -29,6 +29,9 @@ Modes:
 
 Outputs (always):
   - `data/snapshots/{competitor_id}/{ts}.json` — full review list (versioned)
+  - `data/snapshots/{competitor_id}/{ts}.metadata.json` — business_metadata
+    sidecar (name, rating, address, category, phone, website, star breakdown)
+    when the capture produced metadata for that run
   - `data/reviews_new/{competitor_id}_{run_ts}.json` — delta reviews
   - `data/run.log` — append-only structured log
   - `data/run_summary.json` — latest run summary for the dashboard
@@ -1011,7 +1014,7 @@ def _process_one_listing(
             summary["new_reviews"] += len(delta)
             _structured_log(run_id, "delta", competitor=comp_id, new_reviews=len(delta))
 
-        save_snapshot(comp_id, parsed_dicts)
+        save_snapshot(comp_id, parsed_dicts, metadata=instrument.business_metadata)
         stages["save_s"] = round(time.time() - t0, 2)
         failed_stage = None
 

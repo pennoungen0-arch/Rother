@@ -3,11 +3,20 @@
 Per GBP_MONITOR_PLAN.md Section 5.6. Each competitor gets a directory at
 `data/snapshots/{competitor_id}/` containing:
 
-  {YYYY-MM-DDTHH-MM-SSZ}.json   — immutable timestamped snapshot file
-  latest.json                   — pointer file containing the latest filename
+  {YYYY-MM-DDTHH-MM-SSZ}.json           — immutable timestamped snapshot file
+  {YYYY-MM-DDTHH-MM-SSZ}.metadata.json  — optional immutable business_metadata
+                                          sidecar (written when the capture
+                                          produced metadata for this run)
+  latest.json                           — pointer file containing the latest
+                                          review filename
 
 The pointer file avoids scanning the directory for the latest entry on every
 read. It is updated atomically (`.tmp` + rename) alongside each snapshot write.
+
+The metadata sidecar uses the same timestamp as its review snapshot so the
+pair is always joinable; there is no separate pointer (the latest snapshot's
+timestamp selects the latest sidecar). Snapshots remain plain review arrays
+for backward compatibility; consumers that need metadata read the sidecar.
 
 Paths are intentionally RELATIVE to the project root.
 """
@@ -37,6 +46,10 @@ def _timestamped_path(competitor_id: str, ts: str) -> Path:
 
 def _latest_pointer_path(competitor_id: str) -> Path:
     return _competitor_dir(competitor_id) / _LATEST_FILENAME
+
+
+def _metadata_sidecar_path(competitor_id: str, ts: str) -> Path:
+    return _competitor_dir(competitor_id) / f"{ts}.metadata.json"
 
 
 def _now_timestamp() -> str:
@@ -84,6 +97,52 @@ def _load_json_array(path: Path) -> list[dict]:
     return []
 
 
+def _load_json_dict(path: Path) -> dict | None:
+    """Read and parse a JSON object file, returning None on failure."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+        logger.warning("expected dict at %s, got %s", path, type(data).__name__)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        logger.warning("could not read %s (%s)", path, e)
+    return None
+
+
+def _latest_timestamp(competitor_id: str) -> str | None:
+    """Return the timestamp (filename-safe) of the latest snapshot, if any."""
+    latest_filename = _read_latest_pointer(competitor_id)
+    if latest_filename:
+        return latest_filename.replace(".json", "")
+    return None
+
+
+def load_business_metadata(competitor_id: str) -> dict | None:
+    """Load the latest business_metadata sidecar for `competitor_id`.
+
+    Returns None if no snapshot/sidecar exists yet (first run) or the data
+    is corrupt. The sidecar timestamp is derived from the `latest.json`
+    pointer so it always matches the latest review snapshot.
+    """
+    ts = _latest_timestamp(competitor_id)
+    if not ts:
+        return None
+    return _load_json_dict(_metadata_sidecar_path(competitor_id, ts))
+
+
+def load_business_metadata_at(competitor_id: str, timestamp: str) -> dict | None:
+    """Load the business_metadata sidecar for a specific snapshot timestamp.
+
+    `timestamp` accepts the same forms as `load_snapshot_at` (ISO with
+    colons, filename-safe with hyphens, or `"latest"`). Returns None if no
+    sidecar exists for that snapshot (metadata was not captured that run).
+    """
+    if timestamp == "latest":
+        return load_business_metadata(competitor_id)
+    safe = timestamp.replace(":", "-")
+    return _load_json_dict(_metadata_sidecar_path(competitor_id, safe))
+
+
 def load_snapshot(competitor_id: str) -> list[dict]:
     """Load the latest snapshot for `competitor_id`.
 
@@ -104,11 +163,20 @@ def load_snapshot(competitor_id: str) -> list[dict]:
     return []
 
 
-def save_snapshot(competitor_id: str, reviews: list[dict]) -> None:
+def save_snapshot(
+    competitor_id: str,
+    reviews: list[dict],
+    metadata: dict | None = None,
+) -> None:
     """Persist `reviews` as a new immutable snapshot for `competitor_id`.
 
     Each call creates a new timestamped file alongside all previous snapshots.
     The `latest.json` pointer is updated atomically to point at the new file.
+
+    When `metadata` is provided (and truthy), a sibling `{ts}.metadata.json`
+    sidecar is written so business-level fields (name, rating, address,
+    category, phone, website, star breakdown) travel with the run that
+    captured them.
     """
     ts = _now_timestamp()
     comp_dir = _competitor_dir(competitor_id)
@@ -122,13 +190,23 @@ def save_snapshot(competitor_id: str, reviews: list[dict]) -> None:
     )
     tmp.replace(snapshot_path)
 
+    if metadata:
+        meta_path = _metadata_sidecar_path(competitor_id, ts)
+        meta_tmp = meta_path.with_suffix(".tmp")
+        meta_tmp.write_text(
+            json.dumps(metadata, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        meta_tmp.replace(meta_path)
+
     _write_latest_pointer(competitor_id, snapshot_path.name)
 
     logger.info(
-        "save_snapshot[%s]: wrote %d review(s) to %s",
+        "save_snapshot[%s]: wrote %d review(s) to %s%s",
         competitor_id,
         len(reviews),
         snapshot_path,
+        " (+ metadata)" if metadata else "",
     )
 
 

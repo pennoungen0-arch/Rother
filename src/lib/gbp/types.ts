@@ -19,6 +19,34 @@ export interface Review {
   relative_date: string | null;
   /** ISO 8601 string. */
   scraped_at: string;
+  /** ISO 8601 date approximated from relative_date (GMBE-parity). */
+  review_date?: string | null;
+  /** UTC epoch seconds approximated from relative_date. */
+  review_date_epoch?: number | null;
+  /** Like count; 0 when the like button shows no count, null when absent. */
+  review_like_count?: number | null;
+}
+
+/**
+ * Business-level metadata captured alongside a snapshot run and persisted as
+ * a `{ts}.metadata.json` sidecar next to the review snapshot.
+ */
+export interface BusinessMetadata {
+  business_name?: string | null;
+  google_rating?: string | null;
+  google_review_count?: string | null;
+  address?: string | null;
+  category?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  review_breakdown?: {
+    "1_star"?: string | null;
+    "2_star"?: string | null;
+    "3_star"?: string | null;
+    "4_star"?: string | null;
+    "5_star"?: string | null;
+  } | null;
+  [key: string]: unknown;
 }
 
 export interface RunSummaryError {
@@ -88,6 +116,8 @@ export interface CompetitorStats {
   latest_review: { text: string | null; relative_date: string | null; rating: number | null } | null;
   average_review_length: number | null;
   trend_indicator: "up" | "down" | "stable" | null;
+  /** Business-level metadata captured with the latest snapshot run. */
+  business_metadata: BusinessMetadata | null;
 }
 
 /** Branch tree enriched with per-competitor stats. */
@@ -132,6 +162,7 @@ export interface OverviewResponse {
     average_rating: number | null;
     new_reviews_count: number;
     last_scraped_at: string | null;
+    business_metadata: BusinessMetadata | null;
   }[];
 }
 

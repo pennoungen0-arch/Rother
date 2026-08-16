@@ -10,6 +10,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 import type {
+  BusinessMetadata,
   ListingsConfig,
   Review,
   RunSummary,
@@ -208,6 +209,46 @@ export async function readLatestDelta(
   if (matching.length === 0) return [];
   const full = path.join(GBP_REVIEWS_NEW_DIR, matching[0]);
   return cleanReviewNames(await readJsonFile<Review[]>(full, []));
+}
+
+/**
+ * Read the latest business_metadata sidecar for a competitor.
+ *
+ * The scraper writes `{ts}.metadata.json` next to each review snapshot. The
+ * sidecar for the latest snapshot is derived from `latest.json`'s filename
+ * (same timestamp). Returns null if no snapshot/sidecar exists or the file
+ * is corrupt.
+ */
+export async function readLatestBusinessMetadata(
+  competitorId: string,
+): Promise<BusinessMetadata | null> {
+  validateCompetitorId(competitorId);
+  const compDir = path.join(GBP_SNAPSHOTS_DIR, competitorId);
+  const latestPtr = path.join(compDir, "latest.json");
+  const latestFilename = await readJsonFile<string | null>(latestPtr, null);
+  if (!latestFilename) return null;
+  const ts = latestFilename.replace(/\.json$/, "");
+  const sidecarPath = path.join(compDir, `${ts}.metadata.json`);
+  return readJsonFile<BusinessMetadata | null>(sidecarPath, null);
+}
+
+/** Read the latest business_metadata sidecar for every competitor with a snapshot. */
+export async function readAllBusinessMetadata(): Promise<
+  Map<string, BusinessMetadata | null>
+> {
+  const out = new Map<string, BusinessMetadata | null>();
+  let entries: string[] = [];
+  try {
+    entries = await fs.readdir(GBP_SNAPSHOTS_DIR, { withFileTypes: true }).then(
+      (dirents) => dirents.filter((d) => d.isDirectory()).map((d) => d.name),
+    );
+  } catch {
+    return out;
+  }
+  for (const competitorId of entries) {
+    out.set(competitorId, await readLatestBusinessMetadata(competitorId));
+  }
+  return out;
 }
 
 /** Tail the last N lines of run.log. */

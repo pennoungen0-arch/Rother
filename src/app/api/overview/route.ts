@@ -7,6 +7,7 @@ import type {
 } from "@/lib/gbp/types";
 import {
   readAllSnapshots,
+  readAllBusinessMetadata,
   readLatestDelta,
   readListings,
   readRunSummary,
@@ -32,11 +33,12 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    const [runSummary, selectors, listings, snapshots] = await Promise.all([
+    const [runSummary, selectors, listings, snapshots, businessMetadata] = await Promise.all([
       readRunSummary(),
       readSelectors(),
       readListings(),
       readAllSnapshots(),
+      readAllBusinessMetadata(),
     ]);
 
     const totalBranches = listings.branches.length;
@@ -96,6 +98,7 @@ export async function GET() {
           average_rating: avg,
           new_reviews_count: delta.length,
           last_scraped_at: lastScrapedAt && lastScrapedAt !== "" ? lastScrapedAt : null,
+          business_metadata: businessMetadata.get(comp.competitor_id) ?? null,
         });
       }
       newReviewsLastRun += branchCount;

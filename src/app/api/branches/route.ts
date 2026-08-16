@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
 import type { BranchesResponse, BranchWithStats, CompetitorStats } from "@/lib/gbp/types";
-import { readAllSnapshots, readLatestDelta, readAllDeltas, readListings } from "@/lib/gbp/server-data";
+import { readAllSnapshots, readLatestDelta, readAllDeltas, readAllBusinessMetadata, readListings } from "@/lib/gbp/server-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,10 +18,11 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    const [listings, snapshots, allDeltas] = await Promise.all([
+    const [listings, snapshots, allDeltas, businessMetadata] = await Promise.all([
       readListings(),
       readAllSnapshots(),
       readAllDeltas(),
+      readAllBusinessMetadata(),
     ]);
 
     const deltasByComp = new Map<string, typeof allDeltas>();
@@ -107,6 +108,7 @@ export async function GET() {
             : null,
           average_review_length: avgLen,
           trend_indicator: trend,
+          business_metadata: businessMetadata.get(comp.competitor_id) ?? null,
         });
       }
 

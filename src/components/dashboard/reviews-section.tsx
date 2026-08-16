@@ -298,6 +298,20 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
         sortingFn: "alphanumeric",
       },
       {
+        accessorKey: "review_like_count",
+        header: "Likes",
+        cell: ({ row }) => {
+          const likes = row.original.review_like_count;
+          if (likes === null || likes === undefined) return null;
+          return (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {likes > 0 ? likes : "—"}
+            </span>
+          );
+        },
+        sortingFn: "basic",
+      },
+      {
         accessorKey: "competitor_name",
         header: "Competitor",
         cell: ({ row }) => (

@@ -118,3 +118,32 @@ def persist_storage_state(context, path: Path | None = None) -> Path | None:
     except Exception as e:
         logger.warning("ACQUISITION: could not persist storage_state: %s", e)
         return None
+
+
+def invalidate_stale_storage_state(path: Path | None = None, stamp: str = "") -> Path | None:
+    """Move a stale ``storage_state`` jar aside so it is never reused.
+
+    Called by the orchestrator's stale-NID guard when a probe detects the
+    REDUCED variant being served from a reused jar. The jar is *renamed* (not
+    deleted) to ``<name>.stale-<stamp>.json`` for forensic review.
+
+    Returns the stale path, or None if there was nothing to invalidate or the
+    rename failed (the orchestrator then logs a warning and re-warms anyway).
+    """
+    p = path or STORAGE_STATE_PATH
+    if not p.exists():
+        return None
+    if not stamp:
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    stale = p.with_name(f"{p.name}.stale-{stamp}.json")
+    try:
+        p.rename(stale)
+        logger.warning(
+            "ACQUISITION: stale storage_state %s invalidated -> %s", p, stale
+        )
+        return stale
+    except Exception as e:
+        logger.warning(
+            "ACQUISITION: could not invalidate stale storage_state %s: %s", p, e
+        )
+        return None

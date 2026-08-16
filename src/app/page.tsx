@@ -8,6 +8,7 @@ import {
   Columns3,
   LayoutDashboard,
   MessageSquare,
+  MessageSquarePlus,
   ScrollText,
   Settings2,
   Store,
@@ -27,6 +28,7 @@ import { OverviewSection } from "@/components/dashboard/overview-section";
 import { BranchesSection } from "@/components/dashboard/branches-section";
 import { BranchComparisonSection } from "@/components/dashboard/branch-comparison-section";
 import { ReviewsSection } from "@/components/dashboard/reviews-section";
+import { NewReviewsSection } from "@/components/dashboard/new-reviews-section";
 import { LogsSection } from "@/components/dashboard/logs-section";
 import { ConfigSection } from "@/components/dashboard/config-section";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
@@ -50,6 +52,7 @@ type TabValue =
   | "branches"
   | "compare"
   | "reviews"
+  | "new"
   | "alerts"
   | "logs"
   | "config";
@@ -78,6 +81,12 @@ const TABS: { value: TabValue; label: string; icon: typeof Activity; description
     label: "Reviews",
     icon: MessageSquare,
     description: "Searchable, sortable, paginated review table.",
+  },
+  {
+    value: "new",
+    label: "New Reviews",
+    icon: MessageSquarePlus,
+    description: "Full content of reviews captured in each delta run.",
   },
   {
     value: "alerts",
@@ -325,6 +334,7 @@ export default function Home() {
     b: "branches",
     m: "compare",
     v: "reviews",
+    n: "new",
     a: "alerts",
     l: "logs",
     c: "config",
@@ -430,7 +440,9 @@ export default function Home() {
                   const badgeCount =
                     t.value === "reviews" && overview && overview.totalReviews > 0
                       ? overview.totalReviews
-                      : null;
+                      : t.value === "new" && overview && overview.newReviewsLastRun > 0
+                        ? overview.newReviewsLastRun
+                        : null;
                   return (
                     <TooltipProvider key={t.value} delayDuration={300}>
                       <Tooltip>
@@ -498,6 +510,10 @@ export default function Home() {
 
             <TabsContent value="reviews" className="mt-0 focus-visible:outline-none">
               <ReviewsSection refreshKey={refreshKey} />
+            </TabsContent>
+
+            <TabsContent value="new" className="mt-0 focus-visible:outline-none">
+              <NewReviewsSection refreshKey={refreshKey} />
             </TabsContent>
 
             <TabsContent value="alerts" className="mt-0 focus-visible:outline-none">

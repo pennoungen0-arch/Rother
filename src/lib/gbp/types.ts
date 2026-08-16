@@ -236,6 +236,27 @@ export interface HistoryResponse {
   totalRuns: number;
 }
 
+/** One competitor's new-review group within a delta run. */
+export interface NewReviewGroup {
+  competitor_id: string;
+  competitor_name: string;
+  branch_id: string;
+  branch_name: string;
+  reviews: Review[];
+}
+
+/** One delta run with the full content of its new reviews. */
+export interface NewReviewsRun {
+  run_timestamp: string; // ISO 8601
+  total_new_reviews: number;
+  groups: NewReviewGroup[];
+}
+
+export interface NewReviewsResponse {
+  runs: NewReviewsRun[];
+  totalRuns: number;
+}
+
 /** One data point in the "Reviews count over time" time series.
  *  Returned by GET /api/reviews-over-time. */
 export interface ReviewsOverTimePoint {

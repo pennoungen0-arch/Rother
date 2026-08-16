@@ -164,6 +164,30 @@ DOM), so those fields are null until a live capture renders them.
 
 Evidence + exact DOM: `docs/engineering/DOM_AUDIT.md` Appendix C.
 
+### 6a. Stale-NID guard (2026-08-16)
+
+Google serves the FULL review variant only when the context holds a valid `NID`
+cookie; a reused `storage_state` jar whose `NID` has gone stale is served the
+REDUCED variant (~5 cards regardless of the true count). To stop a stale jar
+from silently wasting a full run, the orchestrator now:
+
+1. **Probes** the first competitor URL at bootstrap (`probe_review_variant` in
+   `harness/capture.py`): navigate → verify reviews dialog → open Reviews tab →
+   bounded incremental container scroll (`_PROBE_MAX_SCROLLS`=12) → count distinct
+   `data-review-id` cards; the page's aggregate review count is parsed from the
+   header so a genuinely small listing is not misread as REDUCED.
+2. **Classifies** via `_classify_variant`: ≥50 distinct cards → `full`; ≤20 cards
+   with aggregate ≥100 → `reduced`; otherwise `unknown` (Rule 7 — proceed).
+3. **Recovers** on `reduced` (`_ensure_full_variant` in `orchestration/run_all.py`):
+   `invalidate_stale_storage_state` renames the jar to
+   `storage_state.stale-<ts>.json`, the context is torn down, a fresh context is
+   launched with no storage_state, `warm_up` issues a new NID, and the new jar is
+   persisted. Structured events: `acquisition_probe`, `acquisition_stale_nid_detected`,
+   `acquisition_re_warm`.
+
+Wired into both `run()` (live bootstrap) and `run_verify()` bootstrap. Never
+raises — probe failures degrade to `unknown` and the run proceeds.
+
 ---
 
 ## 7. Confirmed NOT available in this Maps variant
@@ -250,14 +274,28 @@ pipeline_summary).
    the competitor leaderboard + `/api/overview` + `/api/branches`.
 3. Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
    business set (phone/website positive and negative cases).
-4. Add a stale-NID guard: detect when a persisted `storage_state` NID stops
-   serving the FULL variant (e.g. reduced 5-card session) and force re-warm-up
-   instead of reusing the stale jar.
-5. **Productization (self-hosted tool):** genericize Copenhagen Bali coupling
-   (branch prefix strip in `charts.tsx`, Bali stopwords in
-   `review-word-cloud.tsx`, example listings), shipped place_id lookup helper,
-   stale-NID guard for onboarding, proactive alerts (webhook/email on new
-   reviews), generic README/first-run flow.
+4. ~~**Add a stale-NID guard**~~ — **DONE 2026-08-16**: `probe_review_variant`
+   probes a reused jar at bootstrap (navigate → reviews tab → bounded scroll →
+   count distinct `data-review-id` cards vs the page's aggregate review count);
+   on REDUCED detection the stale jar is invalidated (renamed aside), the
+   context relaunched fresh, re-warmed, and re-persisted. Structured events
+   `acquisition_probe` / `acquisition_stale_nid_detected` / `acquisition_re_warm`.
+5. ~~**Surfacing delta content (new reviews) in the dashboard**~~ — **DONE
+   2026-08-16**: `/api/new-reviews` groups delta files by run and returns the
+   full new-review objects (text, rating, reviewer, dates, likes); new "New
+   Reviews" tab renders per-competitor review cards with a run selector and a
+   "+N" tab badge. Deltas were previously count-only in the UI.
+6. ~~**Genericize Copenhagen Bali coupling**~~ — **DONE 2026-08-16**: branch
+   names are shortened by a generic chain-prefix stripper
+   (`shortBranchName`/`shortBranchId` in `format.ts`) instead of hardcoded
+   `Copenhagen Bali`/`cph-` regexes (7 call sites); the word cloud derives its
+   brand/location stopwords from the configured listings instead of hardcoded
+   Bali place names; `config/listings.example.json` is a generic template;
+   README has a first-run "Configuration" section. Remaining from the
+   productization item: proactive alerts (webhook/email on new reviews) +
+   generic first-run polish.
+7. **Productization (self-hosted tool):** proactive alerts (webhook/email on
+   new reviews), generic README/first-run flow polish.
 
 ---
 

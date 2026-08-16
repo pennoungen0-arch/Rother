@@ -28,6 +28,7 @@ import type {
   RatingDistribution,
   ReviewsOverTimePoint,
 } from "@/lib/gbp/types";
+import { shortBranchName } from "@/lib/gbp/format";
 
 interface RatingDistributionChartProps {
   data: RatingDistribution[];
@@ -285,9 +286,8 @@ function BranchTooltip({
 }
 
 export function NewReviewsPerBranchChart({ data }: NewReviewsPerBranchChartProps) {
-  // Shorten branch names by stripping the common prefix.
-  const shorten = (name: string) =>
-    name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim() || name;
+  // Shorten branch names to their location segment (generic chain-prefix strip).
+  const shorten = (name: string) => shortBranchName(name) || name;
   const sorted = [...data].sort((a, b) => b.count - a.count);
   // Max count for the "no data" bar height — 0-value bars render at ~20% of
   // the chart height so the hatched pattern is visible but clearly distinct

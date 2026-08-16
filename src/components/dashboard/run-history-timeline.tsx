@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
-import { formatTimestamp } from "@/lib/gbp/format";
+import { formatTimestamp, shortBranchId } from "@/lib/gbp/format";
 import type { HistoryResponse, HistoryRun } from "@/lib/gbp/types";
 import { EmptyState } from "./empty-state";
 
@@ -373,7 +373,7 @@ function RunHistoryEntry({ run, newest }: { run: HistoryRun; newest: boolean }) 
             key={bid}
             className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
           >
-            {bid.replace(/^cph-/, "")}
+            {shortBranchId(bid)}
           </span>
         ))}
         {run.branches_affected.length > 4 && (

@@ -145,12 +145,31 @@ Copy `.env` from the repository — the default path works for both Windows and 
 | Feature | Description | API | UI |
 |---------|-------------|-----|-----|
 | **Overview** | KPIs, rating distribution, review trends, run history | `GET /api/overview` | Overview tab |
-| **Branches** | 6 branches x 2 competitors with per-competitor intelligence | `GET /api/branches` | Branches tab |
+| **Branches** | Branches × competitors with per-competitor intelligence | `GET /api/branches` | Branches tab |
 | **Compare** | Side-by-side branch comparison + historical snapshot diff | `GET /api/branches`, `GET /api/history/compare` | Compare tab |
 | **Review Explorer** | Searchable, filterable, paginated review table with export | `GET /api/reviews`, `GET /api/reviews/export` | Reviews tab |
+| **New Reviews** | Full content of every review captured in each delta run | `GET /api/new-reviews` | New Reviews tab |
 | **Alerts** | Dashboard alerts for scrapes, new reviews, selector issues | `GET /api/alerts` | Alerts tab |
 | **Configuration** | Edit branches/competitors via inline JSON editor | `GET/PATCH /api/config/listings` | Config tab |
 | **Export** | CSV/JSON export for reviews, competitors, branches, history | `GET /api/reviews/export`, `GET /api/export/competitors`, `GET /api/export/branches`, `GET /api/history/export` | Export dialog |
+
+---
+
+## Configuration (monitoring your own businesses)
+
+Copy the generic template and fill in the listings you want to monitor:
+
+```powershell
+Copy-Item gbp-monitor\config\listings.example.json gbp-monitor\config\listings.json
+```
+
+Each branch is one of **your** locations; each competitor is a Google Business
+Profile you want to watch in that area. The scraper is fully generic — branch
+names follow the `Chain - Location` convention, and the dashboard
+automatically strips the chain prefix in charts and derives brand/location
+words for the word cloud from the listings you configure. For live scraping,
+each competitor needs a real Google Maps `place_id` (starts with `ChIJ`); see
+the guide in the example file.
 
 ## Scraper (gbp-monitor/)
 

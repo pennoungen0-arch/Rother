@@ -1,0 +1,44 @@
+{
+  "_comment": "GENERIC EXAMPLE — copy this file to listings.json and replace the values with your own monitored Google Business Profile listings. The scraper works for any chain/business: a 'branch' is a location of your chain, and each branch lists competitor businesses to monitor. The dashboard auto-derives brand/location words for the word cloud from these names, and charts strip the chain prefix (everything before the last ' - ') automatically.",
+  "_guide": [
+    "branch_id   : short unique slug for a location of YOUR chain, e.g. 'myco-downtown'.",
+    "branch_name : human-readable branch name, e.g. 'My Company - Downtown'. The location part (after the last ' - ') is what charts show.",
+    "competitors : the Google Business Profile listings you want to watch in that area.",
+    "competitor_id: short unique slug, e.g. 'comp-downtown-01'.",
+    "name        : display name of the competitor.",
+    "place_id    : Google Maps place ID (starts with ChIJ). Required for live scraping. Get it from the Maps URL: https://www.google.com/maps/place/?q=place_id:ChIJ...",
+    "gmaps_url   : fallback URL. Can be a mock value; live mode builds the real URL from place_id. In fixtures mode the mock URL is used."
+  ],
+  "branches": [
+    {
+      "branch_id": "myco-downtown",
+      "branch_name": "My Company - Downtown",
+      "competitors": [
+        {
+          "competitor_id": "comp-downtown-01",
+          "name": "Competitor One Downtown",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_competitor_one_downtown",
+          "place_id": "ChIJREPLACEWITHAREALPLACEID"
+        },
+        {
+          "competitor_id": "comp-downtown-02",
+          "name": "Competitor Two Downtown",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_competitor_two_downtown",
+          "place_id": "ChIJREPLACEWITHAREALPLACEID2"
+        }
+      ]
+    },
+    {
+      "branch_id": "myco-northside",
+      "branch_name": "My Company - Northside",
+      "competitors": [
+        {
+          "competitor_id": "comp-northside-01",
+          "name": "Competitor One Northside",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_competitor_one_northside",
+          "place_id": "ChIJREPLACEWITHAREALPLACEID3"
+        }
+      ]
+    }
+  ]
+}

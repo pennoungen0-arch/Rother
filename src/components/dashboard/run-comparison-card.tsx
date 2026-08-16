@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 
 import { EmptyState } from "./empty-state";
-import { formatTimestamp } from "@/lib/gbp/format";
+import { formatTimestamp, shortBranchName } from "@/lib/gbp/format";
 import type { HistoryResponse } from "@/lib/gbp/types";
 
 interface RunComparisonCardProps {
@@ -344,7 +344,7 @@ export function RunComparisonCard({ refreshKey }: RunComparisonCardProps) {
                           {d.competitor_name}
                         </div>
                         <div className="truncate text-[10px] text-muted-foreground">
-                          {d.branch_name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim()}
+                          {shortBranchName(d.branch_name)}
                         </div>
                       </div>
                       {/* Count A → Count B with delta */}

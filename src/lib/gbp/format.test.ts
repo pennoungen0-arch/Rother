@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { parseRelativeDate } from "./format";
+import {
+  parseRelativeDate,
+  shortBranchName,
+  shortBranchId,
+} from "./format";
 
 describe("parseRelativeDate", () => {
   const scrapedAt = "2026-07-23T09:53:45.695184+00:00";
@@ -91,5 +95,49 @@ describe("parseRelativeDate", () => {
   it("is case-insensitive", () => {
     expect(parseRelativeDate("5 HARI LALU", scrapedAt)).toBe("2026-07-18");
     expect(parseRelativeDate("5 Days Ago", scrapedAt)).toBe("2026-07-18");
+  });
+});
+
+describe("shortBranchName", () => {
+  it("strips the chain prefix, keeping the location", () => {
+    expect(shortBranchName("Copenhagen Bali - Seminyak")).toBe("Seminyak");
+  });
+
+  it("keeps multi-dash locations intact after the chain", () => {
+    expect(shortBranchName("Chain - Suburb - Area")).toBe("Area");
+  });
+
+  it("returns names without a ' - ' unchanged", () => {
+    expect(shortBranchName("Anomali Coffee")).toBe("Anomali Coffee");
+  });
+
+  it("trims whitespace", () => {
+    expect(shortBranchName("  Chain -  Uluwatu  ")).toBe("Uluwatu");
+  });
+
+  it("handles null/undefined/empty", () => {
+    expect(shortBranchName(null)).toBe("");
+    expect(shortBranchName(undefined)).toBe("");
+    expect(shortBranchName("")).toBe("");
+  });
+});
+
+describe("shortBranchId", () => {
+  it("strips the prefix segment", () => {
+    expect(shortBranchId("cph-seminyak")).toBe("seminyak");
+  });
+
+  it("keeps multi-segment ids after the first dash", () => {
+    expect(shortBranchId("comp-canggu-01")).toBe("canggu-01");
+  });
+
+  it("returns ids without a dash unchanged", () => {
+    expect(shortBranchId("seminyak")).toBe("seminyak");
+  });
+
+  it("handles null/undefined/empty", () => {
+    expect(shortBranchId(null)).toBe("");
+    expect(shortBranchId(undefined)).toBe("");
+    expect(shortBranchId("")).toBe("");
   });
 });

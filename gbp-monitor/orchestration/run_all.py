@@ -651,6 +651,85 @@ def _resolve_url(comp: dict) -> str:
     return comp.get("gmaps_url", "")
 
 
+def _first_probe_url(listings: dict) -> str | None:
+    """Return the first competitor URL (used by the stale-NID probe)."""
+    for branch in listings.get("branches", []):
+        for comp in branch.get("competitors", []):
+            url = _resolve_url(comp)
+            if url:
+                return url
+    return None
+
+
+def _ensure_full_variant(rid, browser_handles, context, selectors, probe_url) -> tuple:
+    """Guard against a stale NID jar serving the REDUCED variant (2026-08-16).
+
+    Probes ``probe_url`` on the *reused* context. If the REDUCED variant is
+    served (handful of cards despite a large aggregate review count), the stale
+    jar is invalidated and a fresh context is warm-uped + re-persisted so the
+    run does not waste itself capturing ~5 cards. Rule 7 holds: never raises.
+
+    Returns ``(browser_handles, context)`` — either unchanged (healthy jar) or
+    a freshly relaunched pair (stale jar recovered). The caller's ``finally``
+    teardown references ``browser_handles`` by variable, so it correctly closes
+    whichever handles are current.
+    """
+    from harness.acquisition import (
+        STORAGE_STATE_PATH,
+        invalidate_stale_storage_state,
+        persist_storage_state,
+        warm_up,
+    )
+    from harness.browser import get_browser_context
+    from harness.capture import probe_review_variant
+
+    probe = probe_review_variant(context, probe_url, selectors)
+    _structured_log(
+        rid, "acquisition_probe",
+        variant=probe["variant"], cards=probe["cards"],
+        aggregate=probe["aggregate"], detail=probe["detail"],
+    )
+    if probe["variant"] != "reduced":
+        return browser_handles, context
+
+    logger.error(
+        "STALE-NID: reused jar serves the REDUCED variant (%s) — invalidating "
+        "jar and re-warming a fresh NID before the run", probe["detail"],
+    )
+    stale = invalidate_stale_storage_state(STORAGE_STATE_PATH)
+    _structured_log(
+        rid, "acquisition_stale_nid_detected",
+        cards=probe["cards"], aggregate=probe["aggregate"],
+        invalidated=str(stale) if stale else None,
+    )
+
+    try:
+        p, browser, ctx = browser_handles
+        for closer in (ctx.close, browser.close, p.stop):
+            try:
+                closer()
+            except Exception:
+                pass
+    except Exception as e:
+        logger.warning("STALE-NID: teardown of stale context failed: %s", e)
+
+    try:
+        new_handles = get_browser_context(storage_state=None)
+        new_context = new_handles[2]
+        warmed = warm_up(new_context)
+        if warmed:
+            persist_storage_state(new_context, STORAGE_STATE_PATH)
+        _structured_log(rid, "acquisition_re_warm", succeeded=warmed)
+        if not warmed:
+            logger.error(
+                "STALE-NID: re-warm failed — run will likely hit the REDUCED variant"
+            )
+        return new_handles, new_context
+    except Exception as e:
+        logger.error("STALE-NID: relaunch after invalidation failed: %s", e)
+        return browser_handles, context
+
+
 def run(fixtures_mode: bool = False) -> dict:
     """Run one full pass over the configured branches × competitors.
 
@@ -825,6 +904,13 @@ def run(fixtures_mode: bool = False) -> dict:
                             succeeded=warmed, duration_s=warmed_duration)
         else:
             _structured_log(rid, "acquisition_reuse", storage_state=str(reuse_state))
+
+        # M16: stale-NID guard — probe the reused jar before committing to a run.
+        probe_url = _first_probe_url(listings)
+        if probe_url:
+            browser_handles, context = _ensure_full_variant(
+                rid, browser_handles, context, selectors, probe_url
+            )
 
     try:
         processed = 0
@@ -1460,6 +1546,13 @@ def run_verify(url_override: str | None = None) -> dict:
                         succeeded=warmed, duration_s=warmed_duration)
     else:
         _structured_log(rid, "acquisition_reuse", storage_state=str(reuse_state))
+
+    # M16: stale-NID guard — probe the reused jar before committing to a run.
+    probe_url = _first_probe_url(listings)
+    if probe_url:
+        browser_handles, context = _ensure_full_variant(
+            rid, browser_handles, context, selectors, probe_url
+        )
 
     all_pipeline_summaries: list[dict] = []
     try:

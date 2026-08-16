@@ -498,6 +498,50 @@ def _verify_acquisition() -> None:
         )
 
 
+def _verify_stale_nid_guard() -> None:
+    """Offline checks for the M16 stale-NID variant guard.
+
+    Only the pure helpers are tested (classification + count parsing); the
+    DOM probe itself needs a live browser and is exercised by a real run.
+    """
+    print("\n[Phase 6] M16 stale-NID guard offline tests...")
+
+    from harness.capture import _classify_variant, _parse_aggregate_count
+
+    # Aggregate review-count parsing.
+    check("guard: parses '3.243'", _parse_aggregate_count("3.243") == 3243)
+    check("guard: parses '1,024'", _parse_aggregate_count("1,024") == 1024)
+    check("guard: parses '8'", _parse_aggregate_count("8") == 8)
+    check("guard: parses nbsp thousand", _parse_aggregate_count("5\u00a0000") == 5000)
+    check("guard: rejects junk", _parse_aggregate_count("abc") is None)
+    check("guard: rejects empty", _parse_aggregate_count("") is None)
+    check("guard: rejects None", _parse_aggregate_count(None) is None)
+
+    # FULL variant: hundreds of mounted cards.
+    v, _ = _classify_variant(cards=350, aggregate=3467)
+    check("guard: 350 cards + big aggregate => full", v == "full")
+    v, _ = _classify_variant(cards=600, aggregate=5021)
+    check("guard: 600 cards + big aggregate => full", v == "full")
+
+    # REDUCED variant: ~5 cards despite a large aggregate (07:54 evidence).
+    v, _ = _classify_variant(cards=5, aggregate=3467)
+    check("guard: 5 cards + 3467 aggregate => reduced", v == "reduced")
+    v, _ = _classify_variant(cards=0, aggregate=5021)
+    check("guard: 0 cards + big aggregate => reduced", v == "reduced")
+
+    # Genuinely small business: few cards AND small aggregate => unknown (not reduced).
+    v, _ = _classify_variant(cards=8, aggregate=8)
+    check("guard: 8 cards + 8 aggregate => unknown (small business)", v == "unknown")
+    v, _ = _classify_variant(cards=5, aggregate=5)
+    check("guard: 5 cards + 5 aggregate => unknown (small business)", v == "unknown")
+
+    # Ambiguous: low cards with no readable aggregate => unknown (Rule 7: proceed).
+    v, _ = _classify_variant(cards=5, aggregate=None)
+    check("guard: 5 cards + no aggregate => unknown", v == "unknown")
+    v, _ = _classify_variant(cards=30, aggregate=50)
+    check("guard: 30 cards + 50 aggregate => unknown", v == "unknown")
+
+
 def main() -> int:
     print("=" * 60)
     print("GBP Monitor -- Baseline Verification")
@@ -528,6 +572,9 @@ def main() -> int:
 
     # GMBE-PARITY: relative-date/like-count offline tests.
     _verify_gmbe_parity()
+
+    # M16: stale-NID guard offline tests.
+    _verify_stale_nid_guard()
 
     print("\n" + "=" * 60)
     print(f"Results: {PASS} passed, {FAIL} failed")

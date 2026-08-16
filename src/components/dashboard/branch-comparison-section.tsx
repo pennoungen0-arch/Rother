@@ -38,7 +38,7 @@ import { EmptyState } from "./empty-state";
 import { CompetitorDetailDialog } from "./competitor-detail-dialog";
 import { FreshnessBadge } from "./freshness-badge";
 import { HistoryComparisonSection } from "./history-comparison-section";
-import { formatTimestamp } from "@/lib/gbp/format";
+import { formatTimestamp, shortBranchName } from "@/lib/gbp/format";
 import type { BranchesResponse, BranchWithStats, CompetitorStats } from "@/lib/gbp/types";
 import {
   Tabs,
@@ -170,7 +170,7 @@ function BranchComparisonCard({
   rank: number;
   onSelectCompetitor: (c: CompetitorStats) => void;
 }) {
-  const shortName = branch.branch_name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim();
+  const shortName = shortBranchName(branch.branch_name);
   const competitorsWithReviews = branch.competitors.filter(
     (c) => c.total_reviews > 0,
   );

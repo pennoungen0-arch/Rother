@@ -735,3 +735,146 @@ def _expand_truncated_reviews(
     instrument: PipelineInstrument | None = None,
 ) -> None:
     _fallback_expand(page, selectors, tracker=tracker, comp_id=comp_id, instrument=instrument)
+
+
+# ---------------------------------------------------------------------------
+# Stale-NID variant guard (2026-08-16)
+# ---------------------------------------------------------------------------
+# Google serves the FULL Maps review variant only when the context carries a
+# valid NID. A persisted storage_state whose NID has gone stale gets served
+# the REDUCED variant: a handful (~5) review cards regardless of the real
+# count (evidence: 07:54 run jftiEf=5 vs OLD jftiEf=350). `probe_review_variant`
+# cheaply classifies the served variant so the orchestrator can invalidate the
+# stale jar and re-warm a fresh NID BEFORE wasting a full run on 5 cards.
+
+# Aggregate review count shown in the business header ("X reviews" / "X ulasan")
+# — the REDUCED variant still renders the TRUE aggregate even though it mounts
+# only ~5 cards, so comparing cards vs aggregate disambiguates a genuinely
+# small business from a stale-NID reduced capture.
+_JS_READ_AGGREGATE_REVIEWS = """() => {
+  const body = document.body ? document.body.innerText.slice(0, 6000) : '';
+  const m = body.match(/([\\d][\\d,.\\u00a0]*)\\s+(?:reviews?|ulasan)/i);
+  if (m) return m[1];
+  const p = body.match(/\\(\\s*([\\d][\\d,.\\u00a0]*)\\s*\\)/);
+  return p ? p[1] : null;
+}"""
+
+_REDUCED_VARIANT_MAX_CARDS = 20
+_FULL_VARIANT_MIN_CARDS = 50
+# A business with more reviews than this threshold, yet serving <= MAX_CARDS
+# mounted cards, is the stale-NID REDUCED signature (Google hides the list).
+_AGGREGATE_REDUCED_THRESHOLD = 100
+# Bounded probe scroll: enough iterations for a FULL variant to clearly exceed
+# _FULL_VARIANT_MIN_CARDS but far fewer than a real capture's MAX_SCROLLS.
+_PROBE_MAX_SCROLLS = 12
+_PROBE_SCROLL_WAIT_MS = 900
+
+
+def _parse_aggregate_count(raw: str | None) -> int | None:
+    """Parse a Google review-count string like ``"3.243"`` / ``"1,024"``."""
+    if not raw:
+        return None
+    cleaned = raw.replace("\u00a0", "").replace(",", "").replace(".", "")
+    try:
+        return int(cleaned)
+    except ValueError:
+        return None
+
+
+def _classify_variant(cards: int, aggregate: int | None) -> tuple[str, str]:
+    """Classify FULL/REDUCED/UNKNOWN from mounted card count + aggregate count.
+
+    Returns ``(variant, detail)``. Pure logic — unit-testable offline.
+    """
+    if cards >= _FULL_VARIANT_MIN_CARDS:
+        return "full", f"{cards} distinct cards"
+    if (
+        cards <= _REDUCED_VARIANT_MAX_CARDS
+        and aggregate is not None
+        and aggregate >= _AGGREGATE_REDUCED_THRESHOLD
+    ):
+        return (
+            "reduced",
+            f"{cards} distinct cards vs {aggregate} aggregate (REDUCED signature)",
+        )
+    return "unknown", f"{cards} distinct cards (aggregate={aggregate})"
+
+
+def probe_review_variant(context, url: str, selectors: dict, comp_id: str = "") -> dict:
+    """Classify the variant a Maps URL serves on *context* without a full capture.
+
+    Navigates a fresh page, opens the Reviews tab, resolves the scroll
+    container, and does a *bounded* incremental harvest (same mechanism as a
+    real capture, capped at ``_PROBE_MAX_SCROLLS``) counting distinct
+    ``data-review-id`` cards. The FULL variant grows to hundreds of distinct
+    cards; the REDUCED variant stays stuck at ~5 no matter how far we scroll.
+
+    The probe ALSO reads the aggregate review count from the business header
+    so a genuinely small listing (e.g. KAFE Ubud, 8 reviews) is not misread as
+    a stale-NID reduced capture.
+
+    Returns:
+      ``{"variant": "full"|"reduced"|"unknown", "cards": int,
+          "aggregate": int|null, "detail": str}``
+
+    Never raises — failures degrade to ``"unknown"`` so the orchestrator's Rule
+    7 isolation holds. This probe is cheaper than a full capture (~15-30s vs
+    ~2-3 min) and runs at bootstrap time on every reused jar.
+    """
+    from harness.scroll import (
+        _harvest_review_cards,
+        _resolve_container_with_fallback,
+    )
+
+    page = context.new_page()
+    setup_page_handlers(page, comp_id=comp_id or "__probe__")
+    try:
+        page.set_default_navigation_timeout(30000)
+        page.set_default_timeout(10000)
+        try:
+            page.goto(url, timeout=30000)
+        except Exception as e:
+            return {"variant": "unknown", "cards": 0, "aggregate": None,
+                    "detail": f"goto failed: {e}"}
+
+        _verify_reviews_dialog(page, selectors, comp_id or "__probe__")
+        _open_reviews_tab(page, selectors, comp_id or "__probe__")
+        page.wait_for_timeout(1500)
+
+        container_selector = _resolve_container_with_fallback(
+            page, selectors, comp_id=comp_id or "__probe__"
+        )
+
+        aggregate = None
+        try:
+            aggregate = _parse_aggregate_count(
+                page.evaluate(_JS_READ_AGGREGATE_REVIEWS)
+            )
+        except Exception:
+            aggregate = None
+
+        cards = 0
+        if container_selector:
+            harvested: set[str] = set()
+            for _ in range(_PROBE_MAX_SCROLLS):
+                if cards >= _FULL_VARIANT_MIN_CARDS:
+                    break  # already full — no need to keep scrolling
+                try:
+                    page.eval_on_selector(
+                        container_selector, "el => el.scrollTop = el.scrollHeight"
+                    )
+                    page.wait_for_timeout(_PROBE_SCROLL_WAIT_MS)
+                    for card in _harvest_review_cards(page, container_selector):
+                        harvested.add(card["id"])
+                except Exception as e:
+                    break
+                cards = len(harvested)
+
+        variant, detail = _classify_variant(cards, aggregate)
+        return {"variant": variant, "cards": cards, "aggregate": aggregate,
+                "detail": detail}
+    finally:
+        try:
+            page.close()
+        except Exception:
+            pass

@@ -54,8 +54,6 @@ const STOPWORDS = new Set([
   "really", "very", "quite", "pretty", "much", "lot", "lots", "thing",
   "things", "way", "ways", "time", "times", "day", "days", "place", "places",
   "food", "drink", "coffee", "cafe", "restaurant", "shop", "store",
-  // Bali-specific filler
-  "bali", "seminyak", "canggu", "ubud", "uluwatu", "sanur", "nusa",
 ]);
 
 const MAX_WORDS = 40;
@@ -63,11 +61,30 @@ const MIN_WORD_LENGTH = 3;
 const MIN_COUNT = 1;
 
 /**
+ * Tokenize monitored branch/competitor names into extra stopwords so the
+ * cloud filters the chain's own brand + location words (generic — works for
+ * any monitored set, e.g. "Copenhagen Bali", "Seminyak", "Crate Cafe").
+ */
+function deriveNameStopwords(names: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const name of names) {
+    if (!name) continue;
+    for (const w of name.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (w.length >= MIN_WORD_LENGTH) out.add(w);
+    }
+  }
+  return out;
+}
+
+/**
  * Extract word frequencies from review texts. Pure function — no I/O,
  * no AI/LLM. Just splits on non-letter characters, lowercases, filters
  * stopwords + short words, and counts.
  */
-function extractWordFrequency(reviews: Review[]): WordEntry[] {
+function extractWordFrequency(
+  reviews: Review[],
+  extraStopwords?: Set<string>,
+): WordEntry[] {
   const counts = new Map<string, number>();
   for (const r of reviews) {
     if (!r.text) continue;
@@ -76,6 +93,7 @@ function extractWordFrequency(reviews: Review[]): WordEntry[] {
     for (const w of words) {
       if (w.length < MIN_WORD_LENGTH) continue;
       if (STOPWORDS.has(w)) continue;
+      if (extraStopwords?.has(w)) continue;
       counts.set(w, (counts.get(w) ?? 0) + 1);
     }
   }
@@ -130,22 +148,40 @@ function getWordStyle(count: number, maxCount: number): {
  */
 export function ReviewWordCloud({ refreshKey }: ReviewWordCloudProps) {
   const [reviews, setReviews] = React.useState<Review[]>([]);
+  const [nameStopwords, setNameStopwords] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  const fetchReviews = React.useCallback(async () => {
+  const fetchData = React.useCallback(async () => {
     try {
       setError(null);
-      const params = new URLSearchParams({
-        page: "1",
-        pageSize: "100",
-      });
-      const res = await fetch(`/api/reviews?${params.toString()}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setReviews(json.data ?? []);
+      const [reviewsRes, branchesRes] = await Promise.all([
+        fetch(
+          `/api/reviews?${new URLSearchParams({ page: "1", pageSize: "100" })}`,
+          { cache: "no-store" },
+        ),
+        fetch("/api/branches", { cache: "no-store" }),
+      ]);
+      if (!reviewsRes.ok) throw new Error(`HTTP ${reviewsRes.status}`);
+      const reviewsJson = await reviewsRes.json();
+      setReviews(reviewsJson.data ?? []);
+
+      // Generic stopword derivation: filter out the chain's own brand +
+      // location words so the cloud surfaces review topics, not names you
+      // already monitor. Works for any monitored set.
+      if (branchesRes.ok) {
+        const branchesJson = await branchesRes.json();
+        const names: string[] = [];
+        for (const branch of branchesJson.branches ?? []) {
+          if (branch.branch_name) names.push(branch.branch_name);
+          for (const comp of branch.competitors ?? []) {
+            if (comp.name) names.push(comp.name);
+          }
+        }
+        setNameStopwords(deriveNameStopwords(names));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -156,10 +192,13 @@ export function ReviewWordCloud({ refreshKey }: ReviewWordCloudProps) {
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    fetchReviews();
-  }, [fetchReviews, refreshKey]);
+    fetchData();
+  }, [fetchData, refreshKey]);
 
-  const words = React.useMemo(() => extractWordFrequency(reviews), [reviews]);
+  const words = React.useMemo(
+    () => extractWordFrequency(reviews, nameStopwords),
+    [reviews, nameStopwords],
+  );
   const maxCount = words.length > 0 ? words[0].count : 0;
   const totalWords = words.reduce((s, w) => s + w.count, 0);
 
@@ -187,7 +226,7 @@ export function ReviewWordCloud({ refreshKey }: ReviewWordCloudProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={fetchReviews}
+            onClick={fetchData}
             className="text-xs text-muted-foreground hover:text-foreground"
             aria-label="Refresh word cloud"
           >

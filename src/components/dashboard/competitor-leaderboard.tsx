@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { StarRating } from "./star-rating";
 import { EmptyState } from "./empty-state";
+import { shortBranchName } from "@/lib/gbp/format";
 import type { CompetitorStats } from "@/lib/gbp/types";
 
 interface CompetitorLeaderboardProps {
@@ -199,7 +200,7 @@ function LeaderboardRow({
   rank: number;
   sortKey: SortKey;
 }) {
-  const shortBranch = comp.branch_name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim();
+  const shortBranch = shortBranchName(comp.branch_name);
   const medalClass =
     rank === 1
       ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"

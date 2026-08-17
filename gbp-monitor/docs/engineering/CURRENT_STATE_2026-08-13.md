@@ -149,18 +149,25 @@ Supporting knobs (raised 2026-08-13 so 5k-review listings can finish):
 | `google_rating` / `google_review_count` | JSON-LD → body regex | |
 | `address` | `button[data-item-id="address"]` (aria-label/`.Io6YTe`) | **NEW** — captured *before* tab opens |
 | `category` | `button[jsaction*="category"]` | **NEW** |
-| `phone` / `website` | `[data-item-id="telephone"]` / `...website] a` | **NEW** — conditional (Crate has neither) |
+| `phone` | `a[href^="tel:"]` | **M18-corrected** (2026-08-17); conditional |
+| `website` | `a[data-item-id="authority"]` | **M18-corrected** (2026-08-17); conditional |
+| `opening_hours` | `table.eK4R0e` rows (`td.ylH6lf` day / `td.mxowUb` hours) | **NEW (M18)** — weekly, current-day row flagged |
+| `hours_status` | `[jsaction*="pane.openhours.wfvdle24.dropdown"] .ZDu9vd` | **NEW (M18)** — e.g. "Buka · Tutup pukul 23.00"; not always rendered |
 | `review_breakdown` | `tr.BHOKXe` `aria-label="Bintang 5,3.242 ulasan"` | **NEW** — per-star, tab view only |
 
 **Persistence (2026-08-16):** metadata is now persisted alongside each snapshot
 as a `{ts}.metadata.json` sidecar (`storage/snapshot_store.py`) — the scraper
 passes `instrument.business_metadata` through `save_snapshot`. Dashboard reads
 it via `readLatestBusinessMetadata`/`readAllBusinessMetadata`
-(`src/lib/gbp/server-data.ts`) and surfaces address/category in the competitor
-leaderboard and metadata per-competitor in `/api/overview` + `/api/branches`.
-The 12 production snapshots were backfilled from the `20260813T083706Z` verify
-evidence. Note: `phone`/`website` were absent in that verify capture (conditional
-DOM), so those fields are null until a live capture renders them.
+(`src/lib/gbp/server-data.ts`) and surfaces address/category (+ phone/website
+since M18) in the competitor leaderboard and metadata per-competitor in
+`/api/overview` + `/api/branches`. **M18 (2026-08-17):** all 12 production
+sidecars were merged with live-probed phone/website/opening_hours/hours_status
+(`data/verify/20260817T150808Z/selector_cert/evidence.json`); the next live
+scrape run captures these fields natively. The M10-era probe selectors
+(`[data-item-id="telephone"]` / `[data-item-id="website"] a`) matched nothing in
+this Maps variant — corrected to the selectors above (see `SELECTOR_CERTIFICATION.md`
+M18).
 
 Evidence + exact DOM: `docs/engineering/DOM_AUDIT.md` Appendix C.
 
@@ -272,8 +279,18 @@ pipeline_summary).
    **DONE 2026-08-16**: `Review` now carries `review_date`/`review_date_epoch`/
    `review_like_count`; "Likes" column in the reviews table; metadata shown in
    the competitor leaderboard + `/api/overview` + `/api/branches`.
-3. Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
-   business set (phone/website positive and negative cases).
+3. ~~**Re-run `SELECTOR_CERTIFICATION` for the new selectors against a larger
+   business set (phone/website positive and negative cases)**~~ — **DONE
+   2026-08-17**: M18-20260817 cert (see `SELECTOR_CERTIFICATION.md`). Live
+   12-competitor probe re-certified `reviews_tab_button` (12/12), `review_like_selector`
+   (11/12), `review_list_container` (12/12) plus the business-metadata selectors
+   (phone 10/12, website 11/12, opening_hours 9/12, hours_status 5/12). The
+   re-run also **fixed a real extraction bug**: the probe selectors
+   `[data-item-id="telephone"]` / `[data-item-id="website"] a` matched nothing in
+   this Maps variant; corrected to `a[href^="tel:"]` / `a[data-item-id="authority"]`
+   and added weekly `opening_hours` + `hours_status` extraction. Probed metadata
+   merged into the production sidecars; the dashboard leaderboard now shows
+   phone + website.
 4. ~~**Add a stale-NID guard**~~ — **DONE 2026-08-16**: `probe_review_variant`
    probes a reused jar at bootstrap (navigate → reviews tab → bounded scroll →
    count distinct `data-review-id` cards vs the page's aggregate review count);
@@ -302,8 +319,8 @@ pipeline_summary).
    25/25 (local HTTP server + stubbed SMTP). External delivery not exercised —
    no webhook/email credentials configured.
 8. **Productization (self-hosted tool):** generic first-run polish (config
-   validation UX, onboarding), then SELECTOR_CERTIFICATION re-run against a
-   larger business set.
+   validation UX, onboarding). SELECTOR_CERTIFICATION re-run is DONE (2026-08-17,
+   see item 3) — the remaining productization item is first-run polish only.
 
 ---
 

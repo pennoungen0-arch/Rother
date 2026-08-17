@@ -8,5 +8,45 @@
     "3_star": "277",
     "2_star": "110",
     "1_star": "164"
-  }
+  },
+  "phone": "08111793455",
+  "website": "http://kafe-bali.com/",
+  "opening_hours": [
+    {
+      "day": "Senin",
+      "hours": "07.00 hingga 23.00",
+      "today": true
+    },
+    {
+      "day": "Selasa",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Rabu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Kamis",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Jumat",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Sabtu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Minggu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    }
+  ],
+  "hours_status": "Buka · Tutup pukul 23.00"
 }

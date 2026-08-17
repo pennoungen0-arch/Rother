@@ -8,5 +8,45 @@
     "3_star": "236",
     "2_star": "82",
     "1_star": "83"
-  }
+  },
+  "phone": "081283386641",
+  "website": "http://www.senimancoffee.com/",
+  "opening_hours": [
+    {
+      "day": "Senin",
+      "hours": "07.30 hingga 22.00",
+      "today": true
+    },
+    {
+      "day": "Selasa",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    },
+    {
+      "day": "Rabu",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    },
+    {
+      "day": "Kamis",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    },
+    {
+      "day": "Jumat",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    },
+    {
+      "day": "Sabtu",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    },
+    {
+      "day": "Minggu",
+      "hours": "07.30 hingga 22.00",
+      "today": false
+    }
+  ],
+  "hours_status": "Buka · Tutup pukul 22.00"
 }

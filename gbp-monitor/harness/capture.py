@@ -178,10 +178,21 @@ _BUSINESS_RATING_SELECTORS = [
     "div.aMPvhf-fI6EEc-KVuj8d span[aria-label*='star']",
 ]
 
-# Overview/props probe: address, category, phone, website from the business
-# info panel. Runs BEFORE the Reviews tab is clicked (the tab view hides the
-# About/overview items for this variant). All fields are conditional — some
-# businesses (e.g. Crate Cafe) render no phone/website nodes at all.
+# Overview/props probe: address, category, phone, website, opening hours from
+# the business info panel. Runs BEFORE the Reviews tab is clicked (the tab view
+# hides the About/overview items for this variant). All fields are conditional —
+# some businesses (e.g. Crate Cafe) render no phone/website nodes at all.
+#
+# M18 certification (2026-08-17, live probe) corrected the phone/website
+# selectors for this Maps variant:
+#   phone   -> a[href^="tel:"]       (aria-label "Panggil nomor telepon")
+#   website -> a[data-item-id="authority"]  (aria-label "Situs Web: ...")
+# The previous selectors ([data-item-id="telephone"], [data-item-id="website"] a)
+# matched nothing and returned empty phone/website for every business.
+# Opening hours come from the weekly table `table.eK4R0e` (row day = td.ylH6lf,
+# row hours = td.mxowUb aria-label), plus the today status line in the
+# `[jsaction*="pane.openhours.wfvdle24.dropdown"]` dropdown (.ZDu9vd).
+# The current-day row's day cell carries `fontTitleSmall` (verified live).
 _JS_OVERVIEW_PROBE = """() => {
   const out = {};
   const clean = (s) => (s || '').replace(/\\s+/g, ' ').trim();
@@ -197,12 +208,31 @@ _JS_OVERVIEW_PROBE = """() => {
   }
   const cat = document.querySelector('button[jsaction*="category"]');
   if (cat) out['category'] = clean(cat.textContent);
-  const phone = document.querySelector('[data-item-id="telephone"]');
+  const phone = document.querySelector('a[href^="tel:"]');
   if (phone) {
-    out['phone'] = (phone.getAttribute('aria-label') || '').replace(/^Telepon\\s*:\\s*/i, '').trim() || inner(phone);
+    const href = (phone.getAttribute('href') || '').replace(/^tel:/i, '').trim();
+    out['phone'] = href || clean(phone.textContent);
   }
-  const web = document.querySelector('[data-item-id="website"] a');
-  if (web) out['website'] = web.getAttribute('href') || inner(web);
+  const web = document.querySelector('a[data-item-id="authority"]');
+  if (web) {
+    const aria = (web.getAttribute('aria-label') || '').replace(/^Situs Web\\s*:\\s*/i, '').trim();
+    out['website'] = web.getAttribute('href') || aria || clean(web.textContent);
+  }
+  const hours = [];
+  for (const tr of document.querySelectorAll('table.eK4R0e tr.y0skZc')) {
+    const dayEl = tr.querySelector('td.ylH6lf');
+    const hrEl = tr.querySelector('td.mxowUb');
+    if (dayEl && hrEl) {
+      hours.push({
+        'day': clean(dayEl.textContent),
+        'hours': hrEl.getAttribute('aria-label') || clean(hrEl.textContent),
+        'today': dayEl.classList.contains('fontTitleSmall'),
+      });
+    }
+  }
+  if (hours.length) out['opening_hours'] = hours;
+  const todayEl = document.querySelector('[jsaction*="pane.openhours.wfvdle24.dropdown"] .ZDu9vd');
+  if (todayEl) out['hours_status'] = clean(todayEl.textContent);
   return JSON.stringify(out);
 }"""
 

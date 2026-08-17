@@ -8,5 +8,45 @@
     "3_star": "434",
     "2_star": "273",
     "1_star": "436"
-  }
+  },
+  "phone": null,
+  "website": "http://lifescrate.com/",
+  "opening_hours": [
+    {
+      "day": "Senin",
+      "hours": "06.00 hingga 21.00",
+      "today": true
+    },
+    {
+      "day": "Selasa",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    },
+    {
+      "day": "Rabu",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    },
+    {
+      "day": "Kamis",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    },
+    {
+      "day": "Jumat",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    },
+    {
+      "day": "Sabtu",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    },
+    {
+      "day": "Minggu",
+      "hours": "06.00 hingga 21.00",
+      "today": false
+    }
+  ],
+  "hours_status": null
 }

@@ -8,5 +8,45 @@
     "3_star": "91",
     "2_star": "29",
     "1_star": "39"
-  }
+  },
+  "phone": "0361772299",
+  "website": "http://www.artcafebumbubali.com/",
+  "opening_hours": [
+    {
+      "day": "Senin",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": true
+    },
+    {
+      "day": "Selasa",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    },
+    {
+      "day": "Rabu",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    },
+    {
+      "day": "Kamis",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    },
+    {
+      "day": "Jumat",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    },
+    {
+      "day": "Sabtu",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    },
+    {
+      "day": "Minggu",
+      "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+      "today": false
+    }
+  ],
+  "hours_status": null
 }

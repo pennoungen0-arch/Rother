@@ -1,202 +1,762 @@
 {
-  "certification_id": "M10-20260724",
-  "certified_by": "browser_agent",
-  "certification_date": "2026-07-24T20:00:00Z",
-  "method": "Offline parsel DOM audit against live capture (data/verify/20260724T121337Z/comp-canggu-01/page.html) + Playwright selector_report.json (data/selector_report.json, 2026-07-23)",
-  "mode": "live_capture",
-  "evidence_path": "data/verify/20260724T121337Z/",
+  "certification_id": "M18-20260817",
+  "certified_by": "browser_agent (live Playwright probe, 12 real place_id competitors)",
+  "certification_date": "2026-08-17T15:08:08Z",
+  "method": "Live Playwright probe against all 12 configured competitors (https://www.google.com/maps/place/?q=place_id:ChIJ...). For each: CSS match counts for the schema-v5 selectors + the corrected business-metadata selectors, and the _JS_OVERVIEW_PROBE output. Evidence: data/verify/20260817T150808Z/selector_cert/evidence.json",
+  "mode": "live_probe",
+  "evidence_path": "data/verify/20260817T150808Z/",
+  "supersedes": "M10-20260724 (schema-v4 era; the 3 schema-v5 selectors were not evaluated there)",
   "summary": {
-    "total_selectors": 15,
+    "total_selectors": 7,
     "certified_stable": 6,
-    "certified_semi_stable": 2,
-    "certified_fragile": 2,
-    "certified_obsolete": 6,
+    "certified_semi_stable": 1,
+    "certified_fragile": 0,
+    "certified_obsolete": 0,
     "certified_unknown": 0,
-    "overall_confidence": 0.77
+    "business_set_size": 12,
+    "note": "Selectors that are conditional (phone/website/hours) are certified as stable with an explicit positive/negative case split rather than an overall match rate."
   },
   "selectors": {
-    "cookie_reject_button": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Dismiss EU cookie consent banner",
-      "dom_snippet": "NOT FOUND",
-      "text_evidence": "0 occurrences of 'Reject all' or 'cookie' in 517KB HTML",
-      "match_count": 0,
-      "attempts": 36,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove for en-US/Indonesia locale"
-    },
     "reviews_tab_button": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Click reviews tab to load review content",
-      "dom_snippet": "NOT FOUND",
-      "text_evidence": "33 data-review-id elements found in initial HTML without any tab click",
-      "match_count": 0,
-      "attempts": 36,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove — reviews are embedded in initial HTML"
+      "matched_competitors": 12,
+      "total_competitors": 12,
+      "match_rate": 1.0,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-canggu-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-canggu-02": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-ubud-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-ubud-02": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-nusadua-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-sanur-01": {
+          "match_count": 1,
+          "found": true
+        },
+        "comp-sanur-02": {
+          "match_count": 1,
+          "found": true
+        }
+      },
+      "selector": "button[role='tab'][aria-label^='Ulasan']",
+      "purpose": "Open the full Reviews tab (GMBE-PARITY full-list capture)",
+      "classification": "stable"
     },
-    "review_container_tier0": {
-      "classification": "fragile",
-      "confidence": 0.5,
-      "purpose": "Scrollable review container (auto-generated class tier)",
-      "selector": "div.m6QErb.DxyBCb.kA9KIf.dS8AEf",
-      "dom_snippet": "<div class=\"m6QErb DxyBCb kA9KIf dS8AEf\" role=\"region\" ...",
-      "match_count": 1,
-      "avg_lookup_time_ms": 9.1,
-      "auto_generated_classes": ["m6QErb", "DxyBCb", "kA9KIf", "dS8AEf"],
-      "verification_date": "2026-07-24",
-      "recommendation": "Demote to tier 2; promote role='region' variant to tier 0"
+    "review_like_selector": {
+      "matched_competitors": 11,
+      "total_competitors": 12,
+      "match_rate": 0.917,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-canggu-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-canggu-02": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-ubud-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-ubud-02": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "match_count": 0,
+          "found": false
+        },
+        "comp-nusadua-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-sanur-01": {
+          "match_count": 6,
+          "found": true
+        },
+        "comp-sanur-02": {
+          "match_count": 6,
+          "found": true
+        }
+      },
+      "selector": "button.gllhef",
+      "purpose": "Per-review like count (aria-label or inner text)",
+      "classification": "stable"
     },
-    "review_container_tier1": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Scrollable review container (role=feed)",
-      "selector": "div[role='feed']",
-      "match_count": 0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove — Google removed role='feed' from container"
-    },
-    "review_container_tier2": {
-      "classification": "stable",
-      "confidence": 0.9,
-      "purpose": "Scrollable review container (role=region)",
-      "selector": "div.m6QErb[role='region']",
-      "dom_snippet": "<div class=\"m6QErb DxyBCb kA9KIf dS8AEf\" role=\"region\" ...",
-      "match_count": 2,
-      "avg_lookup_time_ms": 8.0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Promote to tier 0 — semantic selector, reliable on all page types"
-    },
-    "review_item": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "Seed CSS for parsing review card elements",
-      "selector": "div.jftiEf.fontBodyMedium",
-      "dom_snippet": "<div class=\"jftiEf fontBodyMedium\" data-review-id=\"...\">",
-      "match_count": 3,
-      "avg_lookup_time_ms": 1.8,
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "review_id_attr": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "HTML attribute for unique review ID",
-      "attribute": "data-review-id",
-      "elements_with_attr": 33,
-      "unique_ids_found": 3,
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "reviewer_name_attr": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "HTML attribute for reviewer display name",
-      "attribute": "aria-label",
-      "elements_with_attr": 301,
-      "sample_values": ["Chelvy Soetanto", "hannah ko", "Ashfia Pramita Nurfitriani"],
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "review_text_selector": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "CSS selector for review text content",
-      "selector": "span.wiI7pd",
-      "dom_snippet": "<span class=\"wiI7pd\">Vibes na enak banget...</span>",
-      "match_count": 3,
-      "avg_lookup_time_ms": 0.4,
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "rating_selector": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "CSS selector for rating element",
-      "selector": "span.kvMYJc",
-      "dom_snippet": "<span class=\"kvMYJc\" aria-label=\"5 bintang\">",
-      "match_count": 3,
-      "avg_lookup_time_ms": 0.4,
-      "sample_aria_labels": ["5 bintang", "1 bintang"],
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "rating_attr": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "HTML attribute for numeric star rating value",
-      "attribute": "aria-label",
-      "elements_with_attr": 301,
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "relative_date_selector": {
-      "classification": "stable",
-      "confidence": 1.0,
-      "purpose": "CSS selector for relative date text",
-      "selector": "span.rsqaWe",
-      "dom_snippet": "<span class=\"rsqaWe\">seminggu lalu</span>",
-      "match_count": 3,
-      "avg_lookup_time_ms": 0.4,
-      "sample_values": ["seminggu lalu", "sebulan lalu", "2 bulan lalu"],
-      "verification_date": "2026-07-24",
-      "recommendation": "No changes needed"
-    },
-    "expand_text_button_tier0": {
-      "classification": "fragile",
-      "confidence": 0.5,
-      "purpose": "Expand truncated reviews",
-      "selector": "button.w8nwRe.kyuRq",
-      "match_count": 5,
-      "avg_lookup_time_ms": 262.0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Keep — works on real pages (262ms, 5 buttons)"
-    },
-    "expand_text_button_tier1": {
-      "classification": "semi_stable",
-      "confidence": 0.7,
-      "purpose": "Expand truncated reviews (text match fallback)",
-      "selector": "button:has-text('More')",
-      "match_count": 0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Keep as Playwright-only fallback"
-    },
-    "expand_text_button_tier2": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Expand truncated reviews (text match fallback)",
-      "selector": "button:has-text('See more')",
-      "match_count": 0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove — text 'See more' not found in DOM"
-    },
-    "locator_tier_2": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Review item locator (role=article)",
-      "selector": "[role='article'][aria-label]",
-      "match_count": 0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove — role='article' removed by Google"
-    },
-    "locator_tier_4": {
-      "classification": "obsolete",
-      "confidence": 1.0,
-      "purpose": "Review item locator (role=article + data-review-id)",
-      "selector": "div[role='article'][data-review-id]",
-      "match_count": 0,
-      "verification_date": "2026-07-24",
-      "recommendation": "Remove — role='article' removed by Google"
+    "review_list_container": {
+      "matched_competitors": 12,
+      "total_competitors": 12,
+      "match_rate": 1.0,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "match_count": 21,
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "match_count": 14,
+          "found": true
+        },
+        "comp-canggu-01": {
+          "match_count": 16,
+          "found": true
+        },
+        "comp-canggu-02": {
+          "match_count": 17,
+          "found": true
+        },
+        "comp-ubud-01": {
+          "match_count": 17,
+          "found": true
+        },
+        "comp-ubud-02": {
+          "match_count": 18,
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "match_count": 16,
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "match_count": 23,
+          "found": true
+        },
+        "comp-nusadua-01": {
+          "match_count": 16,
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "match_count": 16,
+          "found": true
+        },
+        "comp-sanur-01": {
+          "match_count": 16,
+          "found": true
+        },
+        "comp-sanur-02": {
+          "match_count": 16,
+          "found": true
+        }
+      },
+      "selector": "div.m6QErb.XiKgde",
+      "purpose": "Documented tab-view list container (scroll resolves by JS hunt)",
+      "classification": "stable"
     }
   },
-  "waste_analysis": {
-    "obsolete_selectors_seconds_per_competitor": 24,
-    "obsolete_selectors_seconds_all_12": 288,
-    "container_timeout_seconds_all_12_mock": 220,
-    "total_current_waste_seconds": 508,
-    "projected_after_optimization_seconds": 120,
-    "improvement_percent": 76
-  }
+  "business_metadata": {
+    "phone": {
+      "selector": "a[href^='tel:']",
+      "purpose": "Business phone number (href = tel:...; aria 'Panggil nomor telepon')",
+      "positive_cases": 10,
+      "negative_cases": 2,
+      "total": 12,
+      "positive_rate": 0.833,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "value": "081238428343",
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-01": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-02": {
+          "value": "081236116466",
+          "found": true
+        },
+        "comp-ubud-01": {
+          "value": "081283386641",
+          "found": true
+        },
+        "comp-ubud-02": {
+          "value": "08111793455",
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "value": "085958951520",
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "value": "081338051109",
+          "found": true
+        },
+        "comp-nusadua-01": {
+          "value": "0361772299",
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "value": "0361771234",
+          "found": true
+        },
+        "comp-sanur-01": {
+          "value": "085179667935",
+          "found": true
+        },
+        "comp-sanur-02": {
+          "value": "087767775050",
+          "found": true
+        }
+      },
+      "classification": "stable",
+      "note": "Old selector [data-item-id='telephone'] matched 0/12; corrected 2026-08-17."
+    },
+    "website": {
+      "selector": "a[data-item-id='authority']",
+      "purpose": "Business website URL (aria 'Situs Web: ...'; href)",
+      "positive_cases": 11,
+      "negative_cases": 1,
+      "total": 12,
+      "positive_rate": 0.917,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "value": "https://revolverbali.com/",
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-01": {
+          "value": "http://lifescrate.com/",
+          "found": true
+        },
+        "comp-canggu-02": {
+          "value": "https://www.theshadyshackbali.com/",
+          "found": true
+        },
+        "comp-ubud-01": {
+          "value": "http://www.senimancoffee.com/",
+          "found": true
+        },
+        "comp-ubud-02": {
+          "value": "http://kafe-bali.com/",
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "value": "http://www.singlefinbali.com/",
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "value": "http://www.sulubancliffbali.com/",
+          "found": true
+        },
+        "comp-nusadua-01": {
+          "value": "http://www.artcafebumbubali.com/",
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "value": "https://www.hyatt.com/grand-hyatt/en-US/balgh-grand-hyatt-bali/dining?src=prop_balgh_en_misc_other_websitelink-salsabar_gmblisting",
+          "found": true
+        },
+        "comp-sanur-01": {
+          "value": "https://www.byrdhousebali.com/",
+          "found": true
+        },
+        "comp-sanur-02": {
+          "value": "http://discover.sanagroup.id/",
+          "found": true
+        }
+      },
+      "classification": "stable",
+      "note": "Old selector [data-item-id='website'] a matched 0/12; corrected 2026-08-17."
+    },
+    "opening_hours": {
+      "selector": "table.eK4R0e tr.y0skZc (td.ylH6lf day / td.mxowUb hours)",
+      "purpose": "Weekly opening hours (day + hours per row; today row has fontTitleSmall)",
+      "positive_cases": 9,
+      "negative_cases": 3,
+      "total": 12,
+      "positive_rate": 0.75,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "07.00 hingga 23.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-01": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "06.00 hingga 21.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "06.00 hingga 21.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-canggu-02": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "07.30 hingga 22.30",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "07.30 hingga 22.30",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-ubud-01": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "07.30 hingga 22.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "07.30 hingga 22.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-ubud-02": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "07.00 hingga 23.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "08.00 hingga 22.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "08.00 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "08.00 hingga 02.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "08.00 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "08.00 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "08.00 hingga 22.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "08.00 hingga 02.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-nusadua-01": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "11.00 hingga 15.00,18.00 hingga 21.30",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-nusadua-02": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "16.00 hingga 23.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "16.00 hingga 23.00",
+              "today": false
+            }
+          ],
+          "found": true
+        },
+        "comp-sanur-01": {
+          "value": null,
+          "found": false
+        },
+        "comp-sanur-02": {
+          "value": [
+            {
+              "day": "Senin",
+              "hours": "07.00 hingga 23.00",
+              "today": true
+            },
+            {
+              "day": "Selasa",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Rabu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Kamis",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Jumat",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Sabtu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            },
+            {
+              "day": "Minggu",
+              "hours": "07.00 hingga 23.00",
+              "today": false
+            }
+          ],
+          "found": true
+        }
+      },
+      "classification": "stable",
+      "note": "Some businesses render no hours table (negative case)."
+    },
+    "hours_status": {
+      "selector": "[jsaction*='pane.openhours.wfvdle24.dropdown'] .ZDu9vd",
+      "purpose": "Today status line e.g. 'Buka - Tutup pukul 23.00' / 'Segera buka - 16.00'",
+      "positive_cases": 5,
+      "negative_cases": 7,
+      "total": 12,
+      "positive_rate": 0.417,
+      "per_competitor": {
+        "comp-seminyak-01": {
+          "value": "Buka · Tutup pukul 23.00",
+          "found": true
+        },
+        "comp-seminyak-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-01": {
+          "value": null,
+          "found": false
+        },
+        "comp-canggu-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-ubud-01": {
+          "value": "Buka · Tutup pukul 22.00",
+          "found": true
+        },
+        "comp-ubud-02": {
+          "value": "Buka · Tutup pukul 23.00",
+          "found": true
+        },
+        "comp-uluwatu-01": {
+          "value": "Buka · Tutup pukul 22.00",
+          "found": true
+        },
+        "comp-uluwatu-02": {
+          "value": null,
+          "found": false
+        },
+        "comp-nusadua-01": {
+          "value": null,
+          "found": false
+        },
+        "comp-nusadua-02": {
+          "value": "Segera buka · 16.00",
+          "found": true
+        },
+        "comp-sanur-01": {
+          "value": null,
+          "found": false
+        },
+        "comp-sanur-02": {
+          "value": null,
+          "found": false
+        }
+      },
+      "classification": "semi_stable",
+      "note": "Status line present for some businesses only; the weekly table is the primary source."
+    }
+  },
+  "generated_at": "2026-08-17T08:08:48.361875+00:00"
 }

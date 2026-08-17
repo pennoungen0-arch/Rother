@@ -251,6 +251,8 @@ function LeaderboardRow({
             {[
               comp.business_metadata.category,
               comp.business_metadata.address,
+              comp.business_metadata.phone,
+              comp.business_metadata.website,
             ]
               .filter(Boolean)
               .join(" · ")}

@@ -1,12 +1,12 @@
 {
   "verified_by": "browser_agent",
-  "last_verified": "20260812T120000Z",
-  "_verification_note": "GMBE-PARITY (2026-08-12): re-introduced reviews_tab_button (full-list capture), added review_like_selector + review_list_container, schema v5. See docs/engineering/DOM_AUDIT.md Appendices A-D + SELECTOR_CHANGELOG.md.",
+  "last_verified": "20260817T150808Z",
+  "_verification_note": "M18-SelectorCertification (2026-08-17): re-certified all schema-v5 selectors against 12 live competitors (data/verify/20260817T150808Z/selector_cert/evidence.json). reviews_tab_button 12/12, review_like_selector 11/12 (0 on comp-uluwatu-02), review_list_container 12/12. Business-metadata probe corrected: phone = a[href^='tel:'] (10/12), website = a[data-item-id='authority'] (11/12), opening_hours = table.eK4R0e (9/12), hours_status semi-stable (5/12). See SELECTOR_CERTIFICATION.md M18.",
   "_meta": {
-    "last_verified": "20260812T120000Z",
+    "last_verified": "20260817T150808Z",
     "verified_by": "browser_agent",
     "schema_version": 5,
-    "_verification_note": "GMBE-PARITY (2026-08-12): re-introduced reviews_tab_button (full-list capture), added review_like_selector + review_list_container, schema v5. See docs/engineering/DOM_AUDIT.md Appendices A-D + SELECTOR_CHANGELOG.md.",
+    "_verification_note": "M18-SelectorCertification (2026-08-17): re-certified all schema-v5 selectors against 12 live competitors (data/verify/20260817T150808Z/selector_cert/evidence.json). reviews_tab_button 12/12, review_like_selector 11/12 (0 on comp-uluwatu-02), review_list_container 12/12. Business-metadata probe corrected: phone = a[href^='tel:'] (10/12), website = a[data-item-id='authority'] (11/12), opening_hours = table.eK4R0e (9/12), hours_status semi-stable (5/12). See SELECTOR_CERTIFICATION.md M18.",
     "_documentation_url": "https://github.com/anomalyco/gbp-monitor/wiki/Selector-Maintenance",
     "descriptions": {
       "review_container": "Scrollable review list container (feed region)",
@@ -207,6 +207,57 @@
         "overall_confidence": "medium",
         "active_tier": 0,
         "active_selector": "button.w8nwRe.kyuRq"
+      },
+      "reviews_tab_button": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "button[role='tab'][aria-label^='Ulasan']",
+            "status": "live",
+            "confidence": "high",
+            "matches": "1/1 per competitor, 12/12 live"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "button[role='tab'][aria-label^='Ulasan']"
+      },
+      "review_like_selector": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "button.gllhef",
+            "status": "live",
+            "confidence": "high",
+            "matches": "6 on 11/12; 0 on comp-uluwatu-02"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "button.gllhef"
+      },
+      "review_list_container": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "div.m6QErb.XiKgde",
+            "status": "live",
+            "confidence": "high",
+            "matches": "12/12 (14-23 per page)"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "div.m6QErb.XiKgde"
       }
     }
   },

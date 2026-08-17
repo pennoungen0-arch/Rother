@@ -8,5 +8,45 @@
     "3_star": "118",
     "2_star": "40",
     "1_star": "53"
-  }
+  },
+  "phone": "087767775050",
+  "website": "http://discover.sanagroup.id/",
+  "opening_hours": [
+    {
+      "day": "Senin",
+      "hours": "07.00 hingga 23.00",
+      "today": true
+    },
+    {
+      "day": "Selasa",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Rabu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Kamis",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Jumat",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Sabtu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    },
+    {
+      "day": "Minggu",
+      "hours": "07.00 hingga 23.00",
+      "today": false
+    }
+  ],
+  "hours_status": null
 }

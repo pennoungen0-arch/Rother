@@ -1,0 +1,22 @@
+{
+  "_comment": "Proactive run notifications. Copy to notifications.json and set enabled: true. The notifier NEVER raises — a misconfigured webhook/email only logs a warning and never breaks a scrape run.",
+  "_webhook_guide": "Any generic webhook that accepts a JSON POST. The payload includes a plain-text 'text' field (works with Slack, Discord, Mattermost, ntfy, etc.) plus the full run summary. Create a channel integration, paste its URL here, set enabled: true.",
+  "enabled": false,
+  "webhooks": [
+    {
+      "name": "slack",
+      "url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+      "enabled": false
+    }
+  ],
+  "_email_guide": "Optional SMTP email. starttls true for port 587 (Gmail uses an App Password, not your login password). 'to' is a list of recipient addresses.",
+  "email": {
+    "enabled": false,
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "starttls": true,
+    "username": "monitor@example.com",
+    "password": "your-app-password",
+    "to": ["ops@example.com"]
+  }
+}

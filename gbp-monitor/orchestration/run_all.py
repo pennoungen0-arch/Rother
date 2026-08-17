@@ -80,6 +80,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from notifications.notifier import send_run_notification
+
 # Configure the root logger so module-level `logging.getLogger("gbp-monitor.*")`
 # loggers inherit the file handler. We also add a StreamHandler at WARNING+
 # so the operator sees loud alerts on stdout too — the file gets everything.
@@ -1452,6 +1454,12 @@ def _finish_and_write_summary(summary: dict, run_id: str = "") -> None:
     )
     tmp.replace(_SUMMARY_PATH)
     _structured_log(rid, "summary_written", path=str(_SUMMARY_PATH))
+
+    # M17: proactive notifications — webhook + optional email. Never raises.
+    try:
+        send_run_notification(summary)
+    except Exception as exc:  # noqa: BLE001 — Rule 7: never break a run
+        logger.warning("notifications: unexpected error: %s", exc)
 
 
 def run_verify(url_override: str | None = None) -> dict:

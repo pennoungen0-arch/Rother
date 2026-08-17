@@ -294,8 +294,16 @@ pipeline_summary).
    README has a first-run "Configuration" section. Remaining from the
    productization item: proactive alerts (webhook/email on new reviews) +
    generic first-run polish.
-7. **Productization (self-hosted tool):** proactive alerts (webhook/email on
-   new reviews), generic README/first-run flow polish.
+7. ~~**Proactive alerts (webhook/email on new reviews)**~~ — **DONE
+   2026-08-17**: `notifications/notifier.py` fires after every completed run
+   via `_finish_and_write_summary`. Generic JSON webhook POST (Slack/Discord/
+   ntfy etc.) + optional SMTP email; opt-in via `config/notifications.json`;
+   never raises (Rule 7); zero new deps (stdlib only). `tests/verify_notifications`
+   25/25 (local HTTP server + stubbed SMTP). External delivery not exercised —
+   no webhook/email credentials configured.
+8. **Productization (self-hosted tool):** generic first-run polish (config
+   validation UX, onboarding), then SELECTOR_CERTIFICATION re-run against a
+   larger business set.
 
 ---
 

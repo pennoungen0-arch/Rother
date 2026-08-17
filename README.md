@@ -5,6 +5,37 @@ Automated monitoring of competitor Google Business Profile reviews. Two subsyste
 - **gbp-monitor/** — Python scraper (Playwright + Parsel)
 - **src/** — Next.js dashboard (App Router, shadcn/ui, Recharts)
 
+> **Status:** All productization milestones complete. See
+> `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md` for the full "everything
+> done so far" report, and `AGENTS.md` for the agent-facing state summary.
+
+---
+
+## What's been built
+
+Rother is a self-hosted, zero-cost Google Business Profile review monitor. It
+uses a real browser session (`NID` cookie) to capture the **full** review list
+of every configured competitor (hundreds of cards — not the 3 embedded on the
+initial page), tracks per-competitor deltas, and surfaces everything in the
+dashboard with proactive alerts.
+
+| Capability | Where |
+|---|---|
+| Live FULL-variant review capture (incremental harvest, 200–580 cards/listing) | `gbp-monitor/harness/` + `scroll.py` |
+| Structured `Review` parsing (text, rating, reviewer, relative+approximated dates, like counts) | `gbp-monitor/parser/` |
+| Business metadata sidecars (name, rating, address, category, phone, website, weekly opening hours, star breakdown) | `gbp-monitor/storage/` + `{ts}.metadata.json` |
+| Stale-NID guard — detects + recovers from a stale session jar automatically | `orchestration/run_all.py` |
+| New-review delta tracking + full content in the dashboard | `gbp-monitor/storage/delta_store.py` + "New Reviews" tab |
+| Proactive alerts — webhook (Slack/Discord/ntfy) + SMTP email after every run | `gbp-monitor/notifications/notifier.py` |
+| Live verification mode with selector-health + screenshot evidence | `python -m orchestration.run_all --verify` |
+| Dashboard: Overview, Branches, Compare, Review Explorer, New Reviews, Alerts, Config | `src/` |
+| First-run onboarding — `--init-config`, `--validate-config`, guarded config loading | `orchestration/run_all.py` |
+
+Latest verified state (2026-08-17): all test suites green
+(verify_baseline 132/132, verify_notifications 25/25, vitest 77/77),
+production snapshot set of 12 competitors / 5,021 reviews intact, and all 8
+roadmap milestones complete.
+
 ---
 
 ## Prerequisites

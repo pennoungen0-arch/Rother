@@ -367,6 +367,92 @@ def _validate_listings_config(listings: dict) -> list[str]:
     return errors
 
 
+def _load_json_config(path: Path, label: str) -> tuple[dict | None, str | None]:
+    """Load a JSON config file; return (data, None) or (None, error).
+
+    Never raises: a missing file or malformed JSON yields a descriptive
+    error string for the operator instead of a raw traceback.
+    """
+    if not path.exists():
+        example = Path(f"config/{path.name.replace('.json', '.example.json')}")
+        hint = (
+            f" see config/{example.name} for a template" if example.exists() else ""
+        )
+        return None, f"{label} not found at {path.resolve()} —{hint}"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")), None
+    except json.JSONDecodeError as e:
+        return None, f"{label} is not valid JSON: {e}"
+
+
+def _abort_config_error(
+    rid: str,
+    mode: str,
+    started_at: str,
+    preflight_count: int,
+    message: str,
+) -> dict:
+    """Write a failed summary + release the lock after a fatal config error.
+
+    Returns the reduced return dict for ``run()``. Mirrors Rule 7 — a broken
+    or missing config must never produce a traceback.
+    """
+    summary = {
+        "started_at": started_at,
+        "finished_at": None,
+        "mode": mode,
+        "run_id": rid,
+        "success": 0,
+        "failed": 0,
+        "skipped": 0,
+        "new_reviews": 0,
+        "total_reviews": 0,
+        "total_competitors": 0,
+        "preflight_warnings": preflight_count,
+        "duration_seconds": 0,
+        "browser_launch_s": 0,
+        "errors": [{"competitor_id": "__config__", "error": message}],
+    }
+    _finish_and_write_summary(summary, run_id=rid)
+    _release_lock()
+    return {
+        "success": 0,
+        "failed": 0,
+        "skipped": 0,
+        "new_reviews": 0,
+        "total_reviews": 0,
+        "errors": [{"competitor_id": "__config__", "error": message}],
+    }
+
+
+def _init_config_onboarding() -> None:
+    """Scaffold missing config files from the example templates.
+
+    Copies ``config/listings.example.json`` → ``listings.json`` and
+    ``config/notifications.example.json`` → ``notifications.json`` when the
+    target is missing. Never overwrites an existing file. Prints next steps.
+    """
+    pairs = [
+        (Path("config/listings.example.json"), _LISTINGS_PATH),
+        (Path("config/notifications.example.json"), Path("config/notifications.json")),
+    ]
+    for example, target in pairs:
+        if target.exists():
+            print(f"SKIP: {target} already exists (keeping it)")
+            continue
+        if not example.exists():
+            print(f"WARN: {example} not found — cannot scaffold {target}")
+            continue
+        shutil.copyfile(example, target)
+        print(f"CREATED: {target} (from {example})")
+    print("\nNext steps:")
+    print("  1. Edit config/listings.json — fill in your branches, competitors,")
+    print("     and real Google Maps place_id values (or leave place_id null).")
+    print("  2. Validate:  python -m orchestration.run_all --validate-config")
+    print("  3. Run live:  python -m orchestration.run_all")
+    print("     (or fixture-mode: python -m orchestration.run_all --fixtures)")
+
+
 class RateLimiter:
     """Simple in-memory rate limiter per domain.
 
@@ -776,47 +862,29 @@ def run(fixtures_mode: bool = False) -> dict:
                 "This is expected if real place IDs have not been configured yet."
             )
 
-    listings = json.loads(_LISTINGS_PATH.read_text(encoding="utf-8"))
-    selectors = json.loads(_SELECTORS_PATH.read_text(encoding="utf-8"))
+    # M18: Load configs with graceful failure — a missing or malformed
+    # config file must produce a clean summary + message, never a traceback.
+    listings, l_err = _load_json_config(_LISTINGS_PATH, "listings.json")
+    if l_err:
+        logger.error("CONFIG: %s", l_err)
+        return _abort_config_error(rid, mode, started_at, len(warnings), l_err)
+    selectors, s_err = _load_json_config(_SELECTORS_PATH, "selectors.json")
+    if s_err:
+        logger.error("CONFIG: %s", s_err)
+        return _abort_config_error(rid, mode, started_at, len(warnings), s_err)
 
     # M13B: Validate listings config before proceeding.
     config_errors = _validate_listings_config(listings)
     for ce in config_errors:
         logger.error("CONFIG: %s", ce)
     if config_errors:
-        _finish_and_write_summary(
-            {
-                "started_at": started_at,
-                "finished_at": None,
-                "mode": mode,
-                "run_id": rid,
-                "success": 0,
-                "failed": 0,
-                "skipped": 0,
-                "new_reviews": 0,
-                "total_reviews": 0,
-                "total_competitors": 0,
-                "preflight_warnings": len(warnings),
-                "duration_seconds": 0,
-                "browser_launch_s": 0,
-                "errors": [
-                    {
-                        "competitor_id": "__config__",
-                        "error": f"Config validation failed ({len(config_errors)} error(s))",
-                    }
-                ],
-            },
-            run_id=rid,
+        return _abort_config_error(
+            rid,
+            mode,
+            started_at,
+            len(warnings),
+            f"Config validation failed ({len(config_errors)} error(s))",
         )
-        _release_lock()
-        return {
-            "success": 0,
-            "failed": 0,
-            "skipped": 0,
-            "new_reviews": 0,
-            "total_reviews": 0,
-            "errors": [{"competitor_id": "__config__", "error": f"{len(config_errors)} config errors"}],
-        }
 
     total_competitors = sum(
         len(branch.get("competitors", []))
@@ -1763,9 +1831,19 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--validate-config",
         action="store_true",
         help=(
-            "Validate config/listings.json structure and exit. "
-            "Checks for duplicate IDs, missing fields, and invalid place_id "
-            "format. Exits 0 if valid, 1 if errors found."
+            "Validate config/listings.json + config/selectors.json structure "
+            "and exit. Checks file existence, valid JSON, and (for listings) "
+            "duplicate IDs, missing fields, and invalid place_id format. "
+            "Exits 0 if valid, 1 if errors found."
+        ),
+    )
+    parser.add_argument(
+        "--init-config",
+        action="store_true",
+        help=(
+            "First-run onboarding: copy config/listings.example.json and "
+            "config/notifications.example.json to their real filenames when "
+            "missing. Never overwrites existing files. Prints next steps."
         ),
     )
     return parser.parse_args(argv)
@@ -1774,25 +1852,40 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     args = _parse_args()
 
+    # M18: First-run onboarding — scaffold missing configs from examples.
+    if args.init_config:
+        _init_config_onboarding()
+        sys.exit(0)
+
     # M13B: Config validation mode — validate and exit.
     if args.validate_config:
-        try:
-            listings = json.loads(_LISTINGS_PATH.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            print(f"ERROR: {_LISTINGS_PATH} not found")
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            print(f"ERROR: {_LISTINGS_PATH} is not valid JSON: {e}")
-            sys.exit(1)
-        errors = _validate_listings_config(listings)
-        if errors:
-            print(f"Config validation FAILED ({len(errors)} error(s)):")
-            for e in errors:
-                print(f"  - {e}")
-            sys.exit(1)
-        else:
-            print(f"Config validation PASSED — {_LISTINGS_PATH} is valid")
+        ok = True
+        for path, label, validator in [
+            (_LISTINGS_PATH, "listings.json", _validate_listings_config),
+            (_SELECTORS_PATH, "selectors.json", None),
+        ]:
+            data, err = _load_json_config(path, label)
+            if err:
+                print(f"ERROR: {err}")
+                ok = False
+                continue
+            if validator is not None:
+                errors = validator(data)
+                if errors:
+                    ok = False
+                    print(f"ERROR: {label} validation FAILED ({len(errors)} error(s)):")
+                    for e in errors:
+                        print(f"  - {e}")
+        if ok:
+            print(
+                "Config validation PASSED — "
+                "listings.json and selectors.json are present and structurally valid"
+            )
             sys.exit(0)
+        else:
+            print("\nHint: run `python -m orchestration.run_all --init-config` "
+                  "to scaffold missing config files from the example templates.")
+            sys.exit(1)
 
     # M13B: Validate --url if provided.
     if args.url is not None:

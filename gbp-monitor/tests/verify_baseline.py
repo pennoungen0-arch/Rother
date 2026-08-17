@@ -311,6 +311,126 @@ def _verify_security() -> None:
     check("sec: --validate-config exits cleanly", result.returncode in (0, 1))
 
 
+# ── M18 First-run polish tests ──────────────────────────────────────
+
+
+def _verify_first_run_polish() -> None:
+    """Verify the first-run/onboarding CLI improvements (M18).
+
+    Tests in an isolated temp cwd so the real repo config is never touched:
+    - _load_json_config returns clean errors (no raise) for missing/malformed
+      config files
+    - --init-config scaffolds missing configs from examples, idempotently
+    - --validate-config reports missing files + suggests --init-config
+    - run() aborts with a clean summary (no traceback) on a missing config
+    """
+    import shutil
+    import tempfile
+
+    try:
+        from orchestration.run_all import _load_json_config
+    except ImportError as e:
+        check("fr: import run_all", False, str(e))
+        return
+
+    with tempfile.TemporaryDirectory(prefix="gbp-fr-") as tmp:
+        tmp_path = Path(tmp)
+        # Mirror the repo layout the orchestrator expects (cwd-relative paths).
+        (tmp_path / "config").mkdir()
+        (tmp_path / "orchestration").mkdir()
+        (tmp_path / "notifications").mkdir()
+        (tmp_path / "data").mkdir()
+
+        shutil.copy(REPO_ROOT / "orchestration" / "run_all.py", tmp_path / "orchestration")
+        shutil.copy(REPO_ROOT / "notifications" / "notifier.py", tmp_path / "notifications")
+        shutil.copy(
+            REPO_ROOT / "config" / "listings.example.json",
+            tmp_path / "config",
+        )
+        shutil.copy(
+            REPO_ROOT / "config" / "notifications.example.json",
+            tmp_path / "config",
+        )
+
+        def cli(*args: str):
+            return subprocess.run(
+                [sys.executable, "-m", "orchestration.run_all", *args],
+                cwd=str(tmp_path),
+                capture_output=True,
+                text=True,
+            )
+
+        # 5a  --validate-config reports missing config files (exit 1).
+        r = cli("--validate-config")
+        check(
+            "fr: validate-config flags missing config",
+            r.returncode == 1 and "not found" in r.stdout,
+            f"rc={r.returncode} out={r.stdout[:120]!r}",
+        )
+        check(
+            "fr: validate-config suggests --init-config",
+            "--init-config" in r.stdout,
+        )
+
+        # 5b  --init-config scaffolds both example configs.
+        r = cli("--init-config")
+        check(
+            "fr: init-config scaffolds listings.json",
+            (tmp_path / "config" / "listings.json").exists() and r.returncode == 0,
+            f"rc={r.returncode}",
+        )
+        check(
+            "fr: init-config scaffolds notifications.json",
+            (tmp_path / "config" / "notifications.json").exists(),
+        )
+
+        # 5c  --init-config is idempotent (never overwrites existing files).
+        listings_json = (tmp_path / "config" / "listings.json")
+        original = listings_json.read_text(encoding="utf-8")
+        cli("--init-config")
+        check(
+            "fr: init-config is idempotent (no overwrite)",
+            listings_json.read_text(encoding="utf-8") == original,
+        )
+
+        # 5d  _load_json_config yields clean errors (no raise) for a
+        #     missing file and for malformed JSON.
+        missing_path = tmp_path / "config" / "nope.json"
+        data, msg = _load_json_config(missing_path, "nope.json")
+        check(
+            "fr: load_json_config missing -> (None, error)",
+            data is None and isinstance(msg, str) and "not found" in msg,
+            str(msg),
+        )
+        malformed = tmp_path / "config" / "bad.json"
+        malformed.write_text("{not json", encoding="utf-8")
+        data2, msg2 = _load_json_config(malformed, "bad.json")
+        check(
+            "fr: load_json_config malformed -> (None, error)",
+            data2 is None and isinstance(msg2, str) and "not valid JSON" in msg2,
+            str(msg2),
+        )
+
+        # 5e  run() aborts cleanly (no traceback) when a config file is
+        #     missing — the pre-M18 behavior crashed with FileNotFoundError.
+        (tmp_path / "config" / "selectors.json").unlink(missing_ok=True)
+        r = cli()
+        no_traceback = "Traceback" not in r.stderr
+        summary = json.loads((tmp_path / "data" / "run_summary.json").read_text(encoding="utf-8"))
+        errors = summary.get("errors", [])
+        config_err = any(e.get("competitor_id") == "__config__" for e in errors)
+        check(
+            "fr: run() no traceback on missing selectors.json",
+            no_traceback,
+            f"stderr={r.stderr[-200:]!r}",
+        )
+        check(
+            "fr: run() records __config__ error in summary",
+            config_err,
+            f"errors={errors!r}",
+        )
+
+
 # ── M8 Acquisition offline tests ────────────────────────────────────
 
 
@@ -566,6 +686,9 @@ def main() -> int:
 
     # M13B: Security regression tests.
     _verify_security()
+
+    # M18: First-run / onboarding CLI polish tests.
+    _verify_first_run_polish()
 
     # M8: NID acquisition offline tests.
     _verify_acquisition()

@@ -318,9 +318,15 @@ pipeline_summary).
    never raises (Rule 7); zero new deps (stdlib only). `tests/verify_notifications`
    25/25 (local HTTP server + stubbed SMTP). External delivery not exercised —
    no webhook/email credentials configured.
-8. **Productization (self-hosted tool):** generic first-run polish (config
-   validation UX, onboarding). SELECTOR_CERTIFICATION re-run is DONE (2026-08-17,
-   see item 3) — the remaining productization item is first-run polish only.
+8. ~~**Productization (self-hosted tool): generic first-run polish**~~ — **DONE
+   2026-08-17**: first-run polish landed with the SELECTOR_CERTIFICATION re-run
+   commit (`476c613`, docs §6/§7). Missing/malformed `listings.json`/`selectors.json`
+   no longer crash `run()` with a traceback — config loading is guarded and aborts
+   with a clean failed `run_summary.json` (`competitor_id: __config__`) + lock release.
+   `--validate-config` now checks both config files and prints an onboarding hint;
+   new `--init-config` flag scaffolds `config/listings.json` + `config/notifications.json`
+   from the `.example.json` templates when missing (never overwrites) and prints next
+   steps. `tests/verify_baseline` extended with a 9-check first-run phase (132/132 total).
 
 ---
 

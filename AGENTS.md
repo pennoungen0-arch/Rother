@@ -155,7 +155,7 @@ From repo root:
 ## Known limitations / remaining UNPROVEN items
 
 - Live delivery to a real external webhook/email is now PROVEN (webhook.site + Ethereal test account, 2026-08-19); no production credentials configured for real-world delivery.
-- GitHub Actions execution (workflows verified by construction only; no git remote configured to push to).
+- GitHub Actions execution (workflows verified by construction only; no git remote configured — deferred, see POST_CONVERGENCE_PLAN).
 - `hours_status` full coverage (5/12 businesses render it; canonical source is the weekly `opening_hours` table).
 
 ## When to update this file

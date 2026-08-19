@@ -77,9 +77,9 @@ source of truth; update imports across `src/features/` and `src/components/dashb
 
 - [x] `e2e/features.spec.ts` covers all 28 features; `npm run test:e2e` 28/28 pass.
 - [x] Zero duplicate type definitions outside `src/lib/gbp/types.ts`.
-- [ ] Webhook + SMTP delivery proven with real endpoints.
-- [ ] GitHub Actions CI green on this branch.
-- [ ] `hours_status` coverage documented.
+- [x] Webhook + SMTP delivery proven with real endpoints (webhook.site + Ethereal, 2026-08-19).
+- [ ] GitHub Actions CI green on this branch (no git remote configured to push to — requires user action).
+- [x] `hours_status` coverage documented (5/12 in M18 evidence; canonical source is weekly `opening_hours`).
 
 ---
 

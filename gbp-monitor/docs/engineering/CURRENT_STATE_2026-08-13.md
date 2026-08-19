@@ -260,13 +260,27 @@ pipeline_summary).
 2. **Owner replies** — structurally unavailable in this variant (see §7); the
    schema deliberately does NOT carry a reply field until a variant renders one.
 3. **Absolute review dates** — approximated only; no absolute source in DOM.
-4. **GitHub Actions** — cannot execute in this environment; workflows verified
-   by construction only.
-5. **Phone/website** — vary by business; only populated when the DOM provides
+4. ~~**Live webhook delivery**~~ — **NOW PROVEN 2026-08-19**: a `webhook.site`
+   token was configured in `notifications.json` and an offline fixtures run
+   POSTed the payload (plain-text `text` + full `summary` with `run_summary`,
+   `new_reviews`, competitor stats) to the live external endpoint.
+5. ~~**Live SMTP delivery**~~ — **NOW PROVEN 2026-08-19**: an Ethereal test
+   account was configured in `notifications.json` and an offline fixtures run
+   sent an email with subject `Rother run fixtures: 20 new reviews, 3 ok / 0 failed`;
+   delivery verified by reading the message back via IMAP (subject + body match).
+6. **GitHub Actions** — cannot execute in this environment (no git remote
+   configured); workflows verified by construction only.
+7. **Phone/website** — vary by business; only populated when the DOM provides
    them (conditional extraction).
-6. **Dashboard mode default** — `/api/scrape/trigger` now defaults to `"live"`
+8. **Dashboard mode default** — `/api/scrape/trigger` now defaults to `"live"`
    (fixed 2026-08-13T16:30+07:00); synthetic fixtures can no longer be written
    into production snapshots unless `?mode=fixtures` is explicitly requested.
+9. **`hours_status` coverage** — semi-stable: renders for 5/12 businesses in the
+   M18 verification evidence (`data/verify/20260817T150808Z/selector_cert/evidence.json`):
+   comp-seminyak-01, comp-ubud-01, comp-ubud-02, comp-uluwatu-01, comp-nusadua-02.
+   The committed Aug-13 snapshots store `hours_status: null` for all 12 (field was
+   added in M18, 2026-08-17); the weekly `opening_hours` table (`table.eK4R0e`) is
+   the canonical hours source (9/12).
 
 ---
 

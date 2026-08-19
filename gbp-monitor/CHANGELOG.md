@@ -23,6 +23,14 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-19T20:30:00+07:00
+- **Files:** `docs/engineering/POST_CONVERGENCE_PLAN.md` (success criteria checkboxes), `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md` (§9 UNPROVEN items), `AGENTS.md` (UNPROVEN list)
+- **Change:** Post-convergence hardening workstream §3 (UNPROVEN items) advanced. (1) **Live webhook PROVEN** — created a `webhook.site` token, configured `notifications.json`, ran `python -m orchestration.run_all --fixtures`, and confirmed the external endpoint received the JSON payload (plain-text `text` + full `summary` with run_summary/new_reviews/competitor stats). (2) **Live SMTP PROVEN** — created a free Ethereal test account via the nodemailer API (`api.nodemailer.com/user`), configured `notifications.json`, ran the fixtures scrape, and verified the message (subject `Rother run fixtures: 20 new reviews, 3 ok / 0 failed` + body) by reading it back via IMAP (`imap.ethereal.email`). (3) **`hours_status` coverage documented** — 5/12 businesses render it per M18 verification evidence (`comp-seminyak-01`, `comp-ubud-01`, `comp-ubud-02`, `comp-uluwatu-01`, `comp-nusadua-02`); committed Aug-13 snapshots store `null`; weekly `opening_hours` table is canonical (9/12). Temporary `config/notifications.json` (with live webhook token + Ethereal creds) was created for each test and removed afterward — no secrets committed. `data/` backed up before each fixtures run and restored after (production snapshots untouched).
+- **Reason:** Resolve the last provable UNPROVEN items so the hardening plan's success criteria are met except GH Actions (blocked on no git remote).
+- **Status:** PROVEN — live webhook payload and live SMTP email both received and verified at real external endpoints (webhook.site + Ethereal IMAP).
+
+---
+
 <!--
 Template �?" copy this block for each new entry:
 

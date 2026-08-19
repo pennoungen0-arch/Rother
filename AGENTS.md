@@ -152,12 +152,11 @@ From repo root:
   `/api/config/listings` PATCH validates via `validateBranchConfig`.
 - Dev server log if needed: `C:\Users\HP\AppData\Local\Temp\opencode\rother_dev.log`.
 
-## Known UNPROVEN items (do not claim done)
+## Known limitations / remaining UNPROVEN items
 
-- Live delivery to a real external webhook/email (no credentials configured;
-  transport layer proven via local server + stub).
-- GitHub Actions execution (workflows verified by construction only).
-- `hours_status` full coverage (see above).
+- Live delivery to a real external webhook/email is now PROVEN (webhook.site + Ethereal test account, 2026-08-19); no production credentials configured for real-world delivery.
+- GitHub Actions execution (workflows verified by construction only; no git remote configured to push to).
+- `hours_status` full coverage (5/12 businesses render it; canonical source is the weekly `opening_hours` table).
 
 ## When to update this file
 

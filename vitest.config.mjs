@@ -7,6 +7,7 @@ export default defineConfig({
       "**/coverage/**",
       "**/dist/**",
       "**/node_modules/**",
+      "e2e/**",
       "rother02-archive/**",
     ],
   },

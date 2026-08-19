@@ -70,3 +70,38 @@ jobs:
 
       - name: Verify Docker image builds
         run: docker images gbp-monitor:ci-${{ github.sha }}
+
+  dashboard:
+    name: Dashboard (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Lint
+        run: npx eslint src
+
+      - name: Build
+        run: npm run build
+        env:
+          # Skip the prisma generate step if any — the dashboard runtime does
+          # not use prisma (see AGENTS.md: SQLite scaffold only).
+          PRISMA_SKIP_POSTINSTALL_GENERATE: "true"

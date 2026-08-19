@@ -222,3 +222,18 @@
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
 }
+
+/* Reduced-motion: honor the user's OS preference. Tailwind's animate-spin is
+   the default; we neutralize all animations/transitions and treat prefers-
+   reduced-motion as a hard override so charts, spinners and card hovers
+   become instant. Framer-motion honors this at the animation level. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -202,6 +202,41 @@ words for the word cloud from the listings you configure. For live scraping,
 each competitor needs a real Google Maps `place_id` (starts with `ChIJ`); see
 the guide in the example file.
 
+## Testing
+
+All test suites must stay green (Rule 1).
+
+### Scraper tests (run from `gbp-monitor/`)
+
+| Command | Count | Notes |
+|---|---|---|
+| `python -m tests.verify_baseline` | 132/132 | **WIPES `data/`** — back up first, restore after |
+| `python -m tests.verify_notifications` | 25/25 | Local HTTP server + stubbed SMTP |
+| `python -m tests.verify_variant_framework` | 32/32 | Offline variant classifier |
+
+> **Backup discipline:** `verify_baseline` deletes `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13 snapshots) has been lost once this way. ALWAYS back up first:
+> ```powershell
+> Copy-Item data C:\Users\HP\AppData\Local\Temp\opencode\rother_data_backup -Recurse
+> # restore: Remove-Item -Recurse data; Copy-Item <backup> data -Recurse
+> ```
+
+### Dashboard tests (run from repo root)
+
+| Command | Count | Notes |
+|---|---|---|
+| `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
+| `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
+| `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
+| `npm run test:e2e` | 30/30 | Playwright (smoke 2 + per-feature 28) — **needs `npm run dev` running + committed production data** |
+
+### Full local gate (what CI runs)
+
+```powershell
+npx vitest run && npx tsc --noEmit && npx eslint src && npm run build
+```
+
+---
+
 ## Scraper (gbp-monitor/)
 
 See `gbp-monitor/README.md` for scraper-specific setup:

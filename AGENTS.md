@@ -13,8 +13,8 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `609700a`
-  (2026-08-19, "docs: defer GitHub Actions verification (no remote configured)"). **51 commits total.**
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `ac5f70b`
+  (2026-08-19, "docs: add consolidated Testing section to README with all test suites + backup discipline"). **52 commits total.** **Tag: `v0.2.0`** (moved from old pre-convergence commit).
 - **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).

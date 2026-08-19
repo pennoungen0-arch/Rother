@@ -7,6 +7,14 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-19T21:30:00+07:00
+- **Files:** `README.md` (Testing section), `gbp-monitor/CHANGELOG.md`, `AGENTS.md`
+- **Change:** Git tag `v0.2.0` moved to current HEAD (`ac5f70b`, 52 commits) to reflect the complete converged product state: all 8 milestones + convergence (Phases 0–3) + post-convergence hardening (per-feature e2e 28/28, types consolidated, live webhook/SMTP delivery proven, hours_status documented). Old tag was at `afe1785` (pre-convergence dashboard hardening only).
+- **Reason:** Version the complete converged + hardened release so it can be referenced and (eventually) pushed to a remote.
+- **Status:** PROVEN — all test suites green (vitest 103/103, tsc 0, eslint 0/4, e2e 30/30, build OK), docs complete.
+
+---
+
 ## 2026-08-19T18:15:00+07:00
 - **Files:** `src/app/globals.css` (reduced-motion), `src/lib/gbp/run-summary.ts` (new — extracted `normalizeRunSummary`), `src/app/api/overview/route.ts` (import extracted helper), `src/lib/gbp/sanitize.test.ts`, `validate.test.ts`, `geocode.test.ts`, `format.test.ts`, `src/lib/categories.test.ts`, `src/lib/app-mode.test.ts` (new vitest suites), `.github/workflows/ci.yml` (new `dashboard` job: tsc/vitest/eslint/build), `package.json` (+`@playwright/test`, `test:e2e` script), `playwright.config.ts` (new), `e2e/smoke.spec.ts` (new — login → run gate → hub → Leaderboard + KPI dataset), `vitest.config.mjs` (exclude `e2e/`)
 - **Change:** Convergence Phase 3 hardening. (1) `prefers-reduced-motion` override added to `globals.css`. (2) `normalizeRunSummary` extracted from the overview route into `src/lib/gbp/run-summary.ts` for unit testing. (3) vitest coverage expanded 34 → **103 tests** (new run-summary/sanitize/validate/geocode/format/categories/app-mode suites). (4) Playwright e2e added: fixed-mode smoke (login → run gate → hub → Leaderboard renders) + KPI dataset check (5001 reviews / 12 competitors from committed production data), passing against the dev server. (5) CI gained a `dashboard` job (typecheck/unit tests/lint/build) mirroring the local gate.

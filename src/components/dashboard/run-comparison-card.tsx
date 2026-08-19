@@ -29,20 +29,11 @@ import {
 
 import { EmptyState } from "./empty-state";
 import { formatTimestamp } from "@/lib/gbp/format";
-import type { HistoryResponse } from "@/lib/gbp/types";
+import type { HistoryResponse, CompetitorDiff } from "@/lib/gbp/types";
 
 interface RunComparisonCardProps {
   /** Bump to force a refetch. */
   refreshKey?: number;
-}
-
-interface CompetitorDiff {
-  competitor_id: string;
-  competitor_name: string;
-  branch_name: string;
-  countA: number; // new reviews in run A (0 if absent)
-  countB: number; // new reviews in run B (0 if absent)
-  delta: number; // countB - countA
 }
 
 /**

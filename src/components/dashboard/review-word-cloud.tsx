@@ -22,16 +22,11 @@ import {
 } from "@/components/ui/tooltip";
 
 import { EmptyState } from "./empty-state";
-import type { Review } from "@/lib/gbp/types";
+import type { Review, WordEntry } from "@/lib/gbp/types";
 
 interface ReviewWordCloudProps {
   /** Bump to force a refetch. */
   refreshKey?: number;
-}
-
-interface WordEntry {
-  word: string;
-  count: number;
 }
 
 // Common English stopwords to filter out. Not AI — just a static list.

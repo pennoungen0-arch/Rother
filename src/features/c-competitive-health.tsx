@@ -23,34 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useAppState } from "@/lib/app-state";
-
-interface BranchHealth {
-  branch_id: string;
-  branch_name: string;
-  competitorCount: number;
-  nearestM: number | null;
-  densityPerKm2: number | null;
-  enriched: number;
-}
-
-interface HealthResponse {
-  discoveredAt: string | null;
-  hasCompetitors: boolean;
-  source: "osm" | "none";
-  osmMined: number;
-  totals: {
-    competitors: number;
-    branches: number;
-    nearestM: number | null;
-    densityPerKm2: number | null;
-    enriched: number;
-    enrichedPct: number;
-  };
-  branches: BranchHealth[];
-  correlationAvailable: boolean;
-  health: { level: string; success: number; failed: number; skipped: number } | null;
-  dataStatus: string;
-}
+import type { BranchHealth, HealthResponse } from "@/lib/gbp/types";
 
 function fmtDist(m: number | null): string {
   if (m === null) return "—";

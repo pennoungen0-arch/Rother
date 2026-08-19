@@ -16,18 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { EmptyState } from "./empty-state";
-import type { Review } from "@/lib/gbp/types";
+import type { Review, LangEntry } from "@/lib/gbp/types";
 
 interface ReviewLanguageDistributionProps {
   /** Bump to force a refetch. */
   refreshKey?: number;
-}
-
-interface LangEntry {
-  code: string;
-  label: string;
-  count: number;
-  color: string;
 }
 
 /**

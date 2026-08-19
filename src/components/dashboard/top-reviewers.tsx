@@ -24,23 +24,11 @@ import {
 import { StarRating } from "./star-rating";
 import { EmptyState } from "./empty-state";
 import { cleanReviewerName } from "@/lib/gbp/format";
-import type { Review } from "@/lib/gbp/types";
+import type { Review, ReviewerEntry } from "@/lib/gbp/types";
 
 interface TopReviewersProps {
   /** Bump to force a refetch. */
   refreshKey?: number;
-}
-
-interface ReviewerEntry {
-  name: string;
-  reviewCount: number;
-  avgRating: number;
-  ratingSum: number;
-  ratingCount: number;
-  competitors: Set<string>;
-  branches: Set<string>;
-  latestDate: string | null;
-  reviewIds: string[];
 }
 
 /**

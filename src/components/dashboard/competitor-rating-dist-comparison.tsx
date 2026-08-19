@@ -26,18 +26,10 @@ import {
 } from "recharts";
 
 import { EmptyState } from "./empty-state";
+import type { RatingDistResponse } from "@/lib/gbp/types";
 
 interface CompetitorRatingDistComparisonProps {
   refreshKey?: number;
-}
-
-interface RatingDistResponse {
-  competitors: Array<{
-    competitor_id: string;
-    name: string;
-    branch_name: string;
-    distribution: number[];
-  }>;
 }
 
 const RATING_COLORS = [

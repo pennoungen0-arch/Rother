@@ -21,28 +21,11 @@ import {
 } from "@/components/ui/tooltip";
 
 import { EmptyState } from "./empty-state";
-import type { CompetitorStats } from "@/lib/gbp/types";
+import type { CompetitorStats, GrowthEntry } from "@/lib/gbp/types";
 
 interface CompetitorGrowthRateProps {
   data: CompetitorStats[] | null;
   loading: boolean;
-}
-
-interface GrowthEntry {
-  competitor_id: string;
-  name: string;
-  branch_name: string;
-  total_reviews: number;
-  new_reviews_count: number;
-  last_scraped_at: string | null;
-  /** Days since the first scrape (using last_scraped_at as a proxy — we
-   * don't track first_scrape separately, so this is "days since the most
-   * recent scrape" which approximates the monitoring period). */
-  days_monitored: number;
-  /** Reviews per day = total_reviews / days_monitored. 0 if no data. */
-  reviews_per_day: number;
-  /** Growth rate category for color coding. */
-  level: "high" | "medium" | "low" | "none";
 }
 
 function computeGrowth(comp: CompetitorStats): GrowthEntry | null {

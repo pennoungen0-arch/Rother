@@ -545,3 +545,115 @@ export interface GeoGridResponse {
     cells: GeoGridCell[];
   };
 }
+
+/** Competitor correlation matrix — returned by GET /api/competitor-correlation */
+export interface CompetitorInfo {
+  competitor_id: string;
+  name: string;
+  branch_name: string;
+  distribution: number[];
+}
+
+export interface CorrelationData {
+  competitors: CompetitorInfo[];
+  matrix: number[][];
+  maxCompetitors: number;
+}
+
+/** Rating distribution comparison — returned by GET /api/rating-dist-comparison */
+export interface RatingDistResponse {
+  competitors: Array<{
+    competitor_id: string;
+    name: string;
+    branch_name: string;
+    distribution: number[];
+  }>;
+}
+
+/** Competitor growth rate entry — computed from CompetitorStats */
+export interface GrowthEntry {
+  competitor_id: string;
+  name: string;
+  branch_name: string;
+  total_reviews: number;
+  new_reviews_count: number;
+  last_scraped_at: string | null;
+  days_monitored: number;
+  reviews_per_day: number;
+  level: "high" | "medium" | "low" | "none";
+}
+
+/** Language distribution entry — returned by GET /api/review-language */
+export interface LangEntry {
+  code: string;
+  label: string;
+  count: number;
+  color: string;
+}
+
+/** Recency heatmap day cell — computed from history data */
+export interface DayCell {
+  date: Date;
+  dateStr: string; // YYYY-MM-DD
+  newReviews: number;
+  runs: number;
+}
+
+/** Word cloud entry — computed from review text */
+export interface WordEntry {
+  word: string;
+  count: number;
+}
+
+/** Top reviewer entry — computed from reviews */
+export interface ReviewerEntry {
+  name: string;
+  reviewCount: number;
+  avgRating: number;
+  ratingSum: number;
+  ratingCount: number;
+  competitors: Set<string>;
+  branches: Set<string>;
+  latestDate: string | null;
+  reviewIds: string[];
+}
+
+/** Run comparison competitor diff — returned by GET /api/history/compare */
+export interface CompetitorDiff {
+  competitor_id: string;
+  competitor_name: string;
+  branch_name: string;
+  countA: number;
+  countB: number;
+  delta: number;
+}
+
+/** Competitive health branch data — returned by GET /api/competitive-health */
+export interface BranchHealth {
+  branch_id: string;
+  branch_name: string;
+  competitorCount: number;
+  nearestM: number | null;
+  densityPerKm2: number | null;
+  enriched: number;
+}
+
+/** Competitive health response — returned by GET /api/competitive-health */
+export interface HealthResponse {
+  discoveredAt: string | null;
+  hasCompetitors: boolean;
+  source: "osm" | "none";
+  osmMined: number;
+  totals: {
+    competitors: number;
+    branches: number;
+    nearestM: number | null;
+    densityPerKm2: number | null;
+    enriched: number;
+    enrichedPct: number;
+  };
+  branches: BranchHealth[];
+  correlationAvailable: boolean;
+  health: { level: string; success: number; failed: number; skipped: number } | null;
+  dataStatus: string;
+}

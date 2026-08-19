@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { EmptyState } from "./empty-state";
-import type { HistoryResponse } from "@/lib/gbp/types";
+import type { HistoryResponse, DayCell } from "@/lib/gbp/types";
 
 interface ReviewRecencyHeatmapProps {
   /** Bump to force a refetch. */
@@ -31,13 +31,6 @@ interface ReviewRecencyHeatmapProps {
 
 const WEEKS = 13; // ~3 months
 const DAYS = WEEKS * 7;
-
-interface DayCell {
-  date: Date;
-  dateStr: string; // YYYY-MM-DD
-  newReviews: number;
-  runs: number;
-}
 
 function computeLevel(count: number): number {
   if (count === 0) return 0;

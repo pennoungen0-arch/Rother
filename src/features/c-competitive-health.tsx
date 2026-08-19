@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useAppState } from "@/lib/app-state";
-import type { BranchHealth, HealthResponse } from "@/lib/gbp/types";
+import type { HealthResponse } from "@/lib/gbp/types";
 
 function fmtDist(m: number | null): string {
   if (m === null) return "—";

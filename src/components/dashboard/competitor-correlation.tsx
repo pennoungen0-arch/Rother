@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { EmptyState } from "./empty-state";
-import type { CompetitorInfo, CorrelationData } from "@/lib/gbp/types";
+import type { CorrelationData } from "@/lib/gbp/types";
 
 interface CompetitorCorrelationProps {
   refreshKey?: number;

@@ -13,8 +13,8 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `7ed960c`
-  (2026-08-19, "feat: convergence Phase 3 - hardening (reduced-motion, 103 tests, playwright e2e, CI dashboard job)"). **39 commits total.**
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `219d86b`
+  (2026-08-19, "feat: consolidate duplicate types into src/lib/gbp/types.ts"). **40 commits total.**
 - **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).
@@ -130,6 +130,9 @@ From repo root:
   build/test (tsconfig, vitest, eslint ignores).** Do NOT commit it; do NOT treat
   its errors as regressions. `imagetest/` is a leftover screenshot artifact
   (ignore). See `docs/engineering/CONVERGENCE_PLAN.md` + `ROTHER02_ANALYSIS.md`.
+- **Post-convergence hardening plan:** `docs/engineering/POST_CONVERGENCE_PLAN.md`
+  covers per-feature e2e (28 features), type consolidation, and UNPROVEN items
+  (webhook/SMTP, GitHub Actions, hours_status).
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

@@ -105,7 +105,10 @@ Remaining:
 
 **Remaining Phase 2 items:** per-feature browser check of all 28 features against
 v1 production data; promote duplicated local interfaces (CorrelationData,
-RatingDistResponse, HealthResponse) into `types.ts`.
+RatingDistResponse, HealthResponse, GrowthRateEntry, etc.) into `types.ts`.
+
+> **These are now tracked in** `POST_CONVERGENCE_PLAN.md` **§1–2** (with UNPROVEN
+> items §3).
 
 ### Phase 3 — Polish + Hardening ✅ PARTIAL (2026-08-19)
 - [x] Command palette (Cmd+K) searching all 28 features — already existed (audit-confirmed)
@@ -118,7 +121,8 @@ RatingDistResponse, HealthResponse) into `types.ts`.
       (login → run gate → hub → feature data; KPI dataset) passing against dev server
 - [x] Update CI: added `dashboard` job to GitHub Actions (tsc, vitest, eslint, build)
 - [ ] Remaining: per-feature browser check of all 28 features (e2e covers 2); promote
-      duplicated local interfaces into `types.ts`
+      duplicated local interfaces into `types.ts` — **tracked in
+      `POST_CONVERGENCE_PLAN.md` §1–2**
 
 ### Phase 4 — Optional: Onboarding + Discovery (future)
 - [ ] Real OAuth (Google) replacing mock login

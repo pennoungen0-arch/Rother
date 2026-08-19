@@ -19,16 +19,12 @@ State/version knowledge for AI agents (and humans) working on this repo.
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).
   No open roadmap items remain.
-- **Two versions exist:** this repo's `src/`+`gbp-monitor/` is v1
-  (multi-competitor monitoring, proven/certified pipeline, tabbed dashboard);
-  `rother02/` is v2 (single-business UX-first rewrite: login → onboarding →
-  run gate → 4 hubs, 28 lazy features, Cmd+K palette, geo-grid, discovery;
-  Tauri scaffold). Full reference: `docs/engineering/ROTHER02_ANALYSIS.md`.
-  v1 = proven pipeline; v2 = superior UI/UX. They complement each other.
-- **Active convergence plan:** `docs/engineering/CONVERGENCE_PLAN.md` — hybrid
-  approach: Phase 1 ports v2 shell (hubs, palette, 28 features) onto v1's
-  certified scraper + multi-competitor model; Phase 2 adds optional onboarding
-  + discovery. `rother02/` will be archived once migration starts.
+- **Convergence status — Phase 0 DONE (2026-08-17):** `src/` is now the **v2
+  shell** (AppShell: login → onboarding → run gate → 4 hubs → 28 lazy features,
+  Cmd+K palette, geo-grid, discovery, Bali oklch design system) wired to v1's
+  certified pipeline. `gbp-monitor/` untouched. `rother02/` archived →
+  `rother02-archive/` (untracked, excluded from build/test). Reference:
+  `docs/engineering/CONVERGENCE_PLAN.md` + `ROTHER02_ANALYSIS.md`.
 
 ## Repo layout
 
@@ -44,12 +40,14 @@ State/version knowledge for AI agents (and humans) working on this repo.
 │   ├── data/             # snapshots/, reviews_new/, run_summary.json, run.log (partly gitignored)
 │   ├── tests/            # verify_baseline.py, verify_notifications.py, verify_variant_framework.py, fixtures/
 │   └── docs/engineering/ # CURRENT_STATE, SELECTOR_CERTIFICATION, PROJECT_SUMMARY, DOM_AUDIT...
-├── src/                  # Next.js 16 dashboard (App Router, shadcn/ui, Recharts)
-│   ├── app/api/          # overview, branches, reviews, new-reviews, alerts, config/...
+├── src/                  # Next.js 16 dashboard (v2 shell: AppShell, hubs, 28 features, palette)
+│   ├── app/api/          # 29 routes (v1 core + new-reviews + v2: geo-grid, discover, competitive-health...)
+│   ├── components/shell/ # AppShell, LoginScreen, Onboarding, RunScreen, Hub, SectionView, FeaturePage
 │   ├── components/dashboard/
-│   └── lib/gbp/          # server-data.ts, types.ts, format.ts
+│   ├── features/         # i-*, r-*, c-*, t-* lazy feature pages
+│   └── lib/gbp/          # server-data.ts, types.ts, format.ts, use-api-query.ts
 ├── prisma/               # SQLite scaffold only — NOT used by dashboard runtime
-├── rother02/             # v2 (untracked, to be archived) — see docs/engineering/ROTHER02_ANALYSIS.md
+├── rother02-archive/     # v2 reference (untracked, excluded from build/test) — see CONVERGENCE_PLAN.md
 ├── docs/                 # repo-level docs (engineering/, product/, management/...)
 │   └── engineering/
 │       ├── CONVERGENCE_PLAN.md    # active migration strategy (v1 scraper + v2 shell)
@@ -91,9 +89,9 @@ From repo root:
 
 | Command | Count | Notes |
 |---|---|---|
-| `npx vitest run` | 77/77 | 4 files |
-| `npx tsc --noEmit` | 0 `src/` errors | `rother02/` errors are pre-existing; dir is excluded/ignored |
-| `npx eslint src` | exit 0 | |
+| `npx vitest run` | 34/34 | 2 files (src/lib/gbp); archive excluded |
+| `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
+| `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
 
 > **IMPORTANT — `data/` backup discipline.** `tests/verify_baseline.py` deletes
 > `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13
@@ -113,16 +111,10 @@ From repo root:
 
 ## Working conventions / gotchas
 
-- **`rother02/` is v2 — keep, don't commit, don't treat as regressions.** It is
-  intentionally in-repo as the second (UX-first) version; its `tsc` errors are
-  pre-existing and excluded from v1's checks. `imagetest/` is a leftover
-  screenshot artifact (ignore). See `docs/engineering/ROTHER02_ANALYSIS.md`.
-  - Run v2: `cd rother02 && npm install && npm run dev` (port 3000 conflicts
-    with v1). Windows fix (2026-08-17): `lightningcss-linux-x64-gnu` moved to
-    `optionalDependencies` in `rother02/package.json`.
-  - **Migration target:** `rother02/` will be archived once Phase 0 of
-    `docs/engineering/CONVERGENCE_PLAN.md` starts (copy shell to `src/`,
-    merge deps, delete `rother02/`).
+- **`rother02-archive/` is the archived v2 reference — untracked, excluded from
+  build/test (tsconfig, vitest, eslint ignores).** Do NOT commit it; do NOT treat
+  its errors as regressions. `imagetest/` is a leftover screenshot artifact
+  (ignore). See `docs/engineering/CONVERGENCE_PLAN.md` + `ROTHER02_ANALYSIS.md`.
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

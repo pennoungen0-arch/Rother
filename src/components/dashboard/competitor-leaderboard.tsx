@@ -26,8 +26,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { StarRating } from "./star-rating";
 import { EmptyState } from "./empty-state";
-import { shortBranchName } from "@/lib/gbp/format";
 import type { CompetitorStats } from "@/lib/gbp/types";
+
+/** Config-driven competitor cap. Override via MAX_COMPETITORS env (0 = no cap). */
+const MAX_COMPETITORS = (() => {
+  const raw = process.env.MAX_COMPETITORS;
+  if (raw === undefined || raw.trim() === "") return 12;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 12;
+})();
 
 interface CompetitorLeaderboardProps {
   data: CompetitorStats[] | null;
@@ -73,8 +80,13 @@ export function CompetitorLeaderboard({
       }
       return sortDir === "desc" ? -diff : diff;
     });
-    return sorted.slice(0, 12);
+    return sorted.slice(0, MAX_COMPETITORS);
   }, [data, sortKey, sortDir]);
+
+  const maxReviews = React.useMemo(
+    () => sorted.reduce((m, c) => Math.max(m, c.total_reviews), 0),
+    [sorted],
+  );
 
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -176,16 +188,19 @@ export function CompetitorLeaderboard({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <ol className="space-y-1">
-          {sorted.map((comp, idx) => (
-            <LeaderboardRow
-              key={comp.competitor_id}
-              comp={comp}
-              rank={idx + 1}
-              sortKey={sortKey}
-            />
-          ))}
-        </ol>
+        <div className="max-h-[calc(100dvh-12rem)] overflow-y-auto gbp-scrollbar-lg pr-1">
+          <ol className="space-y-1">
+            {sorted.map((comp, idx) => (
+              <LeaderboardRow
+                key={comp.competitor_id}
+                comp={comp}
+                rank={idx + 1}
+                sortKey={sortKey}
+                maxReviews={maxReviews}
+              />
+            ))}
+          </ol>
+        </div>
       </CardContent>
     </Card>
   );
@@ -195,12 +210,14 @@ function LeaderboardRow({
   comp,
   rank,
   sortKey,
+  maxReviews,
 }: {
   comp: CompetitorStats;
   rank: number;
   sortKey: SortKey;
+  maxReviews: number;
 }) {
-  const shortBranch = shortBranchName(comp.branch_name);
+  const shortBranch = comp.branch_name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim();
   const medalClass =
     rank === 1
       ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
@@ -246,18 +263,15 @@ function LeaderboardRow({
         <div className="truncate text-[10px] text-muted-foreground">
           {shortBranch}
         </div>
-        {comp.business_metadata && (
-          <div className="truncate text-[10px] text-muted-foreground/80">
-            {[
-              comp.business_metadata.category,
-              comp.business_metadata.address,
-              comp.business_metadata.phone,
-              comp.business_metadata.website,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </div>
-        )}
+        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-1 rounded-full bg-primary/60"
+            style={{
+              width: maxReviews > 0 ? `${(comp.total_reviews / maxReviews) * 100}%` : "0%",
+            }}
+            title={`${comp.total_reviews} total reviews`}
+          />
+        </div>
       </div>
 
       {/* Star rating (compact) */}

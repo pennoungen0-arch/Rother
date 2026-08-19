@@ -95,30 +95,6 @@ export function parseRelativeDate(
   return null;
 }
 
-/**
- * Shorten a branch display name by removing the chain prefix segment.
- * Branch names follow the "Chain - Location" convention (e.g.
- * "Copenhagen Bali - Seminyak"); the location segment is what distinguishes
- * branches in charts/leaderboards. Keeps the LAST " - " segment.
- */
-export function shortBranchName(name: string | null | undefined): string {
-  if (!name) return "";
-  const parts = name.split(/\s*-\s*/).filter(Boolean);
-  if (parts.length <= 1) return name.trim();
-  return parts[parts.length - 1].trim();
-}
-
-/**
- * Shorten a branch/competitor id by stripping the chain prefix segment.
- * Ids follow "<prefix>-<location>" (e.g. "cph-seminyak"); the segment after
- * the first dash is the readable part. Keeps everything after the first dash.
- */
-export function shortBranchId(id: string | null | undefined): string {
-  if (!id) return "";
-  const idx = id.indexOf("-");
-  return idx >= 0 ? id.slice(idx + 1).trim() : id.trim();
-}
-
 /** Truncate text to ~max chars, adding an ellipsis. */
 export function truncate(text: string | null | undefined, max = 120): string {
   if (!text) return "";

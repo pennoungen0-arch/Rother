@@ -1,12 +1,16 @@
 import { spawn, spawnSync, execSync, type ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import {
   GBP_ROOT,
+  GBP_DATA_DIR,
   GBP_LISTINGS_PATH,
   GBP_RUN_SUMMARY_PATH,
+  businessDataDir,
 } from "./paths";
-import type { RunSummary } from "./types";
+import { readActiveBusiness, readJsonFile } from "./server-data";
+import type { CategoryScanResponse, RunSummary } from "./types";
 import { sanitizeErrorMessage } from "./sanitize";
 
 const _IS_WIN = process.platform === "win32";
@@ -92,9 +96,13 @@ function findPython(): { executable: string; version: string } | null {
 async function countCompetitors(): Promise<number> {
   try {
     const buf = await fs.readFile(GBP_LISTINGS_PATH, "utf-8");
-    const data = JSON.parse(buf) as { branches: { competitors: unknown[] }[] };
+    const data = JSON.parse(buf) as {
+      branches?: { competitors: unknown[] }[];
+      businesses?: { branches?: { competitors: unknown[] }[] }[];
+    };
+    const branches = data.businesses?.[0]?.branches ?? data.branches ?? [];
     let total = 0;
-    for (const branch of data.branches ?? []) {
+    for (const branch of branches) {
       total += (branch.competitors ?? []).length;
     }
     return total || 1;
@@ -136,7 +144,11 @@ function extractProgress(lines: string[]): {
 } {
   for (const line of [...lines].reverse()) {
     const parsed = parseJsonlog(line);
-    if (parsed?.stage === "listing_result" && parsed.progress) {
+    if (
+      (parsed?.stage === "listing_result" ||
+        parsed?.stage === "collection_progress") &&
+      parsed.progress
+    ) {
       const parts = parsed.progress.split("/");
       if (parts.length === 2) {
         const completed = parseInt(parts[0], 10);
@@ -154,6 +166,82 @@ const PROCESS_TIMEOUT_MS = parseInt(
   process.env.SCRAPER_TIMEOUT_MS ?? "600000",
   10,
 );
+
+/**
+ * P1 / RISK-024 — run a category discovery scan and return the parsed result.
+ *
+ * Spawns `python -m orchestration.run_all --category-scan ...`, waits for the
+ * process to finish (the Python side writes `<data-dir>/category_scan/
+ * latest.json`), then reads that file. Scoped to the active business's data
+ * dir via `ROTHER_DATA_DIR`, consistent with the scrape runner.
+ *
+ * `mode` selects the acquisition path:
+ *   - "fixtures" (default) — read tests/fixtures HTML, no browser/network.
+ *   - "cached"   — replay the raw HTML from the last live run (offline).
+ *   - "live"     — launch headless Chromium against Google Maps.
+ * `fixtures` is retained for backward compatibility (an explicit `mode` wins).
+ */
+export async function runCategoryScan(input: {
+  category: string;
+  location?: string;
+  fixtures?: boolean;
+  mode?: "fixtures" | "cached" | "live";
+  businessId?: string;
+}): Promise<CategoryScanResponse> {
+  const python = findPython();
+  if (!python) {
+    throw new Error("No Python executable found. Tried: python3, python.");
+  }
+
+  const mode: "fixtures" | "cached" | "live" =
+    input.mode ?? (input.fixtures ? "fixtures" : "live");
+
+  const id = input.businessId;
+  const dataDir = id ? businessDataDir(id) : GBP_DATA_DIR;
+
+  const args = [
+    "-m",
+    "orchestration.run_all",
+    "--category-scan",
+    "--category",
+    input.category,
+  ];
+  if (input.location) args.push("--location", input.location);
+  if (mode === "fixtures") args.push("--fixtures");
+  else if (mode === "cached") args.push("--cached");
+
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(python.executable, args, {
+      cwd: GBP_ROOT,
+      env: { ...process.env, ROTHER_DATA_DIR: dataDir },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    proc.stderr?.on("data", (c: Buffer) => (stderr += c.toString()));
+    proc.on("error", reject);
+    proc.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Category scan exited with code ${code}: ${stderr.slice(-1000)}`));
+    });
+  });
+
+  const scanDir = path.join(dataDir, "category_scan");
+  const latest = await readJsonFile<string | null>(
+    path.join(scanDir, "latest.json"),
+    null,
+  );
+  if (!latest) {
+    throw new Error("Category scan produced no output file.");
+  }
+  const result = await readJsonFile<CategoryScanResponse | null>(
+    path.join(scanDir, latest),
+    null,
+  );
+  if (!result) {
+    throw new Error("Category scan output could not be read.");
+  }
+  return result;
+}
 
 const MAX_STDOUT_LINES = 10_000;
 const MAX_STDERR_LINES = 5_000;
@@ -193,15 +281,44 @@ class ScrapeRunManager {
 
     const runId = randomUUID().slice(0, 8);
 
-    const args =
-      mode === "live"
-        ? ["-m", "orchestration.run_all"]
-        : ["-m", "orchestration.run_all", "--fixtures"];
+    // P2 / RISK-024 — tenant scoping: point the orchestrator at the active
+    // business's data dir so its snapshots/deltas/run_summary are isolated.
+    const active = await readActiveBusiness();
+    const dataDir = active?.id
+      ? businessDataDir(active.id)
+      : GBP_DATA_DIR;
+    const env = { ...process.env, ROTHER_DATA_DIR: dataDir };
+
+    // Single-path product scraper: `python -m orchestration.run_all
+    // --business <place_id> --max-reviews 100 [--session <path>]`.
+    // The active business must carry a real place_id (otherwise the Python
+    // side refuses with NEED_SESSION-style honesty).
+    const args = ["-m", "orchestration.run_all"];
+    const placeId =
+      (active as { gmaps_place_id?: string } | null)?.gmaps_place_id ??
+      (active as { place_id?: string } | null)?.place_id ??
+      (active as { placeId?: string } | null)?.placeId ??
+      null;
+    if (mode === "live") {
+      if (placeId) {
+        args.push("--business", placeId);
+      } else {
+        args.push("--business", "");
+      }
+      args.push("--max-reviews", "100");
+      const session =
+        process.env.GBP_MONITOR_STORAGE_STATE ??
+        process.env.GBP_MONITOR_COOKIES_FILE;
+      if (session) args.push("--session", session);
+    } else {
+      args.push("--fixtures");
+    }
 
     const totalCompetitors = await countCompetitors();
 
     const proc = spawn(python.executable, args, {
       cwd: GBP_ROOT,
+      env,
       stdio: ["ignore", "pipe", "pipe"],
     });
 

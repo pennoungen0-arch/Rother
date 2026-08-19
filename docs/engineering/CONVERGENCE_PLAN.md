@@ -30,27 +30,32 @@ rother (single repo)
 │   ├── harness/                 # stale-NID guard, probes, scroll capture
 │   ├── parser/, storage/, notifications/ — all proven
 │   └── data/                    # snapshots/, reviews_new/, run_summary.json
-├── src/                         # NEW: v2-shell-based dashboard (replaces current src/)
+├── src/                         # CONVERGED: v2-shell dashboard wired to v1 pipeline (Phase 0 done)
 │   ├── components/shell/        # AppShell, LoginScreen, Onboarding, RunScreen, Hub, SectionView, FeaturePage
 │   ├── lib/features.tsx         # 28 feature registry (adapted to v1 data shapes)
 │   ├── lib/app-state.tsx        # useSyncExternalStore + localStorage (single-business or multi-competitor mode)
 │   ├── lib/gbp/use-api-query.ts # TanStack Query hitting v1 API routes
 │   ├── features/                # i-*, r-*, c-*, t-* lazy feature pages (adapted)
-│   └── app/api/                 # proxy/transform v1 API or direct file reads
+│   └── app/api/                 # 29 routes (v1 core + new-reviews + v2 extras)
 ├── docs/engineering/            # CONVERGENCE_PLAN.md, ROTHER02_ANALYSIS.md, etc.
-└── rother02/                    # ARCHIVE — reference only, no longer run
+└── rother02-archive/            # ARCHIVE — reference only, excluded from build/test
 ```
 
 ---
 
 ## 3. Migration Phases
 
-### Phase 0 — Prep (1 day)
-- [ ] Archive `rother02/` → `rother02-archive/` (git mv, keep history) or tag `v2-reference`
-- [ ] Create new `src/` from v2 shell (copy `rother02/src` → `src`)
-- [ ] Remove Tauri (`src-tauri/`) from new `src/` for now (add back later if needed)
-- [ ] Update `package.json` deps: merge v1 + v2 deps, resolve conflicts
-- [ ] Verify `npm install && npm run dev` works on :3000
+### Phase 0 — Prep ✅ DONE (2026-08-17)
+- [x] Archive `rother02/` → `rother02-archive/` (renamed, untracked, excluded
+      from tsconfig/vitest/gitignore; `imagetest/` also ignored)
+- [x] Copy `rother02/src` → `src/` (wholesale — v2 shell is a superset of v1 UI)
+- [x] Remove Tauri (`src-tauri/` stays only in archive; no tauri dep in package.json)
+- [x] Merge `package.json` deps (Tailwind v3 stack, leaflet, optional lightningcss)
+- [x] Fix 2 pre-existing tsc errors (tailwind oklch typing, `gmaps_place_id`)
+- [x] Restore `/api/new-reviews` + new-reviews types (dropped by wholesale copy)
+- [x] Verify `npm install && npm run dev` on :3000 + tsc/vitest/eslint green
+      (34/34 tests, 0 tsc errors, eslint exit 0; `/api/overview` = 5,021 reviews)
+- [ ] Remaining: `data/`-backup discipline unchanged; run full Python suite at next milestone
 
 ### Phase 1 — Shell + Data Wiring (3–5 days)
 - [ ] **AppShell** — keep gated flow (login → onboarding → run gate → hubs) but:

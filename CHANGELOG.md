@@ -1,5 +1,40 @@
 # Changelog — Rother
 
+## Phase 0 (2026-08-17) — Convergence kickoff
+
+### Added
+- **Converged dashboard: v2 shell wired to v1 pipeline.** Copied `rother02/src`
+  (AppShell: login → onboarding → run gate → 4 hubs → 28 lazy features, Cmd+K
+  palette, geo-grid, discovery, Bali oklch design system) into `src/`, replacing
+  the v1 tabbed dashboard. `gbp-monitor/` (certified scraper) untouched.
+- Restored `/api/new-reviews` (v1 route absent from v2 shell) + re-added
+  `NewReviewsResponse`/`NewReviewGroup`/`NewReviewsRun` types to `types.ts`.
+- `rother02/` archived → `rother02-archive/` (untracked, excluded from
+  tsconfig/vitest/gitignore). `tsconfig.json`, `vitest.config.mjs`, `.gitignore`
+  updated accordingly.
+- `package.json` deps merged: adopted Tailwind v3 stack (tailwindcss,
+  autoprefixer, postcss, tailwindcss-animate), added leaflet + @types/leaflet
+  (geo-grid), kept `lightningcss-linux-x64-gnu` in `optionalDependencies`
+  (Windows-safe), dropped Tauri CLI + v4-only deps.
+- `next.config.ts` updated: OSM tile URLs added to CSP (geo-grid), turbopack
+  root set. `postcss.config.mjs`/`tailwind.config.ts`/`components.json` now from
+  v2 (oklch palette, Geist fonts).
+- `tailwind.config.ts` oklch opacity-function colors typed via
+  `ResolvableTo<RecursiveKeyValuePair>` cast (Tailwind v3 rejects the function
+  form in types); fixed `CompetitorConfig.gmaps_place_id` type in `types.ts`.
+- `docs/engineering/CONVERGENCE_PLAN.md` — full 4-phase migration strategy.
+
+### Verified (Rule 1)
+- `npx vitest run` → 2 files / 34 tests pass (active `src/` only; archive
+  excluded).
+- `npx tsc --noEmit` → 0 errors (0 `src/` errors).
+- `npx eslint src` → exit 0 (0 errors, 4 pre-existing warnings).
+- `npm run dev` → Next.js 16.2.11 on :3000; `/`, `/api/overview` (5,021
+  reviews), `/api/new-reviews`, `/api/history`, `/api/branches`,
+  `/api/geo-grid`, `/api/competitive-health` all HTTP 200 with production data.
+- `python -m tests.verify_variant_framework` → 32/32 (gbp-monitor unchanged,
+  0 diff).
+
 ## Unreleased (2026-08-17)
 
 ### Added

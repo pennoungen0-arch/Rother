@@ -6,14 +6,14 @@ import type {
   RatingDistribution,
 } from "@/lib/gbp/types";
 import {
+  assessDataStatus,
+  readActiveBusiness,
   readAllSnapshots,
-  readAllBusinessMetadata,
   readLatestDelta,
   readListings,
   readRunSummary,
   readSelectors,
 } from "@/lib/gbp/server-data";
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -33,16 +33,20 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    const [runSummary, selectors, listings, snapshots, businessMetadata] = await Promise.all([
-      readRunSummary(),
+    // P2 / tenant scoping: prefer the active business's OWN branch config.
+    const active = await readActiveBusiness();
+    const id = active?.id;
+    const branchConfig = active?.branches ?? (await readListings()).branches;
+
+    const [runSummary, selectors, snapshots, dataStatus] = await Promise.all([
+      readRunSummary(id),
       readSelectors(),
-      readListings(),
-      readAllSnapshots(),
-      readAllBusinessMetadata(),
+      readAllSnapshots(id),
+      assessDataStatus(id),
     ]);
 
-    const totalBranches = listings.branches.length;
-    const totalCompetitors = listings.branches.reduce(
+    const totalBranches = branchConfig.length;
+    const totalCompetitors = branchConfig.reduce(
       (acc, b) => acc + b.competitors.length,
       0,
     );
@@ -69,7 +73,7 @@ export async function GET() {
     const competitorStats: OverviewResponse["competitorStats"] = [];
     let newReviewsLastRun = 0;
 
-    for (const branch of listings.branches) {
+    for (const branch of branchConfig) {
       let branchCount = 0;
       for (const comp of branch.competitors) {
         const reviews = snapshots.get(comp.competitor_id) ?? [];
@@ -82,7 +86,7 @@ export async function GET() {
             : Math.round(
                 (validRatings.reduce((a, b) => a + b, 0) / validRatings.length) * 100,
               ) / 100;
-        const delta = await readLatestDelta(comp.competitor_id);
+        const delta = await readLatestDelta(comp.competitor_id, id);
         branchCount += delta.length;
         const lastScrapedAt =
           reviews.length > 0
@@ -98,7 +102,7 @@ export async function GET() {
           average_rating: avg,
           new_reviews_count: delta.length,
           last_scraped_at: lastScrapedAt && lastScrapedAt !== "" ? lastScrapedAt : null,
-          business_metadata: businessMetadata.get(comp.competitor_id) ?? null,
+          verified: comp.verified,
         });
       }
       newReviewsLastRun += branchCount;
@@ -130,6 +134,7 @@ export async function GET() {
       ratingDistribution,
       errors: runSummary?.errors ?? [],
       isAlert,
+      dataStatus,
       newReviewsPerBranch,
       competitorStats,
     };

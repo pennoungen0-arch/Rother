@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json(
-    { message: "Hello, world!" },
+    { status: "ok", service: "rother-api" },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/tooltip";
 
 import { EmptyState } from "./empty-state";
-import { shortBranchName } from "@/lib/gbp/format";
 import type { CompetitorStats } from "@/lib/gbp/types";
 
 interface CompetitorGrowthRateProps {
@@ -190,7 +189,10 @@ export function CompetitorGrowthRate({
             const style = LEVEL_STYLES[entry.level];
             const barWidthPct =
               maxRate > 0 ? (entry.reviews_per_day / maxRate) * 100 : 0;
-            const shortBranch = shortBranchName(entry.branch_name);
+            const shortBranch = entry.branch_name.replace(
+              /^Copenhagen Bali\s*-\s*/i,
+              "",
+            ).trim();
             return (
               <motion.li
                 key={entry.competitor_id}

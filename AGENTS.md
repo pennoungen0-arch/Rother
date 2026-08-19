@@ -14,7 +14,7 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
 - **Branch:** `test/m15-1-validation`. **Latest commit:** `319a319`
-  (2026-08-19, "feat: add per-feature e2e coverage for all 28 features"). **42 commits total.**
+  (2026-08-19, "feat: add per-feature e2e coverage for all 28 features"). **47 commits total.**
 - **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).

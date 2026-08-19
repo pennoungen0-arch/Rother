@@ -13,8 +13,8 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `9718cd1`
-  (2026-08-19, "fix: remove unused imports from type consolidation"). **41 commits total.**
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `319a319`
+  (2026-08-19, "feat: add per-feature e2e coverage for all 28 features"). **42 commits total.**
 - **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).
@@ -34,8 +34,10 @@ State/version knowledge for AI agents (and humans) working on this repo.
   `categories`/`app-mode` suites), **Playwright e2e** smoke spec (login → run →
   hubs → feature data) passing against dev server, `prefers-reduced-motion`
   in `globals.css`, and a **`dashboard` CI job** (tsc/vitest/eslint/build).
-  All 28 features are wired to v1 endpoints; per-feature browser check pending
-  (e2e covers 2). `gbp-monitor/` untouched.
+  Post-convergence hardening DONE: types consolidated into `src/lib/gbp/types.ts`
+  (zero duplicates outside it) and a full **per-feature Playwright e2e**
+  (`e2e/features.spec.ts`, 28 features across all 4 hubs + smoke) proves every
+  feature renders real data (`npm run test:e2e` 30/30). `gbp-monitor/` untouched.
   `rother02/` archived → `rother02-archive/` (untracked, excluded from
   build/test). Reference: `docs/engineering/CONVERGENCE_PLAN.md` +
   `ROTHER02_ANALYSIS.md`.
@@ -106,7 +108,7 @@ From repo root:
 | `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
 | `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
-| `npm run test:e2e` | 2/2 | Playwright smoke — needs `npm run dev` running + committed production data |
+| `npm run test:e2e` | 30/30 | Playwright (smoke 2 + per-feature 28) — needs `npm run dev` running + committed production data |
 
 > **IMPORTANT — `data/` backup discipline.** `tests/verify_baseline.py` deletes
 > `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13

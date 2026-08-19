@@ -75,8 +75,8 @@ source of truth; update imports across `src/features/` and `src/components/dashb
 
 ## Success Criteria
 
-- [ ] `e2e/features.spec.ts` covers all 28 features; `npm run test:e2e` 28/28 pass.
-- [ ] Zero duplicate type definitions outside `src/lib/gbp/types.ts`.
+- [x] `e2e/features.spec.ts` covers all 28 features; `npm run test:e2e` 28/28 pass.
+- [x] Zero duplicate type definitions outside `src/lib/gbp/types.ts`.
 - [ ] Webhook + SMTP delivery proven with real endpoints.
 - [ ] GitHub Actions CI green on this branch.
 - [ ] `hours_status` coverage documented.

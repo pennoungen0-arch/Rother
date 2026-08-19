@@ -15,8 +15,16 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-19T19:45:00+07:00
+- **Files:** `e2e/features.spec.ts` (new �?" 28 per-feature tests), `docs/engineering/POST_CONVERGENCE_PLAN.md` (success criteria checkboxes), `AGENTS.md` (version/commit bullets)
+- **Change:** Post-convergence hardening workstream §1 (per-feature browser check) completed. Expanded Playwright e2e from 2 smoke tests to full 28-feature coverage (Insights 6, Reputation 8, Competitors 10, Tools 4). Assertions matched to actual rendered DOM: headings are short labels (h1, e.g. "Leaderboard") with a separate card-title heading (h2) �?" strict-mode safe via `.first()` or level scoping; Growth Rate renders a ranked list (not recharts); Review Recency heatmap images are 0×0 until loaded so tests assert summary text; Alerts shows 13 live alerts (12 delta + 1 selector warning); Discover Competitors shows "Discovery is unavailable in Fixed-list mode"; Geo grid has no coordinates in committed data so asserts "No resolvable coordinates yet" (Leaflet map absent); Export Data uses a single "Open export" dialog button; Rating Distribution Compare emits 6 recharts SVGs (chart + 5 legend icons) �?" asserted `.first()`.
+- **Reason:** Close out the last open hardening item before optional Phase 4; prove every feature renders real data in the browser (not just type-checks).
+- **Status:** PROVEN �?" `npm run test:e2e` 30/30 (smoke 2 + features 28), vitest 103/103, tsc 0 errors, eslint exit 0 (4 pre-existing warnings), `npm run build` standalone OK.
+
+---
+
 <!--
-Template — copy this block for each new entry:
+Template �?" copy this block for each new entry:
 
 ## YYYY-MM-DDTHH:MM:SS+08:00
 - **Files:** path/to/file.py (lines X-Y), config/selectors.json

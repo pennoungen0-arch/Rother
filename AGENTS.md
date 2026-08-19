@@ -13,21 +13,26 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `550ee6e`
-  (2026-08-19, "feat: convergence Phase 1 - fixed-list monitoring mode in v2 shell"). **37 commits total.**
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `5ba3fb0`
+  (2026-08-19, "feat: convergence Phase 2 - fixed-mode data-gap fixes"). **38 commits total.**
 - **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).
   No open roadmap items remain.
-- **Convergence status — Phase 1 fixed-list mode DONE (2026-08-19):** `src/` is
+- **Convergence status — Phase 2 data-gap fixes DONE (2026-08-19):** `src/` is
   the **v2 shell** (AppShell, 4 hubs, 28 lazy features, Cmd+K palette, geo-grid,
-  Bali oklch design system) on v1's certified pipeline, now with a **monitoring
-  mode selector** (`fixed` = v1 competitor-list model, default; `discovery` =
+  Bali oklch design system) on v1's certified pipeline, with a **monitoring mode
+  selector** (`fixed` = v1 competitor-list model, default; `discovery` =
   v2 single-business + onboarding). Fixed mode skips Onboarding, POSTs
   `/api/scrape/trigger` with an empty body (no `user-business.json`), and the
-  single-business invariant in `readListings()` was removed. `gbp-monitor/`
-  untouched. `rother02/` archived → `rother02-archive/` (untracked, excluded
-  from build/test). Reference: `docs/engineering/CONVERGENCE_PLAN.md` +
+  single-business invariant in `readListings()` was removed. Phase 2 closed the
+  fixed-mode data gaps: `/api/overview` derives the v2 runSummary contract
+  (`status`/`reviewCount`/`targetCount`) from v1 run_summary; `/api/competitive-health`
+  no longer 409s (tenant-scoped, config-list fallback); c-competitive-health and
+  c-discover gate their discovery UI by mode. All 28 features are wired to v1
+  endpoints; per-feature browser check pending. `gbp-monitor/` untouched.
+  `rother02/` archived → `rother02-archive/` (untracked, excluded from
+  build/test). Reference: `docs/engineering/CONVERGENCE_PLAN.md` +
   `ROTHER02_ANALYSIS.md`.
 
 ## Repo layout

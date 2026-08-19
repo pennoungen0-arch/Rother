@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { useAppState } from "@/lib/app-state";
 
 interface BranchHealth {
   branch_id: string;
@@ -79,6 +80,8 @@ function healthBadge(level: string | undefined): { label: string; cls: string } 
  * health into a single at-a-glance panel.
  */
 export default function CompetitiveHealthFeature() {
+  const { mode } = useAppState();
+  const fixed = mode === "fixed";
   const [health, setHealth] = React.useState<HealthResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [discovering, setDiscovering] = React.useState(false);
@@ -110,7 +113,8 @@ export default function CompetitiveHealthFeature() {
         setError(null);
         let h = await loadHealth();
         // Automatic discovery the first time the business has no competitors.
-        if (!h.hasCompetitors && !autoRan) {
+        // Fixed-list mode never auto-discovers (competitors come from config).
+        if (!fixed && !h.hasCompetitors && !autoRan) {
           setAutoRan(true);
           setDiscovering(true);
           await fetch("/api/competitors/discover?persist=1", { method: "POST" }).catch(() => {});
@@ -124,7 +128,7 @@ export default function CompetitiveHealthFeature() {
         setLoading(false);
       }
     })();
-  }, [loadHealth, autoRan]);
+  }, [loadHealth, autoRan, fixed]);
 
   if (loading && !health) {
     return (
@@ -189,23 +193,27 @@ export default function CompetitiveHealthFeature() {
         <div>
           <h2 className="text-lg font-semibold">Competitive Health</h2>
           <p className="text-sm text-muted-foreground">
-            Automatic OSM discovery fused with correlation readiness and run health.
+            {fixed
+              ? "Health of your configured competitor list fused with run health."
+              : "Automatic OSM discovery fused with correlation readiness and run health."}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={runDiscovery}
-          disabled={discovering}
-          className="shrink-0"
-        >
-          {discovering ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <RefreshCw className="size-4" />
-          )}
-          Re-run discovery
-        </Button>
+        {!fixed && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runDiscovery}
+            disabled={discovering}
+            className="shrink-0"
+          >
+            {discovering ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <RefreshCw className="size-4" />
+            )}
+            Re-run discovery
+          </Button>
+        )}
       </div>
 
       {discovering && (
@@ -214,7 +222,7 @@ export default function CompetitiveHealthFeature() {
         </p>
       )}
 
-      {h?.source === "osm" && (
+      {!fixed && h?.source === "osm" && (
         <Badge variant="outline" className="w-fit bg-emerald-500/10 text-emerald-600">
           Sourced from OpenStreetMap · no scraping required
         </Badge>

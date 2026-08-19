@@ -1,5 +1,39 @@
 # Changelog — Rother
 
+## Phase 2 (2026-08-19) — Feature port data-gap fixes
+
+### Added
+- **v2 runSummary contract from v1 data.** `/api/overview` now derives
+  `status`/`reviewCount`/`targetCount` from v1 `run_summary.json`
+  (`success`/`failed`/`total_reviews`/`total_competitors`) so v2 consumers
+  (ScrapeSchedule "Last scrape run" panel) render in fixed mode. Added
+  optional `total_competitors` to `RunSummary` type. Never overwrites fields
+  the v2 single-path scraper already wrote.
+
+### Changed
+- **Competitive Health works in fixed mode.** `/api/competitive-health` removed
+  its hard 409 (was "No active business") and is now tenant-scoped like
+  `/api/overview`: prefers the active business, falls back to the fixed
+  competitor list. Enrichment counts `gmaps_place_id OR place_id` (both the
+  OSM-discovery and configured-list fields). `discoveredAt` null-safe.
+- **c-competitive-health feature** gated: "Re-run discovery" button + OSM badge
+  + auto-discovery only shown/run in `discovery` mode; fixed mode shows a
+  config/run-health description instead.
+- **c-discover feature** shows an explanatory EmptyState in fixed mode
+  (discovery is a single-business capability; competitor set comes from
+  `listings.json`).
+
+### Verified (Rule 1)
+- `npx tsc --noEmit` → 0 errors.
+- `npx vitest run` → 2 files / 34 tests pass.
+- `npx eslint src` → exit 0 (0 errors, 4 pre-existing warnings).
+- Dev :3000 → `/api/overview` 200 (`runSummary.status=OK`, `reviewCount=5021`,
+  `targetCount=12`); `/api/competitive-health` 200 (`competitors=12`,
+  `source=none`, `enrichedPct=100`, `correlationAvailable=true`, `branches=6`);
+  `/api/category-scan` GET 200 empty fallback (discovery-only UI gated);
+  `/api/competitors/discover` 409 (no active business — correct).
+  `data/` untouched.
+
 ## Phase 1 (2026-08-19) — Fixed-list mode (v1 model in v2 shell)
 
 ### Added

@@ -57,6 +57,8 @@ export interface RunSummary {
   skipped: number;
   new_reviews: number;
   total_reviews: number;
+  /** Total competitor count for the run (v1 orchestrator field). */
+  total_competitors?: number;
   errors: RunSummaryError[];
   /** Product-path status (single-path scraper). */
   status?:

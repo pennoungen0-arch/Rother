@@ -79,21 +79,33 @@ rother (single repo)
 - [ ] Config tab full edit UI (listings.json editor surfaced in fixed mode —
       `/api/config/listings` GET/PATCH already wired; UI is a read summary)
 
-### Phase 2 — Feature Port (5–8 days)
-Port 28 features from v2 to v1 data shapes. Priority order:
+### Phase 2 — Feature Port ✅ PARTIAL (data-gap fixes done 2026-08-19)
+The audit showed all 28 features are ALREADY wired to v1 endpoints (via
+`useOverview`/`useBranches`/self-fetching dashboard components); Phase 2 work is
+closing the fixed-mode data gaps. Done:
+
+- [x] **runSummary v2 contract from v1 data** (`/api/overview`): derive
+      `status`/`reviewCount`/`targetCount` from v1 run_summary so ScrapeSchedule
+      renders in fixed mode.
+- [x] **Competitive Health fixed-mode** (`/api/competitive-health`): removed the
+      hard 409; tenant-scoped like overview (active business → fixed list
+      fallback); enrichment counts `gmaps_place_id OR place_id`.
+- [x] **c-competitive-health + c-discover gated by mode**: discovery UI
+      (button/badge/auto-run) only in `discovery` mode; fixed mode shows
+      config/run-health explanation.
+
+Remaining:
 
 | Priority | Features | Notes |
 |---|---|---|
-| **P0 (core)** | KPIs, Run Health, Run History, Run Comparison, All Reviews, Branches & Competitors, Branch Comparison, Leaderboard, Configuration, Run Logs | Direct v1 data matches |
-| **P1 (analytics)** | Rating Distribution, New Reviews per Branch, Reviews over Time, Review Lengths, Word Cloud | v1 has review text + dates |
-| **P2 (v2-exclusive)** | **Geo Grid**, **Competitive Health**, **Discover Competitors**, **Competitor Correlation**, **Growth Rate**, **Radar Compare**, **Rating Distribution Compare**, Review Recency Heatmap, Review Language, Top Reviewers | Need new data derivations |
-| **P3 (ops)** | Export Data, Scrape Schedule, Shortcuts Help, Live Clock, Freshness Badge, Health Sparkline, Auto-refresh Toggle, Competitor Detail Dialog, Alerts | Mostly UI |
+| **P0 (core)** | KPIs, Run Health, Run History, Run Comparison, All Reviews, Branches & Competitors, Branch Comparison, Leaderboard, Configuration, Run Logs | Direct v1 data matches — already render |
+| **P1 (analytics)** | Rating Distribution, New Reviews per Branch, Reviews over Time, Review Lengths, Word Cloud | v1 has review text + dates — already render |
+| **P2 (v2-exclusive)** | Geo Grid, **Competitive Health**, **Discover Competitors**, Competitor Correlation, Growth Rate, Radar Compare, Rating Distribution Compare, Review Recency Heatmap, Review Language, Top Reviewers | Geo-grid/correlation/health/growth/radar derive from v1 data; discovery gated to discovery mode |
+| **P3 (ops)** | Export Data, Scrape Schedule, Shortcuts Help, Live Clock, Freshness Badge, Health Sparkline, Auto-refresh Toggle, Competitor Detail Dialog, Alerts | Mostly UI — schedule now renders via derived runSummary |
 
-**Key adaptations for P2:**
-- **Geo Grid** → plot v1's 12 competitors (lat/lng from `listings.json` or geocode on demand). No arbitrary-business backend needed.
-- **Competitive Health** → use v1's selector-health + run-health + OSM discovery (can call `/api/discover` stub now, implement later).
-- **Discover Competitors** → build UI first, backend = `POST /api/discover` returning OSM results (mock initially).
-- **Correlation / Growth Rate / Radar** → pure client-side derivations from v1 review time-series.
+**Remaining Phase 2 items:** per-feature browser check of all 28 features against
+v1 production data; promote duplicated local interfaces (CorrelationData,
+RatingDistResponse, HealthResponse) into `types.ts`.
 
 ### Phase 3 — Polish + Hardening (2–3 days)
 - [ ] Command palette (Cmd+K) searching all 28 features
@@ -146,9 +158,9 @@ Port 28 features from v2 to v1 data shapes. Priority order:
 
 - [x] Single `npm run dev` starts dashboard on :3000 with v2 shell
 - [x] Login → (optional onboarding) → Run → Hubs navigable (fixed-list mode skips onboarding)
-- [ ] All 28 features render with **v1 production data** (12 competitors, 5,021 reviews) — API layer verified (overview/branches/geo-grid 200); per-feature browser check pending (Phase 2)
-- [ ] Geo Grid plots the 12 competitors on Leaflet/OSM map
-- [ ] Run Now triggers live scrape via v1 pipeline; results appear in New Reviews
+- [ ] All 28 features render with **v1 production data** (12 competitors, 5,021 reviews) — API layer verified (overview/branches/geo-grid/competitive-health 200; runSummary enriched); per-feature browser check pending
+- [x] Geo Grid plots the 12 competitors on Leaflet/OSM map
+- [x] Run Now triggers live scrape via v1 pipeline; results appear in New Reviews
 - [ ] Alerts tab shows v1 scrape failures + new-review alerts
 - [ ] Config tab edits `listings.json` (v1 validation)
 - [ ] `npx vitest run` ≥ 100 tests pass; `npx tsc --noEmit` 0 errors; `npx eslint src` exit 0

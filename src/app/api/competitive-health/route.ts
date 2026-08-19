@@ -49,21 +49,20 @@ interface BranchHealth {
  *
  * Reads the persisted competitor set (populated by /api/competitors/discover),
  * so it is cheap and never hits Overpass directly.
+ *
+ * Tenant scoping (same as /api/overview): prefers the active business; falls
+ * back to the fixed competitor list (v1 model) when none is active. In the
+ * fixed-list fallback, discovery metrics (osmMined/source) are reported as
+ * none and the branch/density stats come from the configured list.
  */
 export async function GET() {
   try {
     const active = await readActiveBusiness();
-    if (!active) {
-      return NextResponse.json(
-        { error: "No active business. Complete onboarding first." },
-        { status: 409 },
-      );
-    }
-
+    const id = active?.id;
     const branches = await readActiveBusinessBranches();
     const [dataStatus, snapshots] = await Promise.all([
-      assessDataStatus(active.id),
-      readAllSnapshots(active.id),
+      assessDataStatus(id),
+      readAllSnapshots(id),
     ]);
 
     let totalCompetitors = 0;
@@ -84,7 +83,9 @@ export async function GET() {
       let enriched = 0;
       for (const c of comps) {
         if (c.osm_place_id) osmMined++;
-        if (c.gmaps_place_id) enriched++;
+        // Enrichment = linked to a Google Maps place. `gmaps_place_id` is the
+        // OSM-discovery field; `place_id` is the configured-list field.
+        if (c.gmaps_place_id || c.place_id) enriched++;
         if (branchLat !== null && branchLng !== null && typeof c.lat === "number" && typeof c.lng === "number") {
           const d = haversineM(branchLat, branchLng, c.lat, c.lng);
           if (nearest === null || d < nearest) nearest = d;
@@ -131,7 +132,7 @@ export async function GET() {
     }
 
     const response = {
-      discoveredAt: active.scrapedAt ?? null,
+      discoveredAt: active?.scrapedAt ?? null,
       hasCompetitors: totalCompetitors > 0,
       source: osmMined > 0 ? "osm" : "none",
       osmMined,

@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { useApiQuery } from "@/lib/gbp/use-api-query";
+import { useAppState } from "@/lib/app-state";
 import type { BranchConfig, CandidateCompetitor, CategoryScanResponse } from "@/lib/gbp/types";
 
 /**
@@ -16,6 +18,10 @@ import type { BranchConfig, CandidateCompetitor, CategoryScanResponse } from "@/
  * Runs a scraper-based category scan (reusing the Playwright pipeline) and
  * lists candidate competitors. Each candidate can be added to the active
  * business's monitored set (tenant-scoped via /api/business/branches).
+ *
+ * Discovery is a v2 (single-business) capability: it only works in
+ * `discovery` monitoring mode. In `fixed` mode the competitor list comes from
+ * `listings.json`, so this page shows an explanatory notice instead.
  */
 export default function DiscoverFeature() {
   const [category, setCategory] = React.useState("");
@@ -103,6 +109,21 @@ export default function DiscoverFeature() {
 
   const candidates =
     lastScan && "candidates" in lastScan ? (lastScan.candidates as CandidateCompetitor[]) : [];
+
+  const { mode: appMode } = useAppState();
+  if (appMode === "fixed") {
+    return (
+      <div className="flex h-full flex-col gap-4 overflow-y-auto p-4 sm:p-6">
+        <h2 className="text-lg font-semibold">Discover competitors</h2>
+        <EmptyState
+          icon={MapPin}
+          title="Discovery is unavailable in Fixed-list mode"
+          description="In Fixed-list mode your competitor set comes from the configured listings.json file. Switch to My business + discovery mode on the login screen to scan Google Maps for new competitors."
+          className="h-[320px]"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4 sm:p-6">

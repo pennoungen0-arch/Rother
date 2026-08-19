@@ -1,5 +1,42 @@
 # Changelog — Rother
 
+## Phase 1 (2026-08-19) — Fixed-list mode (v1 model in v2 shell)
+
+### Added
+- **Monitoring mode selector.** `MonitoringMode` (`"fixed" | "discovery"`) added
+  to `src/lib/app-state.tsx`, persisted in localStorage (`rother.mode`, default
+  `"fixed"`), exposed via `setMode`. Switching modes resets the run gate.
+- **Login screen mode picker.** `src/components/shell/login-screen.tsx` now offers
+  two monitoring modes: "Fixed competitor list" (v1) and "My business +
+  discovery" (v2).
+- **Fixed-mode AppShell gating.** `src/components/shell/app-shell.tsx` skips
+  Onboarding in fixed mode (login → run gate → hubs); discovery mode keeps the
+  onboarding step. TopBar + Hub labels show "Competitor list" in fixed mode.
+
+### Changed
+- **Fixed-mode RunScreen.** `src/components/shell/run-screen.tsx` POSTs
+  `/api/scrape/trigger` with an EMPTY body in fixed mode — so no
+  `user-business.json` is written and the fixed competitor list remains the
+  active dataset. Discovery mode keeps the business-bodied POST.
+- **Removed the single-business invariant.** `src/lib/gbp/server-data.ts`
+  `readListings()` no longer returns `[]` when `user-business.json` exists — the
+  fixed competitor list from `listings.json` is always the UI-facing dataset
+  (v1 model). Deleted now-unused `hasActiveUserBusiness()`. Updated stale
+  comments on `readSeedListings`/`readActiveBusinessBranches`.
+- **Tools › Config branches by mode.** `src/features/t-config.tsx` shows the
+  configured competitor list (branch/competitor counts from
+  `/api/config/listings`) with a re-run affordance in fixed mode; keeps the
+  per-business view in discovery mode.
+
+### Verified (Rule 1)
+- `npx tsc --noEmit` → 0 errors.
+- `npx vitest run` → 2 files / 34 tests pass.
+- `npx eslint src` → exit 0 (0 errors, 4 pre-existing warnings).
+- Dev :3000 → `/api/overview` HTTP 200 (`totalReviews=5001`, 12 competitors,
+  6 branches), `/api/branches` 200, `/api/geo-grid` 200, `/api/competitive-health`
+  409 (discovery-only, correct in fixed mode). Empty-body trigger POST 200 and
+  does NOT create `gbp-monitor/config/user-business.json`. `data/` untouched.
+
 ## Phase 0 (2026-08-17) — Convergence kickoff
 
 ### Added

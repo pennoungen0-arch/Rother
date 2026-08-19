@@ -13,14 +13,14 @@ import { FEATURES } from "@/lib/features";
  * than dumped all at once.
  */
 export function Hub() {
-  const { business, openHub, setPaletteOpen } = useAppState();
+  const { business, mode, openHub, setPaletteOpen } = useAppState();
+  const targetLabel =
+    mode === "fixed" ? "Competitor list" : business?.name ?? "Your business";
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <header className="mb-8">
-        <p className="text-sm text-muted-foreground">
-          {business ? business.name : "Your business"}
-        </p>
+        <p className="text-sm text-muted-foreground">{targetLabel}</p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">
           What do you want to look at?
         </h1>

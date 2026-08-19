@@ -25,15 +25,24 @@ export type BusinessProfile = {
 };
 export type HubId = "insights" | "reputation" | "competitors" | "tools";
 
+/**
+ * Monitoring mode (Phase 1 / Option C hybrid).
+ * - `fixed`: watch the configured competitor list from listings.json (v1 model).
+ * - `discovery`: onboard the user's own business + auto-discover competitors (v2 model).
+ */
+export type MonitoringMode = "fixed" | "discovery";
+
 interface AppState {
   user: User | null;
   business: BusinessProfile | null;
+  mode: MonitoringMode;
   runStarted: boolean;
   hub: HubId | null;
   feature: string | null;
   paletteOpen: boolean;
   login: (u: User) => void;
   logout: () => void;
+  setMode: (m: MonitoringMode) => void;
   setBusiness: (b: BusinessProfile) => void;
   setActiveBusiness: (b: BusinessProfile) => void;
   startRun: () => void;
@@ -46,6 +55,7 @@ interface AppState {
 const KEY_USER = "rother.user";
 const KEY_BIZ = "rother.business";
 const KEY_RUN = "rother.runStarted";
+const KEY_MODE = "rother.mode";
 
 const Ctx = React.createContext<AppState | null>(null);
 
@@ -55,6 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // `set-state-in-effect` eslint-disable.
   const [user, setUser] = useLocalStorageState<User | null>(KEY_USER, null);
   const [business, setBusinessState] = useLocalStorageState<BusinessProfile | null>(KEY_BIZ, null);
+  const [mode, setModeState] = useLocalStorageState<MonitoringMode>(KEY_MODE, "fixed");
   const [runStarted, setRunStarted] = useLocalStorageState<boolean>(KEY_RUN, false);
   const [hub, setHub] = React.useState<HubId | null>(null);
   const [feature, setFeature] = React.useState<string | null>(null);
@@ -81,6 +92,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [setBusinessState, setRunStarted]);
 
   const setActiveBusiness = setBusiness;
+
+  const setMode = React.useCallback((m: MonitoringMode) => {
+    setModeState(m);
+    // Switching modes resets the run gate so the user re-runs a scrape for
+    // the newly selected target (fixed list or their own business).
+    setRunStarted(false);
+  }, [setModeState, setRunStarted]);
 
   const startRun = React.useCallback(() => {
     setRunStarted(true);
@@ -109,12 +127,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       business,
+      mode,
       runStarted,
       hub,
       feature,
       paletteOpen,
       login,
       logout,
+      setMode,
       setBusiness,
       setActiveBusiness,
       startRun,
@@ -123,7 +143,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       back,
       setPaletteOpen,
     }),
-    [user, business, runStarted, hub, feature, paletteOpen, login, logout, setBusiness, setActiveBusiness, startRun, openHub, openFeature, back],
+    [user, business, mode, runStarted, hub, feature, paletteOpen, login, logout, setMode, setBusiness, setActiveBusiness, startRun, openHub, openFeature, back],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

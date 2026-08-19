@@ -33,7 +33,7 @@ rother (single repo)
 ├── src/                         # CONVERGED: v2-shell dashboard wired to v1 pipeline (Phase 0 done)
 │   ├── components/shell/        # AppShell, LoginScreen, Onboarding, RunScreen, Hub, SectionView, FeaturePage
 │   ├── lib/features.tsx         # 28 feature registry (adapted to v1 data shapes)
-│   ├── lib/app-state.tsx        # useSyncExternalStore + localStorage (single-business or multi-competitor mode)
+│   ├── lib/app-state.tsx        # useSyncExternalStore + localStorage (mode: 'fixed' | 'discovery')
 │   ├── lib/gbp/use-api-query.ts # TanStack Query hitting v1 API routes
 │   ├── features/                # i-*, r-*, c-*, t-* lazy feature pages (adapted)
 │   └── app/api/                 # 29 routes (v1 core + new-reviews + v2 extras)
@@ -57,18 +57,27 @@ rother (single repo)
       (34/34 tests, 0 tsc errors, eslint exit 0; `/api/overview` = 5,021 reviews)
 - [ ] Remaining: `data/`-backup discipline unchanged; run full Python suite at next milestone
 
-### Phase 1 — Shell + Data Wiring (3–5 days)
-- [ ] **AppShell** — keep gated flow (login → onboarding → run gate → hubs) but:
-  - Login: replace mock with **v1 config-driven auth** (or keep mock for local-dev, add real OAuth later)
-  - Onboarding: **Option C** → step 1 = select "monitoring mode": (a) Fixed competitor list (v1) OR (b) My business + discovery (v2). Start with (a) only.
-  - RunScreen: call v1's `POST /api/scrape/trigger` (already exists)
-  - Hubs: keep 4-hub structure (Insights, Reputation, Competitors, Tools)
-- [ ] **App State** (`useSyncExternalStore`):
-  - Persist: `user`, `business` (optional), `mode` ('fixed' | 'discovery'), `runStarted`, `selectedCompetitors[]`
-  - Remove single-business invariant (`readListings()` returning `[]`)
-- [ ] **API Layer** (`useApiQuery`):
-  - Point at v1 endpoints: `/api/overview`, `/api/branches`, `/api/reviews`, `/api/new-reviews`, `/api/alerts`, `/api/run-history`, `/api/run-summary`, `/api/config/listings`
-  - Add transformers to map v1 JSON → v2 feature props
+### Phase 1 — Shell + Data Wiring ✅ PARTIAL (fixed-list mode done 2026-08-19)
+- [x] **AppShell** — fixed-list mode gating:
+  - Login: mock kept; added **monitoring-mode picker** (Fixed competitor list vs
+    My business + discovery) — `src/components/shell/login-screen.tsx`
+  - AppShell skips Onboarding in fixed mode (login → run gate → hubs);
+    discovery mode keeps onboarding — `app-shell.tsx`
+  - RunScreen: fixed mode POSTs `/api/scrape/trigger` with EMPTY body (no
+    `user-business.json` written → fixed list stays the dataset); discovery mode
+    keeps the business-bodied POST — `run-screen.tsx`
+  - Hubs: 4-hub structure kept (Insights, Reputation, Competitors, Tools)
+- [x] **App State** (`useSyncExternalStore`):
+  - Persisted: `user`, `business` (optional), `mode` ('fixed' | 'discovery',
+    default 'fixed'), `runStarted`; `setMode` resets the run gate
+  - **Removed single-business invariant** (`readListings()` returning `[]`) —
+    the fixed competitor list from `listings.json` is always the UI dataset
+  - Geo-grid works in fixed mode via `readActiveBusinessBranches()` fallback;
+    competitive-health keeps its 409 (discovery-only, correct)
+- [ ] **API Layer** (`useApiQuery`) — point v2 feature hooks at v1 endpoints
+      where they still target v2-shaped data; add transformers for v2→v1 shapes
+- [ ] Config tab full edit UI (listings.json editor surfaced in fixed mode —
+      `/api/config/listings` GET/PATCH already wired; UI is a read summary)
 
 ### Phase 2 — Feature Port (5–8 days)
 Port 28 features from v2 to v1 data shapes. Priority order:
@@ -135,9 +144,9 @@ Port 28 features from v2 to v1 data shapes. Priority order:
 
 ## 6. Success Criteria (Definition of Done)
 
-- [ ] Single `npm run dev` starts dashboard on :3000 with v2 shell
-- [ ] Login → (optional onboarding) → Run → Hubs navigable
-- [ ] All 28 features render with **v1 production data** (12 competitors, 5,021 reviews)
+- [x] Single `npm run dev` starts dashboard on :3000 with v2 shell
+- [x] Login → (optional onboarding) → Run → Hubs navigable (fixed-list mode skips onboarding)
+- [ ] All 28 features render with **v1 production data** (12 competitors, 5,021 reviews) — API layer verified (overview/branches/geo-grid 200); per-feature browser check pending (Phase 2)
 - [ ] Geo Grid plots the 12 competitors on Leaflet/OSM map
 - [ ] Run Now triggers live scrape via v1 pipeline; results appear in New Reviews
 - [ ] Alerts tab shows v1 scrape failures + new-review alerts

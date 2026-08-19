@@ -15,7 +15,9 @@ import { SectionView } from "./section-view";
 import { CommandPalette } from "./command-palette";
 
 function TopBar() {
-  const { user, business, logout, setPaletteOpen } = useAppState();
+  const { user, business, mode, logout, setPaletteOpen } = useAppState();
+  const targetLabel =
+    mode === "fixed" ? "Competitor list" : business?.name ?? user?.email ?? "";
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -69,7 +71,7 @@ function TopBar() {
                 <UserCircle2 className="size-8 text-muted-foreground" />
               )}
               <span className="hidden max-w-[12rem] truncate text-sm md:inline">
-                {business?.name ?? user.email}
+                {targetLabel}
               </span>
               <Button
                 variant="ghost"
@@ -88,12 +90,16 @@ function TopBar() {
 }
 
 export function AppShell() {
-  const { user, business, runStarted, hub } = useAppState();
+  const { user, business, mode, runStarted, hub } = useAppState();
 
   if (!user) return <LoginScreen />;
-  if (!business) return <Onboarding />;
-  // Run gate: the 4 hub icons stay hidden until the user has triggered a live
-  // scrape of THEIR OWN business. Copenhagen Bali (seed demo) is never shown.
+  // Discovery mode requires onboarding the user's own business first. In
+  // fixed-list mode (v1) there is nothing to onboard — the configured
+  // competitor list from listings.json is the target.
+  if (mode === "discovery" && !business) return <Onboarding />;
+  // Run gate: the 4 hub icons stay hidden until the user has triggered a
+  // scrape. In fixed mode this scans the configured competitor list; in
+  // discovery mode it scans the user's own business.
   if (!runStarted) return <RunScreen />;
 
   return (

@@ -87,19 +87,9 @@ export async function readActiveBusiness(): Promise<ActiveBusiness | null> {
 }
 
 /**
- * True once the user has selected + run their own business. While false, the
- * seed/demo data is still served to legacy (non-UI) callers; once true, the UI
- * readers below return empty so the seeded Copenhagen Bali demo can NEVER
- * appear in the dashboard.
- */
-async function hasActiveUserBusiness(): Promise<boolean> {
-  return (await readActiveBusiness()) !== null;
-}
-
-/**
- * Read the LEGACY seed listings (Copenhagen Bali demo). Kept for old callers
- * only — the UI must never consume this. Handles both the pre-audit flat
- * `{ branches: [] }` shape and the post-audit `{ businesses: [] }` shape.
+ * Read the LEGACY seed listings (Copenhagen Bali demo). Handles both the
+ * pre-audit flat `{ branches: [] }` shape and the post-audit `{ businesses: [] }`
+ * shape.
  */
 export async function readSeedListings(): Promise<ListingsConfig> {
   const raw = await readJsonFile<BusinessesFile | ListingsConfig>(
@@ -115,18 +105,17 @@ export async function readSeedListings(): Promise<ListingsConfig> {
 }
 
 /**
- * UI-facing listings reader. Returns the seed demo ONLY when no user business
- * is active (i.e. nothing is rendered). Once the user has run their own
- * business, it returns empty so the demo can never leak into the UI.
+ * UI-facing listings reader. Returns the fixed competitor list from
+ * listings.json (the v1 model). In fixed mode (Phase 1 default) this is the
+ * entire dataset; in discovery mode the active user business is scoped
+ * separately via `readActiveBusiness()` + `businessDataDir()`.
  */
-// P5 / B12: a short-TTL in-memory cache avoids re-reading + re-parsing the
-// listings file on every request. Active-user mode returns an immediate empty
-// object and is not cached (the demo path is static between scrapes).
+// A short-TTL in-memory cache avoids re-reading + re-parsing the listings file
+// on every request. The fixed list is static between scrapes.
 const LISTINGS_CACHE_TTL_MS = 10_000;
 let _listingsCache: { value: ListingsConfig; ts: number } | null = null;
 
 export async function readListings(): Promise<ListingsConfig> {
-  if (await hasActiveUserBusiness()) return { branches: [] };
   const now = Date.now();
   if (_listingsCache && now - _listingsCache.ts < LISTINGS_CACHE_TTL_MS) {
     return _listingsCache.value;
@@ -475,7 +464,7 @@ export async function readActiveBusinessBranches(): Promise<BranchConfig[]> {
     // Active business exists but has no branches configured yet → explicit empty.
     return [];
   }
-  // No active business → legacy seed demo branches (UI never renders these).
+  // No active business → fixed competitor list from listings.json (v1 model).
   return (await readSeedListings()).branches;
 }
 

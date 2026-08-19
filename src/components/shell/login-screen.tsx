@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Mail, ShieldCheck } from "lucide-react";
+import { ListChecks, Mail, ShieldCheck, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useAppState } from "@/lib/app-state";
+import { useAppState, type MonitoringMode } from "@/lib/app-state";
+import { cn } from "@/lib/utils";
 
 /**
  * Login screen.
@@ -18,7 +19,7 @@ import { useAppState } from "@/lib/app-state";
  * `user` shape from `useAppState`.
  */
 export function LoginScreen() {
-  const { login } = useAppState();
+  const { mode, setMode, login } = useAppState();
   const [busy, setBusy] = React.useState(false);
 
   const handleGoogle = React.useCallback(() => {
@@ -33,9 +34,24 @@ export function LoginScreen() {
     }, 450);
   }, [login]);
 
+  const MODES: { id: MonitoringMode; label: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    {
+      id: "fixed",
+      label: "Fixed competitor list",
+      desc: "Watch a configured list of competitor Google reviews.",
+      icon: ListChecks,
+    },
+    {
+      id: "discovery",
+      label: "My business + discovery",
+      desc: "Monitor your own business and auto-discover competitors.",
+      icon: UserRound,
+    },
+  ];
+
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             {/* Rother mark */}
@@ -51,6 +67,35 @@ export function LoginScreen() {
           <p className="mt-1 text-sm text-muted-foreground">
             Competitor review intelligence for your business.
           </p>
+        </div>
+
+        <div className="mb-5 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Monitoring mode</p>
+          {MODES.map((m) => {
+            const Icon = m.icon;
+            const active = mode === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMode(m.id)}
+                className={cn(
+                  "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
+                  active
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border hover:bg-muted/50",
+                )}
+              >
+                <span className={cn("mt-0.5", active ? "text-primary" : "text-muted-foreground")}>
+                  <Icon className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{m.label}</span>
+                  <span className="block text-xs text-muted-foreground">{m.desc}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <Button

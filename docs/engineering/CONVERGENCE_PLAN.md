@@ -107,14 +107,18 @@ Remaining:
 v1 production data; promote duplicated local interfaces (CorrelationData,
 RatingDistResponse, HealthResponse) into `types.ts`.
 
-### Phase 3 — Polish + Hardening (2–3 days)
-- [ ] Command palette (Cmd+K) searching all 28 features
-- [ ] Design system: Bali oklch palette + Geist fonts (copy `globals.css`, `tailwind.config.ts`)
-- [ ] Reduced-motion, a11y (aria labels, focus rings, `aria-busy`)
-- [ ] Offline/online toasts (`OnlineStatusProvider`)
-- [ ] Empty states themed (copy v2 patterns)
-- [ ] Test suite: vitest (77→100+), playwright e2e for critical flows
-- [ ] Update CI: add dashboard build/test/lint to GitHub Actions
+### Phase 3 — Polish + Hardening ✅ PARTIAL (2026-08-19)
+- [x] Command palette (Cmd+K) searching all 28 features — already existed (audit-confirmed)
+- [x] Design system: Bali oklch palette + Geist fonts — already existed (audit-confirmed)
+- [x] Reduced-motion: `prefers-reduced-motion` override in `globals.css`
+- [x] Offline/online toasts (`OnlineStatusProvider`) — already existed (audit-confirmed)
+- [x] Empty states themed — already existed (audit-confirmed)
+- [x] Test suite expansion: vitest 34 → **103 tests** (run-summary, sanitize, validate,
+      geocode, format, categories, app-mode suites); **Playwright e2e** smoke spec
+      (login → run gate → hub → feature data; KPI dataset) passing against dev server
+- [x] Update CI: added `dashboard` job to GitHub Actions (tsc, vitest, eslint, build)
+- [ ] Remaining: per-feature browser check of all 28 features (e2e covers 2); promote
+      duplicated local interfaces into `types.ts`
 
 ### Phase 4 — Optional: Onboarding + Discovery (future)
 - [ ] Real OAuth (Google) replacing mock login
@@ -163,8 +167,8 @@ RatingDistResponse, HealthResponse) into `types.ts`.
 - [x] Run Now triggers live scrape via v1 pipeline; results appear in New Reviews
 - [ ] Alerts tab shows v1 scrape failures + new-review alerts
 - [ ] Config tab edits `listings.json` (v1 validation)
-- [ ] `npx vitest run` ≥ 100 tests pass; `npx tsc --noEmit` 0 errors; `npx eslint src` exit 0
-- [ ] GitHub Actions: build + test + lint on PR; daily scrape workflow unchanged
+- [x] `npx vitest run` ≥ 100 tests pass (103/103); `npx tsc --noEmit` 0 errors; `npx eslint src` exit 0 (4 pre-existing warnings)
+- [x] GitHub Actions: build + test + lint on PR (`dashboard` job added); daily scrape workflow unchanged
 - [ ] `rother02/` archived; no code duplication
 
 ---

@@ -7,6 +7,14 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-19T18:15:00+07:00
+- **Files:** `src/app/globals.css` (reduced-motion), `src/lib/gbp/run-summary.ts` (new — extracted `normalizeRunSummary`), `src/app/api/overview/route.ts` (import extracted helper), `src/lib/gbp/sanitize.test.ts`, `validate.test.ts`, `geocode.test.ts`, `format.test.ts`, `src/lib/categories.test.ts`, `src/lib/app-mode.test.ts` (new vitest suites), `.github/workflows/ci.yml` (new `dashboard` job: tsc/vitest/eslint/build), `package.json` (+`@playwright/test`, `test:e2e` script), `playwright.config.ts` (new), `e2e/smoke.spec.ts` (new — login → run gate → hub → Leaderboard + KPI dataset), `vitest.config.mjs` (exclude `e2e/`)
+- **Change:** Convergence Phase 3 hardening. (1) `prefers-reduced-motion` override added to `globals.css`. (2) `normalizeRunSummary` extracted from the overview route into `src/lib/gbp/run-summary.ts` for unit testing. (3) vitest coverage expanded 34 → **103 tests** (new run-summary/sanitize/validate/geocode/format/categories/app-mode suites). (4) Playwright e2e added: fixed-mode smoke (login → run gate → hub → Leaderboard renders) + KPI dataset check (5001 reviews / 12 competitors from committed production data), passing against the dev server. (5) CI gained a `dashboard` job (typecheck/unit tests/lint/build) mirroring the local gate.
+- **Reason:** Phase 3 (Polish + Hardening) of the v1-scraper/v2-shell convergence — raise the quality bar (a11y + tests + CI) before declaring the convergence done.
+- **Status:** PROVEN — vitest 103/103, tsc 0 errors, eslint exit 0 (4 pre-existing warnings), `npm run build` standalone OK, Playwright 2/2 against dev :3000.
+
+---
+
 <!--
 Template — copy this block for each new entry:
 

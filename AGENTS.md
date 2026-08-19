@@ -3,7 +3,8 @@
 State/version knowledge for AI agents (and humans) working on this repo.
 **Last updated: 2026-08-17.** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
-and `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`.
+`gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
+`docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
 
 ---
 
@@ -18,6 +19,12 @@ and `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`.
   guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
   selector certification re-run, business-info retrieval, first-run polish).
   No open roadmap items remain.
+- **Two versions exist:** this repo's `src/`+`gbp-monitor/` is v1
+  (multi-competitor monitoring, proven/certified pipeline, tabbed dashboard);
+  `rother02/` is v2 (single-business UX-first rewrite: login → onboarding →
+  run gate → 4 hubs, 28 lazy features, Cmd+K palette, geo-grid, discovery;
+  Tauri scaffold). Full reference: `docs/engineering/ROTHER02_ANALYSIS.md`.
+  v1 = proven pipeline; v2 = superior UI/UX. They complement each other.
 
 ## Repo layout
 
@@ -38,6 +45,8 @@ and `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`.
 │   ├── components/dashboard/
 │   └── lib/gbp/          # server-data.ts, types.ts, format.ts
 ├── prisma/               # SQLite scaffold only — NOT used by dashboard runtime
+├── rother02/             # v2 (untracked): UX-first rewrite — see docs/engineering/ROTHER02_ANALYSIS.md
+├── docs/                 # repo-level docs (engineering/, product/, management/...)
 ├── .zscripts/            # Unix-only deploy scripts (dev.sh/build.sh/start.sh)
 └── README.md
 ```
@@ -97,9 +106,13 @@ From repo root:
 
 ## Working conventions / gotchas
 
-- **Ignore `rother02/` and `imagetest/`** — untracked leftovers (a project copy
-  and a screenshot artifact). Do NOT commit them; do not treat their errors as
-  regressions.
+- **`rother02/` is v2 — keep, don't commit, don't treat as regressions.** It is
+  intentionally in-repo as the second (UX-first) version; its `tsc` errors are
+  pre-existing and excluded from v1's checks. `imagetest/` is a leftover
+  screenshot artifact (ignore). See `docs/engineering/ROTHER02_ANALYSIS.md`.
+  - Run v2: `cd rother02 && npm install && npm run dev` (port 3000 conflicts
+    with v1). Windows fix (2026-08-17): `lightningcss-linux-x64-gnu` moved to
+    `optionalDependencies` in `rother02/package.json`.
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

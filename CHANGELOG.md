@@ -1,5 +1,23 @@
 # Changelog — Rother
 
+## Unreleased (2026-08-17)
+
+### Added
+- `docs/engineering/ROTHER02_ANALYSIS.md` — two-version reference: current v1
+  (multi-competitor monitoring, proven scraper, tabbed dashboard) vs `rother02/`
+  (single-business UX-first rewrite: login → onboarding → run gate → 4 hubs,
+  28 lazy features, Cmd+K palette, geo-grid map, competitive health, category
+  discovery; Tauri desktop scaffold). Covers architecture, design system, new
+  features, gaps, GMB-Everywhere-style feature coverage, and the convergence
+  strategy.
+- `AGENTS.md` updated with a "Two versions" section (see below).
+
+### Fixed (rother02)
+- Windows `npm install` hard-fail: `lightningcss-linux-x64-gnu` (a Linux-only
+  binary) was a hard dependency — moved to `optionalDependencies` in
+  `rother02/package.json`. Dev server verified running (Next.js 16.2.11,
+  HTTP 200 on :3000).
+
 ## 0.2.0 (2026-07-29)
 
 ### Added

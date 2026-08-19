@@ -25,6 +25,10 @@ State/version knowledge for AI agents (and humans) working on this repo.
   run gate → 4 hubs, 28 lazy features, Cmd+K palette, geo-grid, discovery;
   Tauri scaffold). Full reference: `docs/engineering/ROTHER02_ANALYSIS.md`.
   v1 = proven pipeline; v2 = superior UI/UX. They complement each other.
+- **Active convergence plan:** `docs/engineering/CONVERGENCE_PLAN.md` — hybrid
+  approach: Phase 1 ports v2 shell (hubs, palette, 28 features) onto v1's
+  certified scraper + multi-competitor model; Phase 2 adds optional onboarding
+  + discovery. `rother02/` will be archived once migration starts.
 
 ## Repo layout
 
@@ -45,8 +49,11 @@ State/version knowledge for AI agents (and humans) working on this repo.
 │   ├── components/dashboard/
 │   └── lib/gbp/          # server-data.ts, types.ts, format.ts
 ├── prisma/               # SQLite scaffold only — NOT used by dashboard runtime
-├── rother02/             # v2 (untracked): UX-first rewrite — see docs/engineering/ROTHER02_ANALYSIS.md
+├── rother02/             # v2 (untracked, to be archived) — see docs/engineering/ROTHER02_ANALYSIS.md
 ├── docs/                 # repo-level docs (engineering/, product/, management/...)
+│   └── engineering/
+│       ├── CONVERGENCE_PLAN.md    # active migration strategy (v1 scraper + v2 shell)
+│       └── ROTHER02_ANALYSIS.md   # v1-vs-v2 reference
 ├── .zscripts/            # Unix-only deploy scripts (dev.sh/build.sh/start.sh)
 └── README.md
 ```
@@ -113,6 +120,9 @@ From repo root:
   - Run v2: `cd rother02 && npm install && npm run dev` (port 3000 conflicts
     with v1). Windows fix (2026-08-17): `lightningcss-linux-x64-gnu` moved to
     `optionalDependencies` in `rother02/package.json`.
+  - **Migration target:** `rother02/` will be archived once Phase 0 of
+    `docs/engineering/CONVERGENCE_PLAN.md` starts (copy shell to `src/`,
+    merge deps, delete `rother02/`).
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

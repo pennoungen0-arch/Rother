@@ -202,6 +202,25 @@ words for the word cloud from the listings you configure. For live scraping,
 each competitor needs a real Google Maps `place_id` (starts with `ChIJ`); see
 the guide in the example file.
 
+## Troubleshooting Live Scraping (0 reviews)
+
+If a live scrape returns 0 reviews, the **selectors in `gbp-monitor/config/selectors.json` don't match your Google Maps variant**. Google Maps serves different DOM by region/language.
+
+**Symptoms:** `REVIEWS_TAB` timeouts, scroll height ~100px, 0 cards, all parser tiers fail.
+
+**Fix:**
+```powershell
+cd gbp-monitor
+python -m orchestration.run_all --verify   # captures evidence
+# Inspect data/verify/<ts>/comp-*/01-business-loaded.png for actual DOM
+# Update config/selectors.json with working reviews_tab_button selector
+python -m orchestration.run_all --validate-config
+python -m orchestration.run_all
+```
+See `gbp-monitor/README.md` and `docs/engineering/SELECTOR_CERTIFICATION.md` for full workflow.
+
+---
+
 ## Testing
 
 All test suites must stay green (Rule 1).

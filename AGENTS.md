@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-19.** For full detail see
+**Last updated: 2026-08-20.** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
@@ -157,6 +157,20 @@ From repo root:
 - Live delivery to a real external webhook/email is now PROVEN (webhook.site + Ethereal test account, 2026-08-19); no production credentials configured for real-world delivery.
 - GitHub Actions execution (workflows verified by construction only; no git remote configured — deferred, see POST_CONVERGENCE_PLAN).
 - `hours_status` full coverage (5/12 businesses render it; canonical source is the weekly `opening_hours` table).
+
+## Recommended Audit Checklist (run before release)
+
+| Audit | Command | Frequency |
+|-------|---------|-----------|
+| Secrets scan | `git grep -E "(api[_-]?key|secret|password|token).*=" -- "*.json" "*.py" "*.ts" "*.tsx" \| grep -v example` | Pre-release |
+| Dead code | `npx ts-prune` (dashboard) / `vulture gbp-monitor/` (scraper) | Quarterly |
+| Doc consistency | Diff AGENTS.md vs CHANGELOG.md vs POST_CONVERGENCE_PLAN.md | Pre-release |
+| Dependency vulns | `npm audit` / `pip-audit` | Monthly |
+| Test coverage | `npx vitest run --coverage` (dashboard) / `coverage run -m pytest` (scraper) | Quarterly |
+| Data discipline | `git check-ignore gbp-monitor/data/run_summary.json` (must NOT be ignored) | Pre-release |
+| Backup test | `Copy-Item data <tmp>; Remove-Item data -Recurse; Copy-Item <tmp> data -Recurse; python -m tests.verify_baseline` | Quarterly |
+
+---
 
 ## When to update this file
 

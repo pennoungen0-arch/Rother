@@ -67,6 +67,8 @@ db/
 data/
 gbp-monitor/data/backups/
 gbp-monitor/data/run.log
+gbp-monitor/config/user-business.json
+.rother/
 tool-results/
 _audit_reviews_*.json
 .zscripts/dev.pid

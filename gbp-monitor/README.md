@@ -27,6 +27,13 @@ Before running live mode, you need valid Google Maps `place_id` values:
 The scraper validates place_id format (must start with `ChIJ`, ≥25 chars).
 Invalid/missing place_ids fall back to mock URLs and skip gracefully.
 
+> **Verified (2026-08-20):** 3 Indonesian businesses scrape successfully with certified selectors:
+> - Crate Cafe Canggu: `ChIJOaEQDnk40i0Rzhou4NcRx-w`
+> - Revolver Seminyak: `ChIJ9fhCoBBH0i0R4h17JYdA484`
+> - Seniman Coffee Studio: `ChIJu5hbBmo90i0R4po77axHom8`
+> 
+> **930 reviews captured** (300 + 510 + 120). Root cause of earlier 0-review failures was **placeholder `place_id`s**, not selector mismatch. Certified `reviews_tab_button` selector (`button[role='tab'][aria-label^='Ulasan']`) works for this variant.
+
 ### Troubleshooting Live Mode (0 reviews extracted)
 
 If a live run returns 0 reviews for all competitors, the **selectors in `config/selectors.json` likely don't match your Google Maps variant**. Google Maps serves different DOM structures by region/language.
@@ -61,6 +68,8 @@ python -m orchestration.run_all
 ```
 
 **Why this happens:** The certified selectors in `config/selectors.json` were validated against the Bali competitor set (Indonesian locale with specific DOM). Your locations may serve a different variant. The fixture mode (`--fixtures`) works because it uses static HTML from the certified Bali set.
+
+> **Important (2026-08-20):** The root cause for Crate Cafe Canggu, Revolver Seminyak, and Seniman Coffee Studio was **invalid placeholder `place_id`s** (`ChIJREPLACEWITHAREALPLACEID...`), which loaded generic Google Maps pages — NOT selector mismatch. Real `place_id`s extracted from `maps.app.goo.gl/` short links resolved it. The certified `reviews_tab_button` selector (`button[role='tab'][aria-label^='Ulasan']`) works for this variant.
 
 See `docs/engineering/SELECTOR_CERTIFICATION.md` for the full re-certification workflow.
 

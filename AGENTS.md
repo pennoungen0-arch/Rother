@@ -1,10 +1,13 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-20.** For full detail see
+**Last updated: 2026-08-22.** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
+**Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports)
+and `VERSION_AUDIT_2026-08-22.md` (current-state audit). Ops:
+`TROUBLESHOOTING.md` + `COMPLETION_PLAN.md`.
 
 ---
 
@@ -13,12 +16,21 @@ State/version knowledge for AI agents (and humans) working on this repo.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `ac5f70b`
-  (2026-08-19, "docs: add consolidated Testing section to README with all test suites + backup discipline"). **52 commits total.** **Tag: `v0.2.0`** (moved from old pre-convergence commit).
-- **Roadmap status:** ALL 8 productization milestones are DONE (stale-NID
-  guard, new-reviews dashboard, genericize+onboarding, proactive alerts,
-  selector certification re-run, business-info retrieval, first-run polish).
-  No open roadmap items remain.
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `a57c3f7`
+  (2026-08-20, "docs: add audit checklist to AGENTS.md"). **56 commits total.** **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
+- **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
+  product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** — paste
+  Google Maps link → validate (short links, place URLs, `query_place_id=`,
+  hex-CID→ChIJ conversion) → onboarding prefill → manual competitor add →
+  Start Monitoring; scheduler UI (`/api/schedule` ↔ `schedule.json` ↔
+  `run_all.py --schedule`) and per-competitor Refresh buttons (trigger route →
+  `--competitors` passthrough, sanitized). Live scraping fix (2026-08-20):
+  real place_ids for 3 Indonesian businesses (Crate Cafe Canggu, Revolver
+  Seminyak, Seniman Coffee Studio); certified selectors work. **Tenant-scoped
+  data writes (2026-08-22):** dashboard-spawned Python runs honor
+  `ROTHER_DATA_DIR=data/users/{businessId}` — snapshots/deltas/run_summary/
+  run.log isolated per business; lock file + NID jar stay global at root.
+  Fixed-mode reads root `data/`; discovery mode reads tenant dir only.
 - **Convergence status — Phase 3 hardening DONE (2026-08-19):** `src/` is
   the **v2 shell** (AppShell, 4 hubs, 28 lazy features, Cmd+K palette, geo-grid,
   Bali oklch design system) on v1's certified pipeline, with a **monitoring mode
@@ -97,8 +109,7 @@ Run from `gbp-monitor/`:
 
 | Command | Count | Notes |
 |---|---|---|
-| `python -m tests.verify_baseline` | 132/132 | **WIPES `data/`** — back it up first, restore after |
-| `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
+| `python -m tests.verify_baseline` | 132/132 | **WIPES `data/`** — back it up first, restore after || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
 | `python -m tests.verify_variant_framework` | 32/32 | offline variant classifier |
 
 From repo root:
@@ -108,7 +119,7 @@ From repo root:
 | `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
 | `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
-| `npm run test:e2e` | 30/30 | Playwright (smoke 2 + per-feature 28) — needs `npm run dev` running + committed production data |
+| `npx playwright test` | 12/12 | Smoke (10: discovery landing, fixed-mode, KPI live data, mobile ×2 each incl. discovery flow) + Scheduler (2). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |
 
 > **IMPORTANT — `data/` backup discipline.** `tests/verify_baseline.py` deletes
 > `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13
@@ -154,9 +165,10 @@ From repo root:
 
 ## Known limitations / remaining UNPROVEN items
 
-- Live delivery to a real external webhook/email is now PROVEN (webhook.site + Ethereal test account, 2026-08-19); no production credentials configured for real-world delivery.
+- Live delivery to a real external webhook/email is PROVEN (webhook.site + Ethereal test account, 2026-08-19); no production credentials configured for real-world delivery (`config/notifications.json` gitignored — scaffold via `--init-config`).
 - GitHub Actions execution (workflows verified by construction only; no git remote configured — deferred, see POST_CONVERGENCE_PLAN).
 - `hours_status` full coverage (5/12 businesses render it; canonical source is the weekly `opening_hours` table).
+- Windows/Turbopack dev quirk: `.next` EBUSY after ungraceful kills — see `TROUBLESHOOTING.md` + `TURBOPACK_WINDOWS_EBUSY_FIX.md`.
 
 ## Recommended Audit Checklist (run before release)
 

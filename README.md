@@ -31,10 +31,9 @@ dashboard with proactive alerts.
 | Dashboard: Overview, Branches, Compare, Review Explorer, New Reviews, Alerts, Config | `src/` |
 | First-run onboarding — `--init-config`, `--validate-config`, guarded config loading | `orchestration/run_all.py` |
 
-Latest verified state (2026-08-17): all test suites green
-(verify_baseline 132/132, verify_notifications 25/25, vitest 77/77),
-production snapshot set of 12 competitors / 5,021 reviews intact, and all 8
-roadmap milestones complete.
+Latest verified state (2026-08-20): all test suites green
+(verify_baseline 132/132, verify_notifications 25/25, vitest 103/103),
+production snapshot set of 12 competitors / 5,021 reviews intact, **live scraping verified for 3 Indonesian businesses (Crate Cafe Canggu, Revolver Seminyak, Seniman Coffee Studio) — 930 reviews captured**, and all 8 roadmap milestones complete + convergence hardening.
 
 ---
 
@@ -219,6 +218,8 @@ python -m orchestration.run_all
 ```
 See `gbp-monitor/README.md` and `docs/engineering/SELECTOR_CERTIFICATION.md` for full workflow.
 
+> **Note (2026-08-20):** The Indonesian variant now works with **certified selectors** using real `place_id`s. The root cause of 0 reviews for Crate Cafe Canggu, Revolver Seminyak, and Seniman Coffee Studio was **placeholder `place_id`s** (`ChIJREPLACEWITHAREALPLACEID...`), not selector mismatch. Real `place_id`s extracted from `maps.app.goo.gl/` short links resolved it.
+
 ---
 
 ## Testing
@@ -245,14 +246,38 @@ All test suites must stay green (Rule 1).
 |---|---|---|
 | `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
-| `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
-| `npm run test:e2e` | 30/30 | Playwright (smoke 2 + per-feature 28) — **needs `npm run dev` running + committed production data** |
+| `npx eslint src` | exit 0 | 0 errors, 0 warnings |
+| `npx playwright test` | 12/12 | Smoke (10) + Scheduler (2) — **needs `npm run dev` running** |
 
 ### Full local gate (what CI runs)
 
 ```powershell
-npx vitest run && npx tsc --noEmit && npx eslint src && npm run build
+npx vitest run; npx tsc --noEmit; npx eslint src; npm run build
 ```
+
+---
+
+## Discovery-First Usage
+
+1. **Paste a Google Maps business link** on the landing page (short links
+   `maps.app.goo.gl/…`, full place URLs, or `query_place_id=` share links all work)
+2. **Validate → Continue** — onboarding prefills your business
+3. **Add competitors** by pasting their Google Maps links (Step 3) → **Start Monitoring**
+4. Keep data fresh with either:
+   - **Scheduler** — Tools › Configuration › toggle + interval (6/12/24/48h);
+     pairs with `python -m orchestration.run_all --schedule` in cron/Task Scheduler
+   - **Refresh buttons** (⟳) on Leaderboard/Branches cards — partial scrape of
+     just that competitor (`--competitors` passthrough)
+
+Per-business runtime data is isolated under `gbp-monitor/data/users/{businessId}/`.
+
+---
+
+## Troubleshooting
+
+See **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for the 14 catalogued problems
+and fixes: short-link resolution, "Python exited with code 2", missing reviews
+after scrape, Turbopack EBUSY on Windows, orphaned localhost ports, and more.
 
 ---
 

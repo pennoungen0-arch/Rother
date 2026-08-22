@@ -56,11 +56,20 @@ test("fixed-mode flow (via Advanced): Advanced → Fixed → Run gate → hub", 
   // 4. Wait for LoginScreen to disappear and RunScreen to appear (context updates from localStorage).
   await expect(page.getByText("Start monitoring your competitor list")).toBeVisible({ timeout: 10_000 });
 
-  // 5. Press Run — reveals the hubs (live scrape takes ~2+ minutes).
+  // 5. Press Run — reveals the hubs. Force fixtures mode so the spawned
+  // scrape is instant: a LIVE run here (multi-minute, CPU-heavy) would flip
+  // later tests into Fix C's honest "already running" disabled state.
+  await page.route("**/api/scrape/trigger*", async (route) => {
+    const url = new URL(route.request().url());
+    url.searchParams.set("mode", "fixtures");
+    await route.continue({ url: url.toString() });
+  });
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(page.getByText("What do you want to look at?")).toBeVisible({
     timeout: 15_000,
   });
+
+  // 6. Open the Competitors hub, then the Leaderboard feature.
 
   // 6. Open the Competitors hub, then the Leaderboard feature.
   await page.getByRole("button", { name: /Competitors See how you stack up/ }).click();
@@ -83,6 +92,13 @@ test("KPI feature renders live data (3 competitors)", async ({
   await page.getByRole("button", { name: "Sign in with Gmail" }).click();
 
   await expect(page.getByText("Start monitoring your competitor list")).toBeVisible({ timeout: 10_000 });
+  // Force fixtures mode (see fixed-mode test above) — instant scrape, no
+  // cross-test busy-state cascade.
+  await page.route("**/api/scrape/trigger*", async (route) => {
+    const url = new URL(route.request().url());
+    url.searchParams.set("mode", "fixtures");
+    await route.continue({ url: url.toString() });
+  });
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(page.getByText("What do you want to look at?")).toBeVisible({
     timeout: 15_000,

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppState } from "@/lib/app-state";
 import { getCategory, searchCategories, type BusinessCategory } from "@/lib/categories";
-import type { BranchConfig } from "@/lib/gbp/types";
+import type { BranchConfig, CompetitorConfig } from "@/lib/gbp/types";
 import { osmCategoryToAppCategory, manualPlace, type Place } from "@/lib/places";
 import { resolveOsmToGmaps } from "@/lib/gbp/resolve";
 import type { GmapsResolution } from "@/lib/gbp/types";
@@ -56,6 +56,69 @@ interface CompetitorDraft {
   lng?: number;
   category?: string;
   verified?: boolean;
+}
+
+function competitorToConfig(c: CompetitorDraft): CompetitorConfig {
+  return {
+    competitor_id: c.competitor_id,
+    name: c.name,
+    gmaps_url: c.gmaps_url,
+    place_id: c.place_id,
+    gmaps_place_id: c.gmaps_place_id,
+    osm_place_id: c.osm_place_id,
+    lat: c.lat,
+    lng: c.lng,
+    category: c.category,
+    verified: c.verified,
+  };
+}
+
+/**
+ * P0-1 Fix A — build the branch list to persist for the active business.
+ *
+ * Two shapes, one guarantee: whatever the user added in Step 3 reaches
+ * `user-business.json` even when they skipped Step 2 (own branches).
+ *  - User branches exist → attach the shared competitor list to each.
+ *  - No user branches but competitors exist → auto-create ONE branch from
+ *    the seed business itself carrying the whole competitor list.
+ */
+function buildBranchesToPersist(
+  bizId: string,
+  bizName: string,
+  branchList: BranchDraft[],
+  competitorList: CompetitorDraft[],
+  resolutions: (GmapsResolution | undefined)[],
+): BranchConfig[] {
+  if (branchList.length > 0) {
+    return branchList.map((b, i) => ({
+      branch_id: b.slug,
+      branch_name: b.place.formatted_address || b.place.name || "",
+      lat: b.place.lat || undefined,
+      lng: b.place.lng || undefined,
+      osm_place_id: b.place.place_id.startsWith("manual/") ? undefined : b.place.place_id,
+      gmaps_place_id: b.gmapsPlaceId ?? null,
+      gmaps_resolution: resolutions[i],
+      city: b.place.city,
+      country: b.place.country,
+      postcode: b.place.postcode,
+      unverified: b.place.unverified ?? false,
+      branch_kind: b.kind ?? "business",
+      competitors: competitorList.map(competitorToConfig),
+    }));
+  }
+  if (competitorList.length > 0) {
+    // Skip-branches path: anchor all competitors to an auto-created branch
+    // derived from the business itself so they are never silently dropped.
+    return [
+      {
+        branch_id: bizId,
+        branch_name: bizName,
+        branch_kind: "business",
+        competitors: competitorList.map(competitorToConfig),
+      },
+    ];
+  }
+  return [];
 }
 
 export function Onboarding() {
@@ -289,43 +352,23 @@ export function Onboarding() {
       };
       await persistBusiness(payload);
 
-      if (includeBranches && branchList.length > 0) {
+      // P0-1 Fix A: persist branches AND competitors independently — the
+      // skip-branches path must still carry the Step-3 competitor list.
+      if (includeBranches) {
         const resolutions = await Promise.all(branchList.map((b) => resolveFor(b.place, b.gmapsPlaceId)));
-        const branches: BranchConfig[] = branchList.map((b, i) => ({
-          branch_id: b.slug,
-          branch_name: b.place.formatted_address || b.place.name || "",
-          lat: b.place.lat || undefined,
-          lng: b.place.lng || undefined,
-          osm_place_id: b.place.place_id.startsWith("manual/") ? undefined : b.place.place_id,
-          gmaps_place_id: b.gmapsPlaceId ?? null,
-          gmaps_resolution: resolutions[i],
-          city: b.place.city,
-          country: b.place.country,
-          postcode: b.place.postcode,
-          unverified: b.place.unverified ?? false,
-          branch_kind: b.kind ?? "business",
-          // Phase B: include competitors in each branch
-          competitors: competitorList.map((c) => ({
-            competitor_id: c.competitor_id,
-            name: c.name,
-            gmaps_url: c.gmaps_url,
-            place_id: c.place_id,
-            gmaps_place_id: c.gmaps_place_id,
-            osm_place_id: c.osm_place_id,
-            lat: c.lat,
-            lng: c.lng,
-            category: c.category,
-            verified: c.verified,
-          })),
-        }));
-        try {
-          await fetch("/api/business/branches", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ branches }),
-          });
-        } catch {
-          // branches POST failed — non-blocking
+        const bizId = slugify(place.name ?? place.formatted_address);
+        const bizName = place.name ?? place.formatted_address;
+        const branches = buildBranchesToPersist(bizId, bizName, branchList, competitorList, resolutions);
+        if (branches.length > 0) {
+          try {
+            await fetch("/api/business/branches", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ branches }),
+            });
+          } catch {
+            // branches POST failed — non-blocking
+          }
         }
       }
 
@@ -361,7 +404,19 @@ export function Onboarding() {
       // Then trigger the scrape
       const cat = getCategory(categoryId);
       const place = selectedPlace ?? manualPlace(`${manualName.trim()}, ${manualLocation.trim()}`);
-      
+
+      // P0-1 Fix A: same auto-branch fallback as finish() so the scrape
+      // trigger carries competitors even when the user skipped Step 2.
+      const bizId = slugify(place.name ?? place.formatted_address);
+      const bizName = place.name ?? place.formatted_address;
+      const branchesForTrigger = buildBranchesToPersist(
+        bizId,
+        bizName,
+        branchList,
+        competitorList,
+        branchList.map(() => undefined),
+      );
+
       const body = {
         name: place.name ?? place.formatted_address,
         location: place.formatted_address,
@@ -376,29 +431,9 @@ export function Onboarding() {
         country: place.country,
         postcode: place.postcode,
         unverified: place.unverified ?? false,
-        branches: branchList.map((b) => ({
-          branch_id: b.slug,
-          branch_name: b.place.formatted_address || b.place.name || "",
-          lat: b.place.lat,
-          lng: b.place.lng,
-          osm_place_id: b.place.place_id.startsWith("manual/") ? undefined : b.place.place_id,
-          gmaps_place_id: b.gmapsPlaceId ?? null,
-          branch_kind: b.kind ?? "business",
-          competitors: competitorList.map((c) => ({
-            competitor_id: c.competitor_id,
-            name: c.name,
-            gmaps_url: c.gmaps_url,
-            place_id: c.place_id,
-            gmaps_place_id: c.gmaps_place_id,
-            osm_place_id: c.osm_place_id,
-            lat: c.lat,
-            lng: c.lng,
-            category: c.category,
-            verified: c.verified,
-          })),
-        })),
+        branches: branchesForTrigger,
       };
-      
+
       const res = await fetch("/api/scrape/trigger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

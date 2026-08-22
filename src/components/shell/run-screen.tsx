@@ -25,9 +25,33 @@ export function RunScreen() {
   const [scanning, setScanning] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<{ completed: number; total: number } | null>(null);
+  // P1-4 Fix C: a scrape may be in flight from another tab/session — offer
+  // an honest running state instead of a Run click that dead-ends in a 409.
+  const [busyElsewhere, setBusyElsewhere] = React.useState(false);
 
   const targetName =
     mode === "fixed" ? "your competitor list" : business?.name ?? "your business";
+
+  // Probe for an already-active run on mount + every 5s while visible.
+  React.useEffect(() => {
+    let cancelled = false;
+    const probe = async () => {
+      try {
+        const r = await fetch("/api/scrape/status?active=1");
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!cancelled) setBusyElsewhere(Boolean(d.active));
+      } catch {
+        // ignore probe errors
+      }
+    };
+    void probe();
+    const t = setInterval(probe, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
 
   // Background status poller: shows progress + completion toast AFTER the
   // hubs are revealed. Never blocks navigation (design contract).
@@ -82,11 +106,20 @@ export function RunScreen() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setStatus(
-          data?.error
-            ? `Scrape could not start: ${data.error}`
-            : "Scrape could not start — showing empty states.",
-        );
+        if (res.status === 409) {
+          // Concurrent run — friendly copy + reflect the active state.
+          setBusyElsewhere(true);
+          setStatus("A scrape is already running — new data will appear when it completes.");
+          toast.info("A scrape is already running", {
+            description: "Watch the dashboard — data will refresh when it finishes.",
+          });
+        } else {
+          setStatus(
+            data?.error
+              ? `Scrape could not start: ${data.error}`
+              : "Scrape could not start — showing empty states.",
+          );
+        }
       } else {
         const data = await res.json();
         triggered = true;
@@ -130,9 +163,14 @@ export function RunScreen() {
             size="lg"
             className="w-full"
             onClick={handleRun}
-            disabled={scanning}
+            disabled={scanning || busyElsewhere}
           >
-            {scanning ? (
+            {busyElsewhere && !scanning ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Scrape already running…
+              </>
+            ) : scanning ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
                 Scanning…
@@ -144,6 +182,13 @@ export function RunScreen() {
               </>
             )}
           </Button>
+
+          {busyElsewhere && !scanning && (
+            <p className="text-xs text-muted-foreground">
+              A scrape is already running in this or another session — you can
+              explore the dashboard meanwhile; data appears when it finishes.
+            </p>
+          )}
 
           {scanning && (
             <div className="space-y-3 text-sm">

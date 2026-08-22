@@ -490,6 +490,42 @@ export async function writeActiveBusinessBranches(
 }
 
 /**
+ * P0-2 Fix B — materialize the active business's branches into a
+ * `ListingsConfig` file inside the tenant data dir, so the Python
+ * orchestrator can scrape the USER'S competitors instead of the legacy root
+ * `config/listings.json` demo set.
+ *
+ * Writes `data/users/{businessId}/effective_listings.json` and returns its
+ * absolute path plus the total competitor count (for honest progress
+ * denominators). Returns `null` when:
+ *   - there is no active business (fixed mode → caller keeps legacy path), or
+ *   - the active business exists but has zero total competitors (caller
+ *     should refuse to spawn with an honest "nothing configured" error).
+ */
+export async function writeEffectiveListings(
+  businessId?: string | null,
+): Promise<{ path: string; totalCompetitors: number } | null> {
+  const active = await readActiveBusiness();
+  if (!active) return null;
+  const id = businessId ?? active.id;
+  const branches = Array.isArray(active.branches) ? active.branches : [];
+  const totalCompetitors = branches.reduce(
+    (n, b) => n + (b.competitors?.length ?? 0),
+    0,
+  );
+  if (branches.length === 0 || totalCompetitors === 0) return null;
+
+  const effective: ListingsConfig = {
+    _comment: `Auto-generated for business "${active.name}" (${id}) — do not edit; regenerated on every scrape trigger.`,
+    branches,
+  };
+  const outPath = path.join(businessDataDir(id), "effective_listings.json");
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(effective, null, 2), "utf-8");
+  return { path: outPath, totalCompetitors };
+}
+
+/**
  * P1 / RISK-024 — read the most recent category-scan result for a business.
  * Scoped to the business's data dir; returns `null` when no scan has run.
  */

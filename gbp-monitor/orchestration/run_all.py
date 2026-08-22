@@ -107,7 +107,10 @@ logger = logging.getLogger("gbp-monitor.run_all")
 # isolated per business. CLI runs default to the project-root `data/`.
 # The lock file and NID storage_state stay GLOBAL (root) by design: one run
 # at a time machine-wide, and one shared warm browser jar.
-_LISTINGS_PATH = Path("config/listings.json")
+# P0-2 Fix B — discovery mode scrapes the USER'S competitors: the dashboard
+# materializes them into data/users/{id}/effective_listings.json and points us
+# at it via ROTHER_LISTINGS_PATH. Unset (CLI/fixed mode) keeps the legacy file.
+_LISTINGS_PATH = Path(os.environ.get("ROTHER_LISTINGS_PATH", "config/listings.json"))
 _SELECTORS_PATH = Path("config/selectors.json")
 _SCHEDULE_PATH = Path("config/schedule.json")
 _SNAPSHOT_DIR = _DATA_BASE / "snapshots"

@@ -8,7 +8,7 @@ import {
   GBP_LISTINGS_PATH,
   businessDataDir,
 } from "./paths";
-import { readActiveBusiness, readJsonFile } from "./server-data";
+import { readActiveBusiness, readJsonFile, writeEffectiveListings } from "./server-data";
 import type { CategoryScanResponse, RunSummary } from "./types";
 import { sanitizeErrorMessage } from "./sanitize";
 
@@ -310,7 +310,31 @@ class ScrapeRunManager {
     const dataDir = active?.id
       ? businessDataDir(active.id)
       : GBP_DATA_DIR;
-    const env = { ...process.env, ROTHER_DATA_DIR: dataDir };
+
+    // P0-2 Fix B — discovery scrapes the USER'S competitors: materialize the
+    // active business's branches into effective_listings.json and point
+    // Python at it via ROTHER_LISTINGS_PATH. No active business (fixed mode)
+    // keeps the legacy root config/listings.json behavior.
+    let noCompetitors = false;
+    let effectivePath: string | null = null;
+    let effectiveTotal = 0;
+    if (active) {
+      const effective = await writeEffectiveListings(active.id);
+      if (effective) {
+        effectivePath = effective.path;
+        effectiveTotal = effective.totalCompetitors;
+      } else {
+        // Active business exists but has zero configured competitors — an
+        // empty run would be dishonest; caller maps this to a friendly 422.
+        noCompetitors = true;
+      }
+    }
+
+    const env = {
+      ...process.env,
+      ROTHER_DATA_DIR: dataDir,
+      ...(effectivePath ? { ROTHER_LISTINGS_PATH: effectivePath } : {}),
+    };
 
     // The Python orchestrator reads business config from:
     // - Fixed mode: config/listings.json (via ROTHER_DATA_DIR)
@@ -333,13 +357,20 @@ class ScrapeRunManager {
       args.push("--competitors", filteredIds.join(","));
     }
 
+    // P0-2 Fix B guard — an active business with zero configured competitors
+    // would produce a dishonest empty run; refuse before spawning.
+    if (noCompetitors && filteredIds.length === 0) {
+      throw new Error("NO_COMPETITORS_CONFIGURED");
+    }
+
     const configTotal = await countCompetitors();
-    // With a partial-run filter, progress denominator = requested competitors
-    // (Python skips non-matching ids), not the whole configured list.
+    // Progress denominator priority: partial-run filter > tenant effective
+    // listings > legacy root config count.
+    const baseTotal = effectivePath ? effectiveTotal : configTotal;
     const totalCompetitors =
       filteredIds.length > 0
-        ? Math.min(filteredIds.length, configTotal)
-        : configTotal;
+        ? Math.min(filteredIds.length, baseTotal)
+        : baseTotal;
 
     const proc = spawn(python.executable, args, {
       cwd: GBP_ROOT,

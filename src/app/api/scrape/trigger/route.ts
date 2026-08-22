@@ -181,6 +181,22 @@ export async function POST(request?: Request) {
     }
     runId = result;
   } catch (err) {
+    // P0-2 Fix B guard — active business with zero competitors refuses to
+    // spawn; give the user an actionable 422 instead of a generic 500.
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    if (rawMessage.includes("NO_COMPETITORS_CONFIGURED")) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "No competitors configured — add at least one competitor before starting a scrape.",
+          stderr: "",
+          stage: "validation",
+          probable_cause: "The active business has no competitors in its monitoring list.",
+          suggested_fix: "Add competitors via onboarding Step 3 or Tools › Configuration, then run again.",
+        } satisfies ScrapeTriggerErrorResponse,
+        { status: 422 },
+      );
+    }
     return NextResponse.json(
       {
         ok: false,

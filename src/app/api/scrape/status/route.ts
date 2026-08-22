@@ -5,6 +5,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
+  // P1-4 Fix C — lightweight "is anything running?" probe so the RunScreen
+  // can detect an in-flight scrape from other sessions before offering Run.
+  const active = request.nextUrl.searchParams.get("active");
+  if (active === "1") {
+    return NextResponse.json(
+      { ok: true, active: scrapeRunManager.hasActiveRun() },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const runId = request.nextUrl.searchParams.get("runId");
   if (!runId) {
     return NextResponse.json(

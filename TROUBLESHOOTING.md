@@ -466,6 +466,35 @@ the loss of production data permanently.
 
 ---
 
+## Problem 15: Added Competitors Dropped / Scraper Runs Demo Set Instead
+
+### Symptoms
+- Onboarding Step 3 competitors vanish after Start Monitoring
+- Live scrape processes `comp-canggu-01`, `comp-seminyak-01`, `comp-ubud-01`
+  (the legacy demo set) instead of the user's added competitors
+- Overview shows `totalBranches: 0, competitorStats: []` despite reviews existing
+
+### Root Cause (two stacked bugs)
+1. **Persistence gate:** competitor saving was nested inside
+   `if (branchList.length > 0)` in onboarding — skipping Step 2 (branches)
+   silently discarded Step 3 competitors.
+2. **Scrape targeting:** discovery-mode spawns read root `config/listings.json`,
+   ignoring the tenant business config entirely.
+
+### Fixes Applied (v0.3.1)
+| Fix | Where |
+|-----|-------|
+| Auto-created branch from the seed business carries all Step-3 competitors when no user branches exist | `onboarding.tsx buildBranchesToPersist()` |
+| Dashboard writes `data/users/{id}/effective_listings.json`; Python honors new `ROTHER_LISTINGS_PATH` env | `server-data.ts writeEffectiveListings()` + `run_all.py` one-liner |
+| Zero-competitor active business → friendly 422 (no empty run) | trigger route + runner guard |
+
+### Verification
+Skip-branches e2e captures POST payload with auto-branch + competitor;
+live trigger scraped only `revolver-seminyak` (`success=1, new_reviews=600`);
+emptied-config trigger → HTTP 422.
+
+---
+
 ## Summary: Quick Reference
 
 | Problem | Quick Fix |

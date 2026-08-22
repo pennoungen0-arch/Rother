@@ -1,13 +1,14 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-22.** For full detail see
+**Last updated: 2026-08-22 (v0.3.1).** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
-**Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports)
-and `VERSION_AUDIT_2026-08-22.md` (current-state audit). Ops:
-`TROUBLESHOOTING.md` + `COMPLETION_PLAN.md`.
+**Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports),
+`VERSION_AUDIT_2026-08-22.md`, `DISCOVERY_DATAFLOW_AUDIT/FIX_PLAN.md`
+(✅ v0.3.1 seam fixes). Ops: `CLEAN_START_RUNBOOK.md` +
+`TROUBLESHOOTING.md`. Releases: `RELEASE_NOTES_v0.3.0/1.md`.
 
 ---
 
@@ -16,8 +17,9 @@ and `VERSION_AUDIT_2026-08-22.md` (current-state audit). Ops:
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `a57c3f7`
-  (2026-08-20, "docs: add audit checklist to AGENTS.md"). **56 commits total.** **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
+- **Branch:** `test/m15-1-validation`. **Latest commit:** v0.3.1 line
+  (`757a487` fix: discovery scrapes user-configured competitors).
+  **Tag: `v0.3.1`.** Working tree clean. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** — paste
   Google Maps link → validate (short links, place URLs, `query_place_id=`,
@@ -30,7 +32,11 @@ and `VERSION_AUDIT_2026-08-22.md` (current-state audit). Ops:
   data writes (2026-08-22):** dashboard-spawned Python runs honor
   `ROTHER_DATA_DIR=data/users/{businessId}` — snapshots/deltas/run_summary/
   run.log isolated per business; lock file + NID jar stay global at root.
-  Fixed-mode reads root `data/`; discovery mode reads tenant dir only.
+  **v0.3.1 seam fixes (2026-08-22):** competitors persist even when onboarding
+  Step 2 is skipped; discovery scrapes derive targets from tenant config via
+  `effective_listings.json` + `ROTHER_LISTINGS_PATH` env (root listings.json
+  untouched in discovery mode); honest 422 on zero competitors; concurrent-run
+  detection in RunScreen.
 - **Convergence status — Phase 3 hardening DONE (2026-08-19):** `src/` is
   the **v2 shell** (AppShell, 4 hubs, 28 lazy features, Cmd+K palette, geo-grid,
   Bali oklch design system) on v1's certified pipeline, with a **monitoring mode

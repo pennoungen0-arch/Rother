@@ -110,8 +110,11 @@ def verify_artifacts() -> None:
             f"got {summary.get('failed')}",
         )
         check(
-            "skipped count is 9",
-            summary.get("skipped") == 9,
+            # Baseline config ships fixtures for every configured competitor,
+            # so nothing may be skipped (the old 12-competitor config expected
+            # 9 skips; the current minimal 3-competitor set expects 0).
+            "skipped count is 0",
+            summary.get("skipped") == 0,
             f"got {summary.get('skipped')}",
         )
         check(

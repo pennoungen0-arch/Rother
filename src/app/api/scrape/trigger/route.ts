@@ -34,6 +34,8 @@ interface TriggerBody {
   unverified?: boolean;
   /** P2 / tenant scoping: the user's own monitored branches/competitors. */
   branches?: import("@/lib/gbp/types").BranchConfig[];
+  /** Phase C partial-run: restrict the scrape to these competitor_ids. */
+  competitor_ids?: string[];
 }
 
 function slugify(value: string): string {
@@ -140,11 +142,19 @@ export async function POST(request?: Request) {
   // user's business" step. Scoping the Python orchestrator to this business for
   // arbitrary real competitors is the separate follow-up (RISK-024 / Strategic S).
   let activeBusiness: ActiveBusiness | null = null;
+  let competitorIds: string[] | undefined;
   if (request) {
     try {
       const body = (await request.json()) as TriggerBody;
       if (body && (body.name || body.location || body.category || body.placeId || body.place_id)) {
         activeBusiness = await persistUserBusiness(body);
+      }
+      // Partial-run support (Phase C): per-competitor Refresh buttons post
+      // {competitor_ids}. Sanitization happens in scrape-runner before CLI.
+      if (body && Array.isArray(body.competitor_ids) && body.competitor_ids.length > 0) {
+        competitorIds = body.competitor_ids.filter(
+          (id): id is string => typeof id === "string",
+        );
       }
     } catch {
       // No/invalid body — fall through; the run will use whatever target exists.
@@ -153,7 +163,7 @@ export async function POST(request?: Request) {
 
   let runId: string;
   try {
-    const result = await scrapeRunManager.start(mode as "fixtures" | "live");
+    const result = await scrapeRunManager.start(mode as "fixtures" | "live", competitorIds);
     if (result === null) {
       // A previous run is still active. The active target is already persisted
       // (above), so we report busy rather than blocking the user.

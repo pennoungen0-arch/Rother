@@ -77,7 +77,7 @@ import shutil
 import signal
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from notifications.notifier import send_run_notification
@@ -85,12 +85,15 @@ from notifications.notifier import send_run_notification
 # Configure the root logger so module-level `logging.getLogger("gbp-monitor.*")`
 # loggers inherit the file handler. We also add a StreamHandler at WARNING+
 # so the operator sees loud alerts on stdout too — the file gets everything.
+# The run log is tenant-scoped (ROTHER_DATA_DIR) alongside snapshots/summary.
+_DATA_BASE = Path(os.environ.get("ROTHER_DATA_DIR", "data"))
+_DATA_BASE.mkdir(parents=True, exist_ok=True)
 _LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 logging.basicConfig(
     level=logging.INFO,
     format=_LOG_FORMAT,
     handlers=[
-        logging.FileHandler("data/run.log", encoding="utf-8"),
+        logging.FileHandler(_DATA_BASE / "run.log", encoding="utf-8"),
         logging.StreamHandler(sys.stderr),
     ],
 )
@@ -98,14 +101,21 @@ logger = logging.getLogger("gbp-monitor.run_all")
 
 # Module-level paths. Centralized so a future caller can monkey-patch them
 # in tests if needed.
+#
+# Tenant scoping: the dashboard spawns this module with ROTHER_DATA_DIR set
+# (e.g. `data/users/{businessId}`) so snapshots/deltas/run_summary are
+# isolated per business. CLI runs default to the project-root `data/`.
+# The lock file and NID storage_state stay GLOBAL (root) by design: one run
+# at a time machine-wide, and one shared warm browser jar.
 _LISTINGS_PATH = Path("config/listings.json")
 _SELECTORS_PATH = Path("config/selectors.json")
-_SNAPSHOT_DIR = Path("data/snapshots")
-_REVIEWS_NEW_DIR = Path("data/reviews_new")
-_SUMMARY_PATH = Path("data/run_summary.json")
+_SCHEDULE_PATH = Path("config/schedule.json")
+_SNAPSHOT_DIR = _DATA_BASE / "snapshots"
+_REVIEWS_NEW_DIR = _DATA_BASE / "reviews_new"
+_SUMMARY_PATH = _DATA_BASE / "run_summary.json"
 _FIXTURES_DIR = Path("tests/fixtures")
 _LOCK_PATH = Path("data/.run.lock")
-_SELECTOR_HISTORY_PATH = Path("data/selector_history.json")
+_SELECTOR_HISTORY_PATH = _DATA_BASE / "selector_history.json"
 
 # Per Section 6: at most 2 retries on network/timeout errors, with backoff.
 _NETWORK_RETRY_MAX = 2
@@ -138,7 +148,7 @@ _VALID_COMPETITOR_ID_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 # Maximum length for competitor_id.
 _MAX_COMPETITOR_ID_LEN = 64
 # Path to config backup directory.
-_CONFIG_BACKUP_DIR = Path("data/config_backups")
+_CONFIG_BACKUP_DIR = _DATA_BASE / "config_backups"
 # Minimum seconds between requests to the same domain for rate limiting.
 _RATE_LIMIT_MIN_INTERVAL_S = 5.0
 # Maximum requests per domain per rolling window.
@@ -154,6 +164,53 @@ _lock_file_owned: Path | None = None
 def _run_id() -> str:
     """Return a short unique run identifier for log correlation."""
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def _load_schedule_config() -> dict:
+    """Load schedule.json; return defaults if missing or invalid."""
+    if not _SCHEDULE_PATH.exists():
+        return {"enabled": False, "intervalHours": 24, "nextRun": None, "lastRun": None, "lastRunStatus": None}
+    try:
+        return json.loads(_SCHEDULE_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {"enabled": False, "intervalHours": 24, "nextRun": None, "lastRun": None, "lastRunStatus": None}
+
+
+def _save_schedule_config(config: dict) -> None:
+    """Write schedule.json atomically."""
+    _SCHEDULE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = _SCHEDULE_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(_SCHEDULE_PATH)
+
+
+def _update_schedule_after_run(success: bool) -> None:
+    """Update schedule.json with lastRun, nextRun, and status after a run."""
+    schedule = _load_schedule_config()
+    now = datetime.now(timezone.utc)
+    schedule["lastRun"] = now.isoformat()
+    schedule["lastRunStatus"] = "success" if success else "failed"
+    if schedule.get("enabled") and schedule.get("intervalHours"):
+        interval = schedule["intervalHours"]
+        schedule["nextRun"] = (now + timedelta(hours=interval)).isoformat()
+    else:
+        schedule["nextRun"] = None
+    _save_schedule_config(schedule)
+
+
+def _should_run_scheduled() -> bool:
+    """Check if a scheduled run is due."""
+    schedule = _load_schedule_config()
+    if not schedule.get("enabled"):
+        return False
+    next_run_str = schedule.get("nextRun")
+    if not next_run_str:
+        return True
+    try:
+        next_run = datetime.fromisoformat(next_run_str.replace("Z", "+00:00"))
+        return datetime.now(timezone.utc) >= next_run
+    except Exception:
+        return True
 
 
 def _structured_log(run_id: str, stage: str, **kwargs) -> None:
@@ -239,7 +296,7 @@ def _rotate_run_log_if_needed() -> None:
     starts with a fresh file. Mirrors the CI rotation in
     ``scrape.yml:49-62`` for local runs.
     """
-    log_path = Path("data/run.log")
+    log_path = _DATA_BASE / "run.log"
     if not log_path.exists():
         return
     try:
@@ -262,7 +319,7 @@ def _check_disk_space() -> list[str]:
 
     Returns a list of warning strings (empty if sufficient space).
     """
-    data_dir = Path("data")
+    data_dir = _DATA_BASE
     data_dir.mkdir(parents=True, exist_ok=True)
     try:
         usage = shutil.disk_usage(data_dir.resolve())
@@ -818,7 +875,7 @@ def _ensure_full_variant(rid, browser_handles, context, selectors, probe_url) ->
         return browser_handles, context
 
 
-def run(fixtures_mode: bool = False) -> dict:
+def run(fixtures_mode: bool = False, competitor_filter: list[str] | None = None) -> dict:
     """Run one full pass over the configured branches × competitors.
 
     Acquires a file lock to prevent overlapping runs. Sets up structured
@@ -828,6 +885,8 @@ def run(fixtures_mode: bool = False) -> dict:
     Args:
         fixtures_mode: If True, read HTML from `tests/fixtures/*.html`
             instead of doing live Playwright captures.
+        competitor_filter: Optional list of competitor_ids to process.
+            If provided, only competitors with matching competitor_id are scraped.
 
     Returns:
         The summary dict (also written to `data/run_summary.json`).
@@ -890,6 +949,17 @@ def run(fixtures_mode: bool = False) -> dict:
         len(branch.get("competitors", []))
         for branch in listings.get("branches", [])
     )
+    # Progress denominator: with a --competitors filter the operator cares
+    # about the requested subset, not the whole configured list.
+    if competitor_filter:
+        display_total = sum(
+            1
+            for branch in listings.get("branches", [])
+            for comp in branch.get("competitors", [])
+            if comp.get("competitor_id") in competitor_filter
+        )
+    else:
+        display_total = total_competitors
 
     summary = {
         "started_at": started_at,
@@ -990,6 +1060,11 @@ def run(fixtures_mode: bool = False) -> dict:
             competitors = branch.get("competitors", [])
             if not competitors:
                 continue
+            # Apply competitor filter if provided
+            if competitor_filter:
+                competitors = [c for c in competitors if c.get("competitor_id") in competitor_filter]
+            if not competitors:
+                continue
             for comp in competitors:
                 processed += 1
                 comp_id = comp.get("competitor_id", "unknown-competitor")
@@ -1012,7 +1087,7 @@ def run(fixtures_mode: bool = False) -> dict:
                                 competitor=comp_id,
                                 branch=branch_id,
                                 duration_s=duration,
-                                progress=f"{processed}/{total_competitors}")
+                                progress=f"{processed}/{display_total}")
                 if not fixtures_mode and _LIVE_POLITE_DELAY_S:
                     time.sleep(random.uniform(*_LIVE_POLITE_DELAY_S))
     finally:
@@ -1523,6 +1598,9 @@ def _finish_and_write_summary(summary: dict, run_id: str = "") -> None:
     tmp.replace(_SUMMARY_PATH)
     _structured_log(rid, "summary_written", path=str(_SUMMARY_PATH))
 
+    # C2: Update schedule.json after run (if scheduler is enabled)
+    _update_schedule_after_run(summary["failed"] == 0)
+
     # M17: proactive notifications — webhook + optional email. Never raises.
     try:
         send_run_notification(summary)
@@ -1846,6 +1924,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "missing. Never overwrites existing files. Prints next steps."
         ),
     )
+    parser.add_argument(
+        "--schedule",
+        action="store_true",
+        help=(
+            "Run in scheduler mode: check config/schedule.json and run "
+            "only if a scheduled run is due. On success, updates nextRun. "
+            "Intended for cron / systemd timer (e.g., run every hour)."
+        ),
+    )
+    parser.add_argument(
+        "--competitors",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated list of competitor_ids to scrape. "
+            "Filters the configured listings to only process these competitors. "
+            "Useful for partial re-scrapes (e.g., --competitors comp-a,comp-b)."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1904,7 +2001,18 @@ if __name__ == "__main__":
         # operator can detect it without parsing the report JSON.
         sys.exit(1 if report["failed"] > 0 else 0)
     else:
-        summary = run(fixtures_mode=args.fixtures)
+        # C2: Scheduler mode — check if a scheduled run is due
+        if args.schedule:
+            if not _should_run_scheduled():
+                print("Scheduler: no run due at this time (nextRun not reached or disabled)")
+                sys.exit(0)
+            print("Scheduler: scheduled run due — executing")
+        # C5: Parse competitor filter
+        competitor_filter = None
+        if args.competitors:
+            competitor_filter = [c.strip() for c in args.competitors.split(",") if c.strip()]
+            print(f"Competitor filter: {competitor_filter}")
+        summary = run(fixtures_mode=args.fixtures, competitor_filter=competitor_filter)
         # Exit 0 even if some listings failed — Rule 7 mandates the run
         # completes; the dashboard reads the summary to see the failure
         # count. A non-zero exit would make GitHub Actions treat the whole

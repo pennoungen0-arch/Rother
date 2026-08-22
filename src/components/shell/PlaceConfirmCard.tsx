@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { MapPin, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +29,12 @@ export function PlaceConfirmCard({
     <div className="rounded-xl border border-border bg-background p-3">
       <div className="flex items-start gap-3">
         {thumb ? (
-          <img
+          <Image
             src={thumb}
             alt="Map preview"
             width={80}
             height={80}
+            unoptimized
             className="size-20 shrink-0 rounded-md border border-border object-cover"
           />
         ) : (

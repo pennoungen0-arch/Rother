@@ -67,7 +67,15 @@ db/
 data/
 gbp-monitor/data/backups/
 gbp-monitor/data/run.log
+# Tenant-scoped runtime data (snapshots/deltas/run_summary per business).
+# Explicit even though `data/` already matches — documents intent + survives
+# any future narrowing of the blanket rule.
+gbp-monitor/data/users/
 gbp-monitor/config/user-business.json
+# Real notification delivery config (webhook URLs / SMTP creds).
+# Commit notifications.example.json as template instead.
+gbp-monitor/config/notifications.json
+gbp-monitor/config/schedule.json
 .rother/
 tool-results/
 _audit_reviews_*.json

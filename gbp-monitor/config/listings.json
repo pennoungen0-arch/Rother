@@ -1,113 +1,39 @@
 {
-  "_comment": "Competitor listings for 6 Copenhagen Bali branches. Each competitor has a gmaps_url (currently mock place IDs for fixture compatibility) and an optional place_id field for live Google Maps navigation. When place_id is set and the scraper runs in live mode, the real URL is constructed; otherwise the mock gmaps_url is used (which will gracefully fail reachability checks in live mode, resulting in a skip, not a crash).",
-  "_note": "M11-CORRECTION: place_id ChIJ9fhCoBBH0i0R4h17JYdA484 was previously attributed to comp-canggu-01 but resolves to Revolver Espresso Seminyak (comp-seminyak-01). Confirmed via captured HTML analysis (21 occurrences of 'Revolver', 0 of 'Crate Cafe') and Wanderlog external verification. comp-canggu-01 now has correct place_id ChIJOaEQDnk40i0Rzhou4NcRx-w found via Wanderlog MOBX state. M16: all 10 remaining competitors now have real place_ids resolved from Google Maps place pages (hex-form URL !1s<0xhi:0xlo> -> ChIJ conversion validated by round-trip against the 2 known place_ids; each ChIJ verified to load the intended business page via place_id URL).",
-  "_m16_place_id_source": "data/place_id_lookup_results.json + data/place_id_verified.json (temp browser tooling, NOT shipped; conversion hex->ChIJ = b64url(hi[::-1] + 0x11 + lo[::-1]))",
+  "_comment": "Minimal test config for 3 competitors with real place_ids",
   "branches": [
     {
-      "branch_id": "cph-seminyak",
-      "branch_name": "Copenhagen Bali - Seminyak",
-      "competitors": [
-        {
-          "competitor_id": "comp-seminyak-01",
-          "name": "Revolver Espresso Seminyak",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_revolver_seminyak",
-          "place_id": "ChIJ9fhCoBBH0i0R4h17JYdA484"
-        },
-        {
-          "competitor_id": "comp-seminyak-02",
-          "name": "Anomali Coffee Seminyak",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_anomali_seminyak",
-          "place_id": "ChIJ2-tAaM9G0i0RZtoCZOBhpuI"
-        }
-      ]
-    },
-    {
-      "branch_id": "cph-canggu",
-      "branch_name": "Copenhagen Bali - Canggu",
+      "branch_id": "test-canggu",
+      "branch_name": "Test - Canggu",
       "competitors": [
         {
           "competitor_id": "comp-canggu-01",
           "name": "Crate Cafe Canggu",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_crate_canggu",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJOaEQDnk40i0Rzhou4NcRx-w",
           "place_id": "ChIJOaEQDnk40i0Rzhou4NcRx-w"
-        },
-        {
-          "competitor_id": "comp-canggu-02",
-          "name": "The Shady Shack Canggu",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_shadyshack_canggu",
-          "place_id": "ChIJH6Xg6nk40i0RkpnxaV9yCWs"
         }
       ]
     },
     {
-      "branch_id": "cph-ubud",
-      "branch_name": "Copenhagen Bali - Ubud",
+      "branch_id": "test-seminyak",
+      "branch_name": "Test - Seminyak",
+      "competitors": [
+        {
+          "competitor_id": "comp-seminyak-01",
+          "name": "Revolver Seminyak",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ9fhCoBBH0i0R4h17JYdA484",
+          "place_id": "ChIJ9fhCoBBH0i0R4h17JYdA484"
+        }
+      ]
+    },
+    {
+      "branch_id": "test-ubud",
+      "branch_name": "Test - Ubud",
       "competitors": [
         {
           "competitor_id": "comp-ubud-01",
-          "name": "Seniman Coffee Studio Ubud",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_seniman_ubud",
+          "name": "Seniman Coffee Studio",
+          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJu5hbBmo90i0R4po77axHom8",
           "place_id": "ChIJu5hbBmo90i0R4po77axHom8"
-        },
-        {
-          "competitor_id": "comp-ubud-02",
-          "name": "Kafe Ubud",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_kafe_ubud",
-          "place_id": "ChIJw8kin3M90i0R5lPexrblgZ8"
-        }
-      ]
-    },
-    {
-      "branch_id": "cph-uluwatu",
-      "branch_name": "Copenhagen Bali - Uluwatu",
-      "competitors": [
-        {
-          "competitor_id": "comp-uluwatu-01",
-          "name": "Single Fin Uluwatu",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_singlefin_uluwatu",
-          "place_id": "ChIJ0aNPQ_lP0i0RtPlHW6trMHM"
-        },
-        {
-          "competitor_id": "comp-uluwatu-02",
-          "name": "Suluban Cliffs Uluwatu",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_suluban_uluwatu",
-          "place_id": "ChIJD_9Lp_hP0i0RjKu5ZWslsyE"
-        }
-      ]
-    },
-    {
-      "branch_id": "cph-nusadua",
-      "branch_name": "Copenhagen Bali - Nusa Dua",
-      "competitors": [
-        {
-          "competitor_id": "comp-nusadua-01",
-          "name": "Bumbu Bali Nusa Dua",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_bumbu_nusadua",
-          "place_id": "ChIJdZa5pqdD0i0R6S9PqkjLIFY"
-        },
-        {
-          "competitor_id": "comp-nusadua-02",
-          "name": "Salsa Nusa Dua",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_salsa_nusadua",
-          "place_id": "ChIJSSaEcSND0i0RKNWnXwGnP0I"
-        }
-      ]
-    },
-    {
-      "branch_id": "cph-sanur",
-      "branch_name": "Copenhagen Bali - Sanur",
-      "competitors": [
-        {
-          "competitor_id": "comp-sanur-01",
-          "name": "Byrd House Sanur",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_byrdhouse_sanur",
-          "place_id": "ChIJtZBYRzRA0i0Rb9i2J22B-bU"
-        },
-        {
-          "competitor_id": "comp-sanur-02",
-          "name": "Lilla Pantai Sanur",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJmock_lilla_sanur",
-          "place_id": "ChIJbeZyp8FB0i0RXEoDXPN3SuY"
         }
       ]
     }

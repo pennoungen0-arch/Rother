@@ -6,7 +6,6 @@ import {
   GBP_ROOT,
   GBP_DATA_DIR,
   GBP_LISTINGS_PATH,
-  GBP_RUN_SUMMARY_PATH,
   businessDataDir,
 } from "./paths";
 import { readActiveBusiness, readJsonFile } from "./server-data";
@@ -168,6 +167,24 @@ const PROCESS_TIMEOUT_MS = parseInt(
 );
 
 /**
+ * Sanitize user-supplied competitor ids before they reach the Python CLI.
+ * Mirrors the orchestrator's own `_VALID_COMPETITOR_ID_RE` (alphanumeric,
+ * hyphen, underscore; ≤64 chars) so a malicious id can never smuggle shell
+ * semantics into the spawned argv. Invalid entries are dropped, not fatal —
+ * an empty result simply means "no filter".
+ */
+function sanitizeCompetitorIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set<string>();
+  for (const id of ids) {
+    if (typeof id === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(id)) {
+      seen.add(id);
+    }
+  }
+  return [...seen];
+}
+
+/**
  * P1 / RISK-024 — run a category discovery scan and return the parsed result.
  *
  * Spawns `python -m orchestration.run_all --category-scan ...`, waits for the
@@ -263,17 +280,23 @@ class ScrapeRunManager {
   }
 
   /** Start a scrape run. Returns the runId, or null if a run is already active. */
-  async start(mode: "fixtures" | "live"): Promise<string | null> {
+  async start(
+    mode: "fixtures" | "live",
+    competitorIds?: string[],
+  ): Promise<string | null> {
     if (this.hasActiveRun() || this.starting) return null;
     this.starting = true;
     try {
-      return await this.startInner(mode);
+      return await this.startInner(mode, competitorIds);
     } finally {
       this.starting = false;
     }
   }
 
-  private async startInner(mode: "fixtures" | "live"): Promise<string> {
+  private async startInner(
+    mode: "fixtures" | "live",
+    competitorIds?: string[],
+  ): Promise<string> {
     const python = findPython();
     if (!python) {
       throw new Error("No Python executable found. Tried: python3, python.");
@@ -289,23 +312,12 @@ class ScrapeRunManager {
       : GBP_DATA_DIR;
     const env = { ...process.env, ROTHER_DATA_DIR: dataDir };
 
-    // Single-path product scraper: `python -m orchestration.run_all
-    // --business <place_id> --max-reviews 100 [--session <path>]`.
-    // The active business must carry a real place_id (otherwise the Python
-    // side refuses with NEED_SESSION-style honesty).
+    // The Python orchestrator reads business config from:
+    // - Fixed mode: config/listings.json (via ROTHER_DATA_DIR)
+    // - Discovery mode: config/user-business.json (via ROTHER_DATA_DIR)
+    // No CLI args needed for business config.
     const args = ["-m", "orchestration.run_all"];
-    const placeId =
-      (active as { gmaps_place_id?: string } | null)?.gmaps_place_id ??
-      (active as { place_id?: string } | null)?.place_id ??
-      (active as { placeId?: string } | null)?.placeId ??
-      null;
     if (mode === "live") {
-      if (placeId) {
-        args.push("--business", placeId);
-      } else {
-        args.push("--business", "");
-      }
-      args.push("--max-reviews", "100");
       const session =
         process.env.GBP_MONITOR_STORAGE_STATE ??
         process.env.GBP_MONITOR_COOKIES_FILE;
@@ -314,7 +326,20 @@ class ScrapeRunManager {
       args.push("--fixtures");
     }
 
-    const totalCompetitors = await countCompetitors();
+    // Phase C partial-run: per-competitor Refresh passes ids through to the
+    // orchestrator's `--competitors` filter (Python-side sanitization too).
+    const filteredIds = sanitizeCompetitorIds(competitorIds);
+    if (filteredIds.length > 0) {
+      args.push("--competitors", filteredIds.join(","));
+    }
+
+    const configTotal = await countCompetitors();
+    // With a partial-run filter, progress denominator = requested competitors
+    // (Python skips non-matching ids), not the whole configured list.
+    const totalCompetitors =
+      filteredIds.length > 0
+        ? Math.min(filteredIds.length, configTotal)
+        : configTotal;
 
     const proc = spawn(python.executable, args, {
       cwd: GBP_ROOT,
@@ -355,7 +380,12 @@ class ScrapeRunManager {
         return;
       }
       try {
-        const summaryJson = await fs.readFile(GBP_RUN_SUMMARY_PATH, "utf-8");
+        // The orchestrator writes run_summary.json to its scoped data dir
+        // (ROTHER_DATA_DIR), which matches `dataDir` computed above.
+        const summaryJson = await fs.readFile(
+          path.join(dataDir, "run_summary.json"),
+          "utf-8",
+        );
         activeRun.summary = JSON.parse(summaryJson) as RunSummary;
         activeRun.status = "completed";
       } catch (err) {

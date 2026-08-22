@@ -5,6 +5,7 @@ import { Loader2, Play, Radar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAppState } from "@/lib/app-state";
+import { toast } from "sonner";
 
 /**
  * The Run gate. Shown before the hubs are revealed.
@@ -23,14 +24,47 @@ export function RunScreen() {
   const { business, mode, startRun } = useAppState();
   const [scanning, setScanning] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+  const [progress, setProgress] = React.useState<{ completed: number; total: number } | null>(null);
 
   const targetName =
     mode === "fixed" ? "your competitor list" : business?.name ?? "your business";
 
+  // Background status poller: shows progress + completion toast AFTER the
+  // hubs are revealed. Never blocks navigation (design contract).
+  const watchRef = React.useRef<((id: string) => Promise<void>) | null>(null);
+  const watchStatus = React.useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/scrape/status?runId=${id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.progress?.total > 0) {
+        setProgress({ completed: data.progress.completed, total: data.progress.total });
+      }
+      if (data.status === "completed") {
+        setScanning(false);
+        const newReviews = data.summary?.new_reviews ?? 0;
+        toast.success("Scrape completed", {
+          description: newReviews > 0 ? `Found ${newReviews} new reviews` : "No new reviews found",
+        });
+      } else if (data.status === "failed") {
+        setScanning(false);
+        toast.error("Scrape failed", { description: data.error ?? "Unknown error" });
+      } else if (data.status === "running") {
+        setTimeout(() => watchRef.current?.(id), 3000);
+      }
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
+  React.useEffect(() => {
+    watchRef.current = watchStatus;
+  }, [watchStatus]);
+
   const handleRun = React.useCallback(async () => {
     if (scanning) return;
     setScanning(true);
-    setStatus("Starting live scrape…");
+    setStatus("Starting live scan…");
+    let triggered = false;
     try {
       const body =
         mode === "fixed"
@@ -54,7 +88,13 @@ export function RunScreen() {
             : "Scrape could not start — showing empty states.",
         );
       } else {
-        setStatus("Scanning complete — opening your dashboard…");
+        const data = await res.json();
+        triggered = true;
+        if (data.runId) {
+          setStatus("Scraping in the background — you can explore while it runs.");
+          // Fire-and-forget watcher: progress bar + completion toast
+          setTimeout(() => watchStatus(data.runId), 3000);
+        }
       }
     } catch {
       setStatus("Network error reaching the scraper — showing empty states.");
@@ -63,7 +103,8 @@ export function RunScreen() {
       // show the scraped data if any, or explicit empty states.
       startRun();
     }
-  }, [mode, business, scanning, startRun]);
+    void triggered;
+  }, [mode, business, scanning, startRun, watchStatus]);
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 text-center">
@@ -84,28 +125,55 @@ export function RunScreen() {
           , then open your dashboard.
         </p>
 
-        <Button
-          size="lg"
-          className="mt-7 w-full"
-          onClick={handleRun}
-          disabled={scanning}
-        >
-          {scanning ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Scanning…
-            </>
-          ) : (
-            <>
-              <Play className="size-4" />
-              Run
-            </>
-          )}
-        </Button>
+        <div className="mt-7 space-y-4">
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleRun}
+            disabled={scanning}
+          >
+            {scanning ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Scanning…
+              </>
+            ) : (
+              <>
+                <Play className="size-4" />
+                Run
+              </>
+            )}
+          </Button>
 
-        {scanning && status && (
-          <p className="mt-4 text-xs text-muted-foreground">{status}</p>
-        )}
+          {scanning && (
+            <div className="space-y-3 text-sm">
+              {status && <p className="text-muted-foreground">{status}</p>}
+              {progress && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Progress</span>
+                    <span>{progress.completed} / {progress.total}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{
+                        width: `${progress.total > 0 ? (progress.completed / progress.total) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Scraped {progress.completed} of {progress.total} competitors
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!scanning && status && (
+            <p className="mt-4 text-xs text-muted-foreground">{status}</p>
+          )}
+        </div>
       </div>
     </div>
   );

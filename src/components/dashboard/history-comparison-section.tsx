@@ -80,6 +80,17 @@ export function HistoryComparisonSection({ refreshKey }: HistoryComparisonSectio
     }
   }, [competitorId]);
 
+  // Re-run the active comparison after a scrape refresh bumps refreshKey,
+  // so freshly scraped history appears without re-selecting a competitor.
+  // Deferred to a task so the fetch's setState runs outside the effect body.
+  React.useEffect(() => {
+    if (!refreshKey) return;
+    const t = setTimeout(() => {
+      void fetchComparison();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [fetchComparison, refreshKey]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

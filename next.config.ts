@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  images: {
+    // OSM tiles are already exact-size 256px rasters served from a
+    // subdomain-rotating host; the optimizer adds nothing (and cannot reach
+    // them in standalone offline use), so allow + pass through unoptimized.
+    remotePatterns: [
+      { protocol: "https", hostname: "*.tile.openstreetmap.org" },
+    ],
+  },
   async headers() {
     return [
       {

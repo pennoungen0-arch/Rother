@@ -25,13 +25,18 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 logger = logging.getLogger("gbp-monitor.storage")
 
-_SNAPSHOT_DIR = Path("data/snapshots")
+# Tenant scoping: when spawned by the dashboard with ROTHER_DATA_DIR set,
+# snapshots are written under that dir (e.g. data/users/{businessId}/).
+# CLI runs default to the project-root `data/`.
+_DATA_BASE = Path(os.environ.get("ROTHER_DATA_DIR", "data"))
+_SNAPSHOT_DIR = _DATA_BASE / "snapshots"
 _TIMESTAMP_FMT = "%Y-%m-%dT%H-%M-%SZ"       # colon-free for Windows paths
 _LATEST_FILENAME = "latest.json"
 

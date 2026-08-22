@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Check, ChevronDown, MapPin, Search, Store } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, MapPin, Search, Store, Plus, Trash2, Loader2, Play } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import type { GmapsResolution } from "@/lib/gbp/types";
 import { AutocompleteInput, AddressAutocomplete } from "@/components/shell/AutocompleteInput";
 import { PlaceConfirmCard } from "@/components/shell/PlaceConfirmCard";
 import { PasteFromMapsParser, type ResolvedMaps } from "@/components/shell/PasteFromMapsParser";
+import { toast } from "sonner";
 
 function slugify(value: string): string {
   return (
@@ -44,9 +45,22 @@ interface BranchDraft {
   kind?: "business" | "address";
 }
 
+interface CompetitorDraft {
+  competitor_id: string;
+  name: string;
+  gmaps_url: string;
+  place_id?: string | null;
+  gmaps_place_id?: string | null;
+  osm_place_id?: string | null;
+  lat?: number;
+  lng?: number;
+  category?: string;
+  verified?: boolean;
+}
+
 export function Onboarding() {
-  const { business, setBusiness } = useAppState();
-  const [step, setStep] = React.useState<1 | 2>(1);
+  const { business, setBusiness, startRun } = useAppState();
+  const [step, setStep] = React.useState<1 | 2 | 3>(1);
   const [selectedPlace, setSelectedPlace] = React.useState<Place | null>(null);
   const [gmapsBusinessId, setGmapsBusinessId] = React.useState<string | null>(null);
   const [categoryId, setCategoryId] = React.useState<string | undefined>(business?.categoryId);
@@ -59,6 +73,32 @@ export function Onboarding() {
 
   const [branchInput, setBranchInput] = React.useState("");
   const [branchList, setBranchList] = React.useState<BranchDraft[]>([]);
+
+  // Phase B: Competitor management
+  const [competitorInput, setCompetitorInput] = React.useState("");
+  const [competitorList, setCompetitorList] = React.useState<CompetitorDraft[]>([]);
+  const [addingCompetitor, setAddingCompetitor] = React.useState(false);
+
+  // Phase B: pick up the seed place from the landing screen's link validation
+  React.useEffect(() => {
+    const raw = sessionStorage.getItem("rother_seed_place");
+    if (raw) {
+      try {
+        const seed = JSON.parse(raw) as Place;
+        if (seed && (seed.name || seed.formatted_address)) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from sessionStorage
+          setSelectedPlace(seed);
+          // Extract gmaps place_id if present (e.g., "gmaps/ChIJ...")
+          if (seed.place_id?.startsWith("gmaps/")) {
+            setGmapsBusinessId(seed.place_id.slice(6));
+          }
+        }
+      } catch {
+        // invalid JSON — ignore
+      }
+      sessionStorage.removeItem("rother_seed_place");
+    }
+  }, []);
 
   const valid = Boolean(selectedPlace) || (showManual && manualName.trim().length > 1 && manualLocation.trim().length > 3);
 
@@ -90,6 +130,54 @@ export function Onboarding() {
     },
     [],
   );
+
+  // Phase B: Competitor management helpers
+  const addCompetitor = React.useCallback(async (gmapsUrl: string) => {
+    setAddingCompetitor(true);
+    try {
+      const res = await fetch(`/api/places?q=${encodeURIComponent(gmapsUrl)}`);
+      const data = await res.json();
+      if (data.places?.length > 0) {
+        const place = data.places[0];
+        const compId = slugify(place.name ?? gmapsUrl);
+        if (competitorList.some((c) => c.competitor_id === compId)) {
+          toast.info("Already added", { description: `${place.name ?? "This competitor"} is already in your list` });
+        } else {
+          setCompetitorList((list) => [
+            ...list,
+            {
+              competitor_id: compId,
+              name: place.name ?? gmapsUrl,
+              gmaps_url: gmapsUrl,
+              place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+              gmaps_place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+              osm_place_id: place.place_id?.startsWith("coord/") || place.place_id?.startsWith("osm/") ? place.place_id : null,
+              lat: place.lat,
+              lng: place.lng,
+              category: place.category,
+              verified: place.provider === "gmaps",
+            },
+          ]);
+          toast.success("Competitor added", { description: place.name ?? "Added to monitoring list" });
+        }
+        setCompetitorInput("");
+      } else {
+        toast.error("Could not resolve link", { description: "Try a different Google Maps link" });
+      }
+    } catch {
+      toast.error("Failed to add competitor", { description: "Network error" });
+    } finally {
+      setAddingCompetitor(false);
+    }
+  }, [competitorList]);
+
+  const removeCompetitor = React.useCallback((competitorId: string) => {
+    const removed = competitorList.find((c) => c.competitor_id === competitorId);
+    setCompetitorList((list) => list.filter((c) => c.competitor_id !== competitorId));
+    if (removed) {
+      toast.success("Competitor removed", { description: `${removed.name} removed from monitoring list` });
+    }
+  }, [competitorList]);
 
   const addBranch = React.useCallback((place: Place) => {
     const slug = slugify(place.name ?? place.formatted_address);
@@ -216,7 +304,19 @@ export function Onboarding() {
           postcode: b.place.postcode,
           unverified: b.place.unverified ?? false,
           branch_kind: b.kind ?? "business",
-          competitors: [],
+          // Phase B: include competitors in each branch
+          competitors: competitorList.map((c) => ({
+            competitor_id: c.competitor_id,
+            name: c.name,
+            gmaps_url: c.gmaps_url,
+            place_id: c.place_id,
+            gmaps_place_id: c.gmaps_place_id,
+            osm_place_id: c.osm_place_id,
+            lat: c.lat,
+            lng: c.lng,
+            category: c.category,
+            verified: c.verified,
+          })),
         }));
         try {
           await fetch("/api/business/branches", {
@@ -248,8 +348,72 @@ export function Onboarding() {
       setBusiness(profile as Parameters<typeof setBusiness>[0]);
       setBusy(false);
     },
-    [selectedPlace, showManual, manualName, manualLocation, categoryId, gmapsBusinessId, branchList, persistBusiness, setBusiness, resolveFor],
+    [selectedPlace, manualName, manualLocation, categoryId, gmapsBusinessId, branchList, competitorList, persistBusiness, setBusiness, resolveFor],
   );
+
+  // Phase B: Start monitoring — triggers first scrape with the configured business + competitors
+  const startMonitoring = React.useCallback(async () => {
+    setBusy(true);
+    try {
+      // First, ensure business and branches are persisted
+      await finish(true);
+      
+      // Then trigger the scrape
+      const cat = getCategory(categoryId);
+      const place = selectedPlace ?? manualPlace(`${manualName.trim()}, ${manualLocation.trim()}`);
+      
+      const body = {
+        name: place.name ?? place.formatted_address,
+        location: place.formatted_address,
+        category: cat?.label,
+        categoryId: cat?.id,
+        place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
+        osm_place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
+        gmaps_place_id: gmapsBusinessId ?? null,
+        lat: place.lat,
+        lng: place.lng,
+        city: place.city,
+        country: place.country,
+        postcode: place.postcode,
+        unverified: place.unverified ?? false,
+        branches: branchList.map((b) => ({
+          branch_id: b.slug,
+          branch_name: b.place.formatted_address || b.place.name || "",
+          lat: b.place.lat,
+          lng: b.place.lng,
+          osm_place_id: b.place.place_id.startsWith("manual/") ? undefined : b.place.place_id,
+          gmaps_place_id: b.gmapsPlaceId ?? null,
+          branch_kind: b.kind ?? "business",
+          competitors: competitorList.map((c) => ({
+            competitor_id: c.competitor_id,
+            name: c.name,
+            gmaps_url: c.gmaps_url,
+            place_id: c.place_id,
+            gmaps_place_id: c.gmaps_place_id,
+            osm_place_id: c.osm_place_id,
+            lat: c.lat,
+            lng: c.lng,
+            category: c.category,
+            verified: c.verified,
+          })),
+        })),
+      };
+      
+      const res = await fetch("/api/scrape/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      
+      if (res.ok) {
+        startRun();
+      }
+    } catch (err) {
+      console.error("Failed to start monitoring:", err);
+    } finally {
+      setBusy(false);
+    }
+  }, [selectedPlace, manualName, manualLocation, categoryId, gmapsBusinessId, branchList, competitorList, finish, startRun]);
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
@@ -335,7 +499,7 @@ export function Onboarding() {
             </p>
           )}
         </div>
-      ) : (
+      ) : step === 2 ? (
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">Add your own branch locations</h1>
@@ -383,9 +547,102 @@ export function Onboarding() {
           </div>
 
           <div className="mt-7 flex flex-col gap-2">
-            <Button type="button" size="lg" className="w-full" disabled={busy} onClick={() => void finish(true)}>
+            <Button type="button" size="lg" className="w-full" disabled={busy} onClick={() => { setStep(3); }}>
               Continue
               <ArrowRight className="size-4" />
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" disabled={busy} onClick={() => { setStep(3); }}>
+              Skip for now
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Add competitors to monitor</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Paste a Google Maps link for each competitor. We&apos;ll validate and add them to your monitoring list.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                type="url"
+                placeholder="https://maps.app.goo.gl/... or https://maps.google.com/place/..."
+                value={competitorInput}
+                onChange={(e) => setCompetitorInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && competitorInput.trim() && addCompetitor(competitorInput)}
+                disabled={addingCompetitor}
+                aria-label="Competitor Google Maps link"
+              />
+              <Button
+                type="button"
+                onClick={() => competitorInput.trim() && addCompetitor(competitorInput)}
+                disabled={!competitorInput.trim() || addingCompetitor}
+              >
+                {addingCompetitor ? (
+                  <svg className="size-4 animate-spin" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <>
+                    <Plus className="size-4 mr-2" />
+                    Add
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {competitorList.length > 0 && (
+              <ul className="space-y-2">
+                {competitorList.map((c) => (
+                  <li key={c.competitor_id} className="flex items-center justify-between gap-2 p-2 border border-border rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{c.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.gmaps_url}</p>
+                      {c.verified && <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Verified</span>}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeCompetitor(c.competitor_id)}
+                      aria-label="Remove competitor"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {competitorList.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                No competitors added yet. Add at least one to start monitoring.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-7 flex flex-col gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="w-full"
+              disabled={busy || competitorList.length === 0}
+              onClick={() => void startMonitoring()}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Starting monitoring…
+                </>
+              ) : (
+                <>
+                  <Play className="size-4 mr-2" />
+                  Start Monitoring
+                </>
+              )}
             </Button>
             <Button type="button" variant="ghost" className="w-full" disabled={busy} onClick={() => void finish(false)}>
               Skip for now

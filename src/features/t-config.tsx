@@ -1,18 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, RefreshCw, Store } from "lucide-react";
+import { Loader2, RefreshCw, Store, Plus, Trash2, Link2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAppState } from "@/lib/app-state";
 import { getCategory } from "@/lib/categories";
+import type { BranchConfig, CompetitorConfig } from "@/lib/gbp/types";
+import SchedulerFeature from "./t-scheduler";
+import { toast } from "sonner";
 
 /**
  * Tools › Config.
  * - Fixed mode (v1): shows the configured competitor list (branch/competitor
  *   counts) and a "Run scan again" that re-scrapes the fixed list.
- * - Discovery mode (v2): shows the user's own selected business (never the
- *   seeded Copenhagen Bali demo) and a "Run scan again" affordance.
+ * - Discovery mode (v2): shows the user's own selected business with competitor
+ *   management (add/edit/remove competitors via Google Maps links).
  */
 export default function ConfigFeature() {
   const { business, mode, startRun } = useAppState();
@@ -21,25 +25,40 @@ export default function ConfigFeature() {
   const [listings, setListings] = React.useState<
     { branch_id: string; branch_name: string; competitor_count: number }[] | null
   >(null);
+  // Discovery mode state
+  const [branches, setBranches] = React.useState<BranchConfig[]>([]);
+  const [competitorInput, setCompetitorInput] = React.useState("");
+  const [addingCompetitor, setAddingCompetitor] = React.useState(false);
 
   const category = getCategory(business?.categoryId);
 
+  // Load data based on mode
   React.useEffect(() => {
-    if (mode !== "fixed") return;
     let active = true;
-    fetch("/api/config/listings")
-      .then((r) => r.json())
-      .then((data: { branches?: { branch_id: string; branch_name: string; competitors: unknown[] }[] }) => {
-        if (!active) return;
-        setListings(
-          (data.branches ?? []).map((b) => ({
-            branch_id: b.branch_id,
-            branch_name: b.branch_name,
-            competitor_count: b.competitors?.length ?? 0,
-          })),
-        );
-      })
-      .catch(() => {});
+    if (mode === "fixed") {
+      fetch("/api/config/listings")
+        .then((r) => r.json())
+        .then((data: { branches?: { branch_id: string; branch_name: string; competitors: unknown[] }[] }) => {
+          if (!active) return;
+          setListings(
+            (data.branches ?? []).map((b) => ({
+              branch_id: b.branch_id,
+              branch_name: b.branch_name,
+              competitor_count: b.competitors?.length ?? 0,
+            })),
+          );
+        })
+        .catch(() => {});
+    } else {
+      // Discovery mode: load active business branches (with competitors)
+      fetch("/api/business/branches")
+        .then((r) => r.json())
+        .then((data: { branches?: BranchConfig[] }) => {
+          if (!active) return;
+          setBranches(data.branches ?? []);
+        })
+        .catch(() => {});
+    }
     return () => {
       active = false;
     };
@@ -71,6 +90,76 @@ export default function ConfigFeature() {
       startRun();
     }
   }, [mode, business, scanning, startRun]);
+
+  // Discovery mode: add competitor to all branches
+  const addCompetitor = React.useCallback(async () => {
+    if (!competitorInput.trim() || addingCompetitor) return;
+    setAddingCompetitor(true);
+    try {
+      const res = await fetch(`/api/places?q=${encodeURIComponent(competitorInput.trim())}`);
+      const data = await res.json();
+      if (data.places?.length > 0) {
+        const place = data.places[0];
+        const compId = place.name
+          ? place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+          : "competitor";
+        const newCompetitor: CompetitorConfig = {
+          competitor_id: compId,
+          name: place.name ?? competitorInput.trim(),
+          gmaps_url: competitorInput.trim(),
+          place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+          gmaps_place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+          osm_place_id: place.place_id?.startsWith("coord/") || place.place_id?.startsWith("osm/") ? place.place_id : null,
+          lat: place.lat,
+          lng: place.lng,
+          category: place.category,
+          verified: place.provider === "gmaps",
+        };
+        setBranches((prev) =>
+          prev.map((b) => ({
+            ...b,
+            competitors: [...(b.competitors ?? []), newCompetitor],
+          })),
+        );
+        // Persist updated branches
+        await fetch("/api/business/branches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ branches: prev => prev.map((b) => ({
+            ...b,
+            competitors: [...(b.competitors ?? []), newCompetitor],
+          })) }),
+        });
+        setCompetitorInput("");
+        toast.success("Competitor added", { description: place.name ?? "Added to monitoring list" });
+      } else {
+        toast.error("Could not resolve link", { description: "Try a different Google Maps link" });
+      }
+    } catch {
+      toast.error("Failed to add competitor", { description: "Network error" });
+    } finally {
+      setAddingCompetitor(false);
+    }
+  }, [competitorInput, addingCompetitor]);
+
+  const removeCompetitor = React.useCallback(async (competitorId: string) => {
+    setBranches((prev) =>
+      prev.map((b) => ({
+        ...b,
+        competitors: (b.competitors ?? []).filter((c) => c.competitor_id !== competitorId),
+      })),
+    );
+    // Persist updated branches
+    await fetch("/api/business/branches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ branches: prev => prev.map((b) => ({
+        ...b,
+        competitors: (b.competitors ?? []).filter((c) => c.competitor_id !== competitorId),
+      })) }),
+    });
+    toast.success("Competitor removed", { description: "Removed from monitoring list" });
+  }, []);
 
   if (mode === "fixed") {
     return (
@@ -171,6 +260,76 @@ export default function ConfigFeature() {
           <p className="mt-3 text-center text-xs text-muted-foreground">{status}</p>
         )}
       </div>
+
+      {/* Discovery mode: Competitor management */}
+      <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-sm font-medium text-primary">
+          <Link2 className="size-4" />
+          Competitors
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              placeholder="https://maps.app.goo.gl/... or https://maps.google.com/place/..."
+              value={competitorInput}
+              onChange={(e) => setCompetitorInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && competitorInput.trim() && addCompetitor()}
+              disabled={addingCompetitor}
+              aria-label="Competitor Google Maps link"
+            />
+            <Button
+              type="button"
+              onClick={() => competitorInput.trim() && addCompetitor()}
+              disabled={!competitorInput.trim() || addingCompetitor}
+            >
+              {addingCompetitor ? (
+                <svg className="size-4 animate-spin" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <>
+                  <Plus className="size-4 mr-2" />
+                  Add
+                </>
+              )}
+            </Button>
+          </div>
+
+          {branches.flatMap((b) => b.competitors ?? []).length > 0 && (
+            <ul className="space-y-2">
+              {branches.flatMap((b) => b.competitors ?? []).map((c) => (
+                <li key={c.competitor_id} className="flex items-center justify-between gap-2 p-2 border border-border rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{c.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.gmaps_url}</p>
+                    {c.verified && <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Verified</span>}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeCompetitor(c.competitor_id)}
+                    aria-label="Remove competitor"
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {branches.flatMap((b) => b.competitors ?? []).length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-4">
+              No competitors added yet. Add your first competitor above.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Discovery mode: Scheduler */}
+      <SchedulerFeature />
     </div>
   );
 }

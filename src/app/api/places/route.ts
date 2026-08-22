@@ -244,6 +244,150 @@ async function queryChain(
   return merged;
 }
 
+const GMAPS_URL_PATTERNS = [
+  /maps\.app\.goo\.gl\//i,
+  /goo\.gl\/maps\//i,
+  /maps\.google\.com\/maps\/place/i,
+  /maps\.google\.com\/maps\/search/i,
+  /www\.google\.com\/maps\/place/i,
+  /www\.google\.com\/maps\/search/i,
+  /google\.com\/maps\/place/i,
+  /google\.com\/maps\/search/i,
+] as const;
+
+function isGoogleMapsUrl(input: string): boolean {
+  return GMAPS_URL_PATTERNS.some((p) => p.test(input));
+}
+
+function extractGmapsName(url: string): string | null {
+  const m = url.match(/\/maps\/place\/([^/@]+)/);
+  if (m) return decodeURIComponent(m[1].replace(/\+/g, " "));
+  return null;
+}
+
+function extractCoordinates(url: string): { lat: number; lng: number } | null {
+  const m = url.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (m) return { lat: Number(m[1]), lng: Number(m[2]) };
+  return null;
+}
+
+function extractHexCid(url: string): { cid: string; ftid: string } | null {
+  const m = url.match(/!1s0x([0-9a-f]{16}):0x([0-9a-f]{16})/i);
+  if (m) return { cid: m[1], ftid: m[2] };
+  return null;
+}
+
+function cidToPlaceId(cidHex: string, ftidHex: string): string {
+  const leBytes = (hex: string) => {
+    const bytes: number[] = [];
+    for (let i = hex.length - 2; i >= 0; i -= 2) bytes.push(parseInt(hex.slice(i, i + 2), 16));
+    return bytes;
+  };
+  const cidLe = leBytes(cidHex);
+  const ftidLe = leBytes(ftidHex);
+  const combined = [...cidLe, 0x11, ...ftidLe];
+  return "ChIJ" + Buffer.from(combined).toString("base64url");
+}
+
+function extractGooglePlaceId(url: string): string | null {
+  const m =
+    url.match(/place_id:([A-Za-z0-9_-]{20,})/) ??
+    url.match(/\/maps\/place\/[^/]+\/([A-Za-z0-9_-]{20,})/) ??
+    url.match(/query_place_id=([A-Za-z0-9_-]{20,})/) ??
+    url.match(/(ChIJ[A-Za-z0-9_-]{20,})/);
+  return m ? m[1] : null;
+}
+
+async function resolveGoogleMapsUrl(
+  input: string,
+  limit: number,
+): Promise<NormalizedPlace[]> {
+  // First, extract place_id/name/coords from the ORIGINAL input (handles query_place_id=, full URLs)
+  const origPlaceId = extractGooglePlaceId(input);
+  const origName = extractGmapsName(input);
+  const origCoords = extractCoordinates(input);
+  const origHexCid = extractHexCid(input);
+
+  // Follow redirects to get the final URL
+  let resolved = input;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(input, {
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: { "User-Agent": "Rother/0.3 (+local)" },
+    });
+    resolved = res.url;
+    clearTimeout(t);
+  } catch {
+    // keep original as best effort
+  }
+
+  // Extract from resolved URL as fallback/augmentation
+  const resPlaceId = extractGooglePlaceId(resolved);
+  const resName = extractGmapsName(resolved);
+  const resCoords = extractCoordinates(resolved);
+  const resHexCid = extractHexCid(resolved);
+
+  // Merge: prefer original place_id (e.g., query_place_id), fallback to resolved
+  const placeId = origPlaceId ?? resPlaceId;
+  const name = origName ?? resName;
+  const coords = origCoords ?? resCoords;
+
+  // If we have a hex CID from either URL, convert to real ChIJ place_id
+  const hexCid = origHexCid ?? resHexCid;
+  const convertedPlaceId = hexCid ? cidToPlaceId(hexCid.cid, hexCid.ftid) : null;
+
+  // If we have a real place_id (original, resolved, or converted from hex CID)
+  const finalPlaceId = placeId ?? convertedPlaceId;
+  if (finalPlaceId) {
+    return [
+      {
+        place_id: `gmaps/${finalPlaceId}`,
+        name,
+        formatted_address: name ?? "",
+        lat: coords?.lat ?? 0,
+        lng: coords?.lng ?? 0,
+        provider: "gmaps",
+        unverified: true,
+      },
+    ];
+  }
+
+  // If we have coordinates, try to forward-geocode with name bias
+  if (coords) {
+    const query = name ? `${name}, ${coords.lat},${coords.lng}` : `${coords.lat},${coords.lng}`;
+    const places = await queryChain(query, coords.lat, coords.lng, limit);
+    if (places.length > 0) {
+      // If we had a name but the geocode didn't preserve it, keep our name
+      if (name && !places[0].name) {
+        places[0] = { ...places[0], name, formatted_address: name };
+      }
+      return places;
+    }
+    return [
+      {
+        place_id: `coord/${coords.lat},${coords.lng}`,
+        name,
+        formatted_address: name ?? `${coords.lat}, ${coords.lng}`,
+        lat: coords.lat,
+        lng: coords.lng,
+        provider: "gmaps-coords",
+        unverified: true,
+      },
+    ];
+  }
+
+  // If we only have a name (no coords, no place_id), try text geocode
+  if (name) {
+    const places = await queryChain(name, undefined, undefined, limit);
+    if (places.length > 0) return places;
+  }
+
+  return [];
+}
+
 function cacheKey(q: string, lat?: number, lng?: number, limit = 6, mode = "business"): string {
   return `${q.toLowerCase()}|${lat ?? ""}|${lng ?? ""}|${limit}|${mode}`;
 }
@@ -336,6 +480,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ places: [place], provider: "manual", manual: true }, { headers });
   }
 
+  // Handle Google Maps URLs directly in main query path (paste link → place_id)
+  if (isGoogleMapsUrl(q)) {
+    const places = await resolveGoogleMapsUrl(q, limit);
+    return NextResponse.json(
+      { places, provider: places[0]?.provider ?? "gmaps", fromUrl: true },
+      { headers },
+    );
+  }
+
   if (q.length < 2) {
     return NextResponse.json(
       { places: [], provider: "none", note: "query too short" },
@@ -402,6 +555,11 @@ async function expandShortLink(input: string): Promise<{ places: NormalizedPlace
     return { places: [], provider: "none" };
   }
 
+  // Extract from original input before redirect
+  const origName = extractGmapsName(input);
+  const origCoords = extractCoordinates(input);
+  const origHexCid = extractHexCid(input);
+
   // Follow redirects without loading the body.
   let resolved = target;
   try {
@@ -418,37 +576,31 @@ async function expandShortLink(input: string): Promise<{ places: NormalizedPlace
     // keep `target` as best effort
   }
 
-  const pid = resolved.match(/place_id:([A-Za-z0-9_-]{20,})/) ??
-    resolved.match(/\/maps\/place\/[^/]+\/([A-Za-z0-9_-]{20,})/) ??
-    resolved.match(/ChIJ[A-Za-z0-9_-]{20,}/);
-  const at = resolved.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-  const latF = at ? Number(at[1]) : undefined;
-  const lngF = at ? Number(at[2]) : undefined;
+  // Extract from resolved URL
+  const resName = extractGmapsName(resolved);
+  const resCoords = extractCoordinates(resolved);
+  const resHexCid = extractHexCid(resolved);
+  const resPlaceId = extractGooglePlaceId(resolved);
 
-  // Prefer forward-geocoding coordinates into a real OSM place.
-  if (typeof latF === "number" && typeof lngF === "number") {
-    const places = await queryChain(`${latF},${lngF}`, latF, lngF, 1);
-    if (places.length > 0) return { places, provider: places[0].provider };
-    const place: NormalizedPlace = {
-      place_id: pid ? `gmaps/${pid[1]}` : `coord/${latF},${lngF}`,
-      name: null,
-      formatted_address: `${latF}, ${lngF}`,
-      lat: latF,
-      lng: lngF,
-      provider: "gmaps-coords",
-      unverified: true,
-    };
-    return { places: [place], provider: "gmaps-coords" };
-  }
-  if (pid) {
+  // Merge: prefer original (for query_place_id=), fallback to resolved
+  const name = origName ?? resName;
+  const coords = origCoords ?? resCoords;
+  const hexCid = origHexCid ?? resHexCid;
+  const placeId = resPlaceId;
+
+  // If we have a hex CID, convert to real ChIJ place_id
+  const convertedPlaceId = hexCid ? cidToPlaceId(hexCid.cid, hexCid.ftid) : null;
+  const finalPlaceId = placeId ?? convertedPlaceId;
+
+  if (finalPlaceId) {
     return {
       places: [
         {
-          place_id: `gmaps/${pid[1]}`,
-          name: null,
-          formatted_address: "",
-          lat: 0,
-          lng: 0,
+          place_id: `gmaps/${finalPlaceId}`,
+          name,
+          formatted_address: name ?? "",
+          lat: coords?.lat ?? 0,
+          lng: coords?.lng ?? 0,
           provider: "gmaps",
           unverified: true,
         },
@@ -456,6 +608,39 @@ async function expandShortLink(input: string): Promise<{ places: NormalizedPlace
       provider: "gmaps",
     };
   }
+
+  // If we have coordinates, try forward-geocode with name bias
+  if (coords) {
+    const query = name ? `${name}, ${coords.lat},${coords.lng}` : `${coords.lat},${coords.lng}`;
+    const places = await queryChain(query, coords.lat, coords.lng, 1);
+    if (places.length > 0) {
+      if (name && !places[0].name) {
+        places[0] = { ...places[0], name, formatted_address: name };
+      }
+      return { places, provider: places[0].provider };
+    }
+    return {
+      places: [
+        {
+          place_id: `coord/${coords.lat},${coords.lng}`,
+          name,
+          formatted_address: name ?? `${coords.lat}, ${coords.lng}`,
+          lat: coords.lat,
+          lng: coords.lng,
+          provider: "gmaps-coords",
+          unverified: true,
+        },
+      ],
+      provider: "gmaps-coords",
+    };
+  }
+
+  // If only name, try text geocode
+  if (name) {
+    const places = await queryChain(name, undefined, undefined, 1);
+    if (places.length > 0) return { places, provider: places[0].provider };
+  }
+
   return { places: [], provider: "none" };
 }
 

@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Star,
   MessageSquare,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -218,6 +220,22 @@ function LeaderboardRow({
   maxReviews: number;
 }) {
   const shortBranch = comp.branch_name.replace(/^Copenhagen Bali\s*-\s*/i, "").trim();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch("/api/scrape/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ competitor_ids: [comp.competitor_id] }),
+      });
+    } catch {
+      // error handled silently
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const medalClass =
     rank === 1
       ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
@@ -280,7 +298,7 @@ function LeaderboardRow({
       </div>
 
       {/* Highlight value */}
-      <div className="flex shrink-0 flex-col items-end">
+      <div className="flex shrink-0 flex-col items-end gap-1">
         <span
           className={
             "text-sm font-bold tabular-nums " +
@@ -300,6 +318,23 @@ function LeaderboardRow({
               ? "reviews"
               : "new"}
         </span>
+
+        {/* Per-competitor refresh */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label={`Refresh ${comp.name}`}
+          className="h-7 w-7 text-muted-foreground hover:text-primary"
+        >
+          {refreshing ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="size-3.5" />
+          )}
+        </Button>
       </div>
     </motion.li>
   );

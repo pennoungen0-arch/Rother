@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Sparkles,
   Store,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -21,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -66,16 +69,41 @@ function CompetitorRow({
 }) {
   const ts = formatTimestamp(comp.last_scraped_at);
   const hasReviews = comp.total_reviews > 0;
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch("/api/scrape/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ competitor_ids: [comp.competitor_id] }),
+      });
+    } catch {
+      // error handled silently
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const TrendIcon = comp.trend_indicator === "up" ? ArrowUp
     : comp.trend_indicator === "down" ? ArrowDown
     : null;
 
   return (
-    <button
-      type="button"
+    // div[role=button] instead of <button>: this row contains the per-competitor
+    // refresh <button>, and HTML forbids nested interactive elements (hydration error).
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
-      className="group w-full rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group w-full cursor-pointer rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       aria-label={`View reviews for ${comp.name}`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -119,10 +147,27 @@ function CompetitorRow({
             {comp.competitor_id}
           </div>
         </div>
-        <ChevronRight
-          className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary"
-          aria-hidden="true"
-        />
+        <div className="flex shrink-0 items-center gap-2">
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary"
+            aria-hidden="true"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label={`Refresh ${comp.name}`}
+            className="h-7 w-7 text-muted-foreground hover:text-primary"
+          >
+            {refreshing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="size-3.5" />
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -165,7 +210,7 @@ function CompetitorRow({
           hasn&apos;t been scraped live.
         </p>
       )}
-    </button>
+    </div>
   );
 }
 

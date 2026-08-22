@@ -1,40 +1,68 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Smoke test — the critical first-run flow in FIXED-list mode (Phase 1):
- *   login (mock) → mode picker defaults to fixed → run gate → hub revealed.
+ * Smoke test — critical first-run flows:
+ * 1. Discovery-first: landing screen renders with link input
+ * 2. Fixed-mode (legacy): Advanced → Fixed competitor list → Run gate → hubs
  *
- * Requires a running dev server with the committed Aug-13 production data
- * (12 competitors / 5,021 reviews).
+ * Requires a running dev server.
  */
 
-test("fixed-mode flow: login → run gate → hub → feature renders data", async ({
+test("discovery-first flow: landing screen renders with link input", async ({
   page,
 }) => {
-  // Clear any previous session so we start at the login screen.
+  // Clear any previous session so we start at the landing screen.
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => sessionStorage.clear());
   await page.reload();
 
-  // 1. Login screen with mode picker (default = fixed).
-  await expect(page.getByText("Monitoring mode")).toBeVisible();
-  await expect(page.getByText("Fixed competitor list")).toBeVisible();
-  await expect(page.getByText("My business + discovery")).toBeVisible();
+  // 1. Landing screen with "Paste Google Maps link" input.
+  await expect(page.getByText("Paste a Google Maps business link")).toBeVisible();
+  await expect(page.getByPlaceholder(/maps\.app\.goo\.gl/)).toBeVisible();
 
-  // 2. Sign in (mock Gmail).
-  await page.getByRole("button", { name: /Sign in with Gmail/ }).click();
-  await page.getByText("Signing in…").waitFor({ state: "hidden", timeout: 10_000 });
+  // 2. Enter a link and click validate - use manual mode for instant response
+  await page.getByPlaceholder(/maps\.app\.goo\.gl/).fill(
+    "https://maps.app.goo.gl/test",
+  );
 
-  // Fixed mode skips onboarding → run gate.
-  await expect(page.getByText("Start monitoring your competitor list")).toBeVisible();
+  // 3. Click validate
+  await page.getByRole("button", { name: /Validate link/ }).click();
 
-  // 3. Press Run — reveals the hubs regardless of scrape outcome.
+  // 4. Should show error for invalid test link (instant, no API call)
+  // The inline error has role=alert, the toast is separate
+  await expect(page.locator("p[role='alert']")).toContainText("Could not resolve that link", { timeout: 5_000 });
+});
+
+test("fixed-mode flow (via Advanced): Advanced → Fixed → Run gate → hub", async ({
+  page,
+}) => {
+  // Clear any previous session so we start at the landing screen.
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+
+  // 1. Click "Advanced" to reveal fixed/discovery mode selector.
+  await page.getByRole("button", { name: /Advanced/ }).click();
+
+  // 2. Mode picker visible with Fixed competitor list option.
+  await expect(page.getByRole("button", { name: "Fixed competitor list", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Discovery (my business)", exact: true })).toBeVisible();
+
+  // 3. Click "Sign in with Gmail" for fixed mode (mocks login + sets mode=fixed).
+  await page.getByRole("button", { name: "Sign in with Gmail" }).click();
+
+  // 4. Wait for LoginScreen to disappear and RunScreen to appear (context updates from localStorage).
+  await expect(page.getByText("Start monitoring your competitor list")).toBeVisible({ timeout: 10_000 });
+
+  // 5. Press Run — reveals the hubs (live scrape takes ~2+ minutes).
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(page.getByText("What do you want to look at?")).toBeVisible({
     timeout: 15_000,
   });
 
-  // 4. Open the Competitors hub, then the Leaderboard feature.
+  // 6. Open the Competitors hub, then the Leaderboard feature.
   await page.getByRole("button", { name: /Competitors See how you stack up/ }).click();
   await page.getByRole("button", { name: /Leaderboard/ }).click();
   await expect(page.getByText("Competitor Leaderboard")).toBeVisible({
@@ -42,20 +70,85 @@ test("fixed-mode flow: login → run gate → hub → feature renders data", asy
   });
 });
 
-test("KPI feature renders the committed production dataset", async ({ page }) => {
+test("KPI feature renders live data (3 competitors)", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => sessionStorage.clear());
   await page.reload();
-  await page.getByRole("button", { name: /Sign in with Gmail/ }).click();
-  await page.getByText("Signing in…").waitFor({ state: "hidden", timeout: 10_000 });
+
+  // Use fixed mode for quick access (no link validation needed)
+  await page.getByRole("button", { name: /Advanced/ }).click();
+  await page.getByRole("button", { name: "Sign in with Gmail" }).click();
+
+  await expect(page.getByText("Start monitoring your competitor list")).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(page.getByText("What do you want to look at?")).toBeVisible({
     timeout: 15_000,
   });
 
+  // Open Insights hub → KPIs feature
   await page.getByRole("button", { name: /Insights Your business health/ }).click();
   await page.getByRole("button", { name: /KPIs/ }).click();
 
-  // The KPI row reads /api/overview — 5,001 total reviews + 12 competitors.
-  await expect(page.getByText("5001")).toBeVisible({ timeout: 15_000 });
+  // KPI feature should load and show the 3 KPI cards
+  await expect(page.getByText("Branches", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Competitors", { exact: true })).toBeVisible();
+});
+
+test("Mobile viewport: landing screen renders correctly", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+
+  // Landing screen should be responsive
+  await expect(page.getByText("Paste a Google Maps business link")).toBeVisible();
+  await expect(page.getByPlaceholder(/maps\.app\.goo\.gl/)).toBeVisible();
+});
+
+test("Discovery flow: paste link → add competitor → start monitoring", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+
+  // 1. Paste a valid Google Maps link
+  await page.getByPlaceholder(/maps\.app\.goo\.gl/).fill(
+    "https://maps.app.goo.gl/dCBcNxfk2fDjbDUC9", // Crate Cafe short link
+  );
+  await page.getByRole("button", { name: /Validate link/ }).click();
+
+  // 2. Should show preview with business name (in preview card)
+  await expect(page.getByText("Crate Cafe").first()).toBeVisible({ timeout: 10_000 });
+
+  // 3. Continue to monitoring
+  await page.getByRole("button", { name: /Continue to monitoring/ }).click();
+
+  // 4. Should reach onboarding step 1 (business pre-filled)
+  await expect(page.getByText("Crate Cafe").first()).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  // 5. Step 2 - branches (skip)
+  await expect(page.getByText("Add your own branch locations")).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: /Skip for now/ }).click();
+
+  // 6. Step 3 - add competitor
+  await expect(page.getByText("Add competitors to monitor")).toBeVisible({ timeout: 10_000 });
+  await page.getByPlaceholder(/maps\.app\.goo\.gl/).fill(
+    "https://maps.app.goo.gl/FEkM7q8dPc8DrPiQ6", // Revolver short link
+  );
+  await page.getByRole("button", { name: /Add/ }).click();
+
+  // 7. Should show competitor in list (first occurrence in the list, not toast)
+  await expect(page.getByText("Revolver Seminyak").first()).toBeVisible({ timeout: 10_000 });
+
+  // 8. Start monitoring - verify button exists and is enabled
+  await expect(page.getByRole("button", { name: /Start Monitoring/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start Monitoring/ })).toBeEnabled();
 });

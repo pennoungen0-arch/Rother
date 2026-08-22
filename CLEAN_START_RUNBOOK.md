@@ -1,6 +1,6 @@
 # Rother Clean-Start Runbook (Manual Procedure)
 
-**For version:** v0.3.0 · Windows / PowerShell
+**For version:** v0.3.1+ · Windows / PowerShell
 **Time:** ~10 min first time, ~3 min after warm-up
 
 ---
@@ -191,5 +191,39 @@ taskkill /F /PID <pid>
 | Scrape failed code 2 | Should be fixed — update repo | #9 |
 | Reviews missing after scrape | Check `data\users\<id>\` exists | #13 |
 | git shows data deletions | `git restore gbp-monitor/data/` | #14 |
+| Run button says "Scrape already running…" | Correct v0.3.1 behavior — wait or explore dashboard; auto-rechecks every 5s | Fix C |
 
-**Full catalog:** `TROUBLESHOOTING.md` (14 entries)
+**Full catalog:** `TROUBLESHOOTING.md` (15 entries)
+
+---
+
+## v0.3.1 Verification Addendum (seam fixes)
+
+After the Phase E walkthrough, confirm the four v0.3.1 behaviors:
+
+### V1 — Competitors persist through skip-branches (Fix A)
+During Step 3, add ≥1 competitor, click **Start Monitoring**, then:
+```powershell
+Invoke-RestMethod http://localhost:3000/api/business/branches
+```
+*Expected:* `branches[0].competitors` contains your competitor's id, even
+though you skipped Step 2.
+
+### V2 — Scraper targets YOUR competitors (Fix B)
+Watch the spawned run's log (or `data/users/<id>/run.log`): only YOUR
+competitor ids appear as `listing_start`. Root
+`gbp-monitor/config/listings.json` must remain untouched. Also confirm:
+```powershell
+Test-Path gbp-monitor\data\users\<businessId>\effective_listings.json   # True
+```
+
+### V3 — Honest empty-config refusal (Fix B guard)
+Temporarily remove all competitors via Tools › Configuration, then press Run:
+*Expected:* "No competitors configured — add at least one competitor…"
+(HTTP 422), no scrape spawns.
+
+### V4 — Concurrent-run detection (Fix C)
+While a live scrape is running, open a second browser tab to
+`http://localhost:3000`, sign in, reach the Run gate:
+*Expected:* Run button shows **"Scrape already running…"** disabled with
+explanatory text; auto-re-enables within ~5s of run completion.

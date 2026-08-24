@@ -60,12 +60,13 @@ export async function GET() {
       total: number;
     }> = [];
 
-    // We need competitor names — read from listings
-    const { readListings } = await import("@/lib/gbp/server-data");
-    const listings = await readListings();
+    // We need competitor names — Phase D sweep: from the monitored config,
+    // not the root seed listings.
+    const { resolveMonitoredConfig } = await import("@/lib/gbp/server-data");
+    const { branches: configBranches } = await resolveMonitoredConfig();
     const compIdToName = new Map<string, string>();
     const compIdToBranchName = new Map<string, string>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       for (const comp of branch.competitors) {
         compIdToName.set(comp.competitor_id, comp.name);
         compIdToBranchName.set(comp.competitor_id, branch.branch_name);

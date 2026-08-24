@@ -5,7 +5,7 @@ import {
   readAllSnapshots,
   readSnapshotAt,
   listSnapshots,
-  readListings,
+  resolveMonitoredConfig,
 } from "@/lib/gbp/server-data";
 import type { HistoricalComparisonResponse } from "@/lib/gbp/types";
 
@@ -26,9 +26,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const [snapshots, listings] = await Promise.all([
+    // Phase D sweep: label maps from the monitored config, not seed listings.
+    const [snapshots, { branches: configBranches }] = await Promise.all([
       readAllSnapshots(),
-      readListings(),
+      resolveMonitoredConfig(),
     ]);
 
     // Resolve the two snapshots to compare.
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
     const compIdToName = new Map<string, string>();
     const compIdToBranchId = new Map<string, string>();
     const branchIdToName = new Map<string, string>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchIdToName.set(branch.branch_id, branch.branch_name);
       for (const comp of branch.competitors) {
         compIdToName.set(comp.competitor_id, comp.name);

@@ -1,0 +1,24 @@
+Phase 0 baseline repro evidence — 2026-08-22 (pre-fix, v0.3.1 @ 4fa6765)
+
+E1. Snapshots on disk:
+    gbp-monitor/data/users/crate-cafe/snapshots/ contains ONLY:
+      - revolver-seminyak/
+    No crate-cafe/ directory exists, despite crate-cafe being the active
+    monitored business (user-business.json: id=crate-cafe, name=Crate Cafe).
+
+E2. GET /api/overview (dev server :3000):
+      competitorStats = [ { competitor_id: revolver-seminyak,
+                            total_reviews: 580, average_rating: 4.5 } ]
+      totalCompetitors: 1
+      totalBranches: 1
+    The monitored business itself has zero rows — no stats, no rating
+    trend, no new-review tracking for Crate Cafe.
+
+E3. Scrape-target config:
+      effective_listings.json competitors = [revolver-seminyak]
+      user-business.json branch crate-cafe -> competitors = [revolver-seminyak]
+    The self entry that persistUserBusiness() synthesizes by default was
+    replaced by onboarding Step 3's competitor-only branches POST.
+
+Conclusion: bug reproduced at all three layers (disk / API / config).
+Proceeding to Phase 1 per SELF_MONITORING_FIX_PLAN.md.

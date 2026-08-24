@@ -8,7 +8,7 @@ import {
   readAllSnapshots,
   readLatestDelta,
   readAllDeltas,
-  readListings,
+  resolveMonitoredConfig,
 } from "@/lib/gbp/server-data";
 
 export const dynamic = "force-dynamic";
@@ -25,17 +25,17 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    // P2 / tenant scoping: prefer the active business's OWN branch config;
-    // fall back to the seed demo listings when no business is selected.
+    // P2 / tenant scoping + S6 provenance (Phase D): one choke point for the
+    // monitored config; `source` is surfaced to the UI as `configSource`.
     const active = await readActiveBusiness();
     const id = active?.id;
-    const branchConfig = active?.branches ?? (await readListings()).branches;
-
-    const [snapshots, allDeltas, dataStatus] = await Promise.all([
-      readAllSnapshots(id),
-      readAllDeltas(id),
-      assessDataStatus(id),
-    ]);
+    const [{ branches: branchConfig, source: configSource }, snapshots, allDeltas, dataStatus] =
+      await Promise.all([
+        resolveMonitoredConfig(),
+        readAllSnapshots(id),
+        readAllDeltas(id),
+        assessDataStatus(id),
+      ]);
 
     const deltasByComp = new Map<string, typeof allDeltas>();
     for (const d of allDeltas) {
@@ -121,6 +121,7 @@ export async function GET() {
           average_review_length: avgLen,
           trend_indicator: trend,
           verified: comp.verified,
+          self: comp.self,
         });
       }
 
@@ -147,6 +148,7 @@ export async function GET() {
       totalCompetitors,
       totalReviews,
       dataStatus,
+      configSource,
     };
 
     return NextResponse.json(body, {

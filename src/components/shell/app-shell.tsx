@@ -73,6 +73,18 @@ function TopBar() {
               <span className="hidden max-w-[12rem] truncate text-sm md:inline">
                 {targetLabel}
               </span>
+              {/* S6 provenance (SYSTEMS_FIX_PLAN Phase D): in fixed mode the
+                  monitored list IS the seeded demo set — say so explicitly
+                  instead of silently masking (server mirrors this via the
+                  configSource field on /api/overview + /api/branches). */}
+              {mode === "fixed" && (
+                <span
+                  className="hidden rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 lg:inline"
+                  title="Fixed mode monitors the seeded demo competitor list. Switch to Discovery mode to monitor your own business."
+                >
+                  Demo dataset
+                </span>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
 import {
-  readAllSnapshots,
   readAllDeltas,
-  readListings,
+  resolveMonitoredConfig,
   readRunSummary,
 } from "@/lib/gbp/server-data";
 import { readJsonFile } from "@/lib/gbp/server-data";
@@ -33,18 +32,18 @@ export async function GET() {
   try {
     const alerts: Alert[] = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [snapshots, deltas, listings, runSummary] = await Promise.all([
-      readAllSnapshots(),
+    // Phase D sweep: label maps must come from the monitored config
+    // (tenant branches + self entry), not the root seed listings.
+    const [deltas, { branches: configBranches }, runSummary] = await Promise.all([
       readAllDeltas(),
-      readListings(),
+      resolveMonitoredConfig(),
       readRunSummary(),
     ]);
 
     const compIdToName = new Map<string, string>();
     const compIdToBranchId = new Map<string, string>();
     const branchIdToName = new Map<string, string>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchIdToName.set(branch.branch_id, branch.branch_name);
       for (const comp of branch.competitors) {
         compIdToName.set(comp.competitor_id, comp.name);

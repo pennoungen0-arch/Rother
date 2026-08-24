@@ -99,7 +99,13 @@ export interface CompetitorConfig {
   /** D2 / RISK-002: whether the place_id has been cross-checked against the
    *  resolved business name. Defaults to false; the dashboard shows an
    *  "unverified" badge for false. Never auto-overwritten on mismatch. */
-  verified?: boolean;
+   verified?: boolean;
+  /** v0.3.2 self-monitoring: true when this entry is the ACTIVE BUSINESS
+   *  ITSELF synthesized by `withSelfEntry()` rather than a user-added
+   *  competitor. Synthetic entries are never persisted to user-business.json;
+   *  geographic-statistics consumers (competitive-health, geo-grid) must
+   *  filter them out to keep distance/density math honest. */
+  self?: boolean;
 }
 
 /**
@@ -254,10 +260,14 @@ export interface CompetitorStats {
   latest_review: { text: string | null; relative_date: string | null; rating: number | null } | null;
   average_review_length: number | null;
   trend_indicator: "up" | "down" | "stable" | null;
-  /** D2 / RISK-002: whether the place_id was cross-checked against the
-   *  resolved business name. When false the UI shows an "Unverified" badge. */
-  verified?: boolean;
-}
+   /** D2 / RISK-002: whether the place_id was cross-checked against the
+    *  resolved business name. When false the UI shows an "Unverified" badge. */
+   verified?: boolean;
+   /** v0.3.2 self-monitoring: true when this stats row belongs to the active
+    *  business itself (synthesized by `withSelfEntry`). UI shows a
+    *  "Your business" badge. */
+   self?: boolean;
+ }
 
 /** Health of the underlying data layer for the current request (D4 / TD-H06). */
 export type DataStatus = "ok" | "missing" | "corrupt";
@@ -307,7 +317,11 @@ export interface OverviewResponse {
     new_reviews_count: number;
     last_scraped_at: string | null;
     verified?: boolean;
+    /** v0.3.2 self-monitoring: row belongs to the active business itself. */
+    self?: boolean;
   }[];
+  /** S6 provenance (Phase D): where the monitored config came from. */
+  configSource?: "tenant" | "seed-demo";
 }
 
 export interface BranchesResponse {
@@ -316,6 +330,8 @@ export interface BranchesResponse {
   totalReviews: number;
   /** D4 / TD-H06: health of the data layer for this request. */
   dataStatus: DataStatus;
+  /** S6 provenance (Phase D): where the monitored config came from. */
+  configSource?: "tenant" | "seed-demo";
 }
 
 export interface ReviewsQuery {

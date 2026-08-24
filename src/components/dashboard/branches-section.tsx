@@ -113,6 +113,16 @@ function CompetitorRow({
             <h4 className="truncate text-sm font-semibold text-foreground">
               {comp.name}
             </h4>
+            {comp.self && (
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 border-primary/50 bg-primary/10 px-1.5 py-0 text-[10px] font-semibold text-primary"
+                title="This is your own monitored business — scraped alongside competitors"
+              >
+                <Store className="size-2.5" aria-hidden="true" />
+                Your business
+              </Badge>
+            )}
             {comp.verified === false && (
               <Badge
                 variant="outline"
@@ -275,6 +285,16 @@ function CompetitorReviewList({
             <SheetTitle className="flex items-center gap-2 text-base">
               <Store className="size-4 text-primary" aria-hidden="true" />
               {comp.name}
+              {comp.self && (
+                <Badge
+                  variant="outline"
+                  className="ml-1 gap-1 border-primary/50 bg-primary/10 px-1.5 py-0 text-[10px] font-semibold text-primary"
+                  title="This is your own monitored business — scraped alongside competitors"
+                >
+                  <Store className="size-2.5" aria-hidden="true" />
+                  Your business
+                </Badge>
+              )}
               {comp.verified === false && (
                 <Badge
                   variant="outline"

@@ -1,0 +1,57 @@
+Phase C evidence — true-clean-start walkthrough, S1 verification (2026-08-24)
+
+METHOD: server-state checkpoints via API (the UI interaction itself is already
+e2e-covered by discovery-persistence.spec.ts, which walks the real browser
+through the identical steps and asserts persistence). Backup taken before
+start: Temp\opencode\phaseC_backup_20260824T175855\.
+
+CHECKPOINT 1 — COLD STATE (user-business.json deleted, server restarted)
+  /api/business/branches → seed demo set (test-canggu/seminyak/ubud, comp-*)
+    = documented fixed-mode fallback.
+  /api/overview → configSource=seed-demo, 3 competitors, 5001 reviews,
+    dataStatus=ok. Provenance field works; TopBar would show "Demo dataset".
+  ✓ EXPECTED
+
+CHECKPOINT 2 — STEP 1 (validate link + persist business)
+  GET /api/places?q=<real Crate Cafe short link> → resolved "Crate Cafe",
+    place_id gmaps/ChIJOaEQDnk40i0Rzhou4NcRx-w (live Google resolution OK).
+  POST /api/business → ok=true, stored id=crate-cafe, branches=0
+  File: {id, name, ...} with NO branches key → honest "no branches yet".
+  ✓ EXPECTED
+
+CHECKPOINT 3 — ZERO-COMPETITOR PATH (Step 2 skipped, no competitors, trigger)
+  POST /api/scrape/trigger?mode=fixtures → ACCEPTED (pre-v0.3.2 this was 422).
+  effective_listings.json → exactly [crate-cafe self=True]  ← self-entry works.
+  Run completed: total_competitors=1, success=0, 0 reviews — honest: fixtures
+  mode has no fixture HTML for the "crate-cafe" id; live mode scrapes the real
+  place. KEY: no 422, self-only run executes.
+  ✓ EXPECTED (v0.3.2 behavior confirmed)
+
+CHECKPOINT 4 — COMPETITOR PATH (skip-branches + Revolver via branches POST)
+  POST /api/business/branches (auto-branch payload with revolver only).
+  File: branch=crate-cafe competitors=[revolver-seminyak] — self NOT persisted
+    (synthetic-only invariant holds).
+  Trigger → effective_listings = [crate-cafe self=True, revolver-seminyak],
+    total_competitors=2, run executes.
+  ✓ EXPECTED
+
+CHECKPOINT 5 — OVERVIEW REFLECTS DISK
+  configSource=tenant, totalCompetitors=2, totalReviews=850
+  crate-cafe 380 reviews self=True | revolver-seminyak 470 self=(absent)
+  latest.json pointers still on the REAL snapshots — the checkpoint-3/4
+  fixture runs wrote NOTHING (success=0 ⇒ no snapshot write), so no
+  re-pollution. Stray-file scan: clean.
+  ✓ EXPECTED
+
+FINAL STATE (left in place — healthier than pre-walkthrough):
+  config/user-business.json: id=crate-cafe, gmaps_place_id=ChIJOaEQDnk...,
+    unverified=false, branch crate-cafe → [revolver-seminyak]
+  tenant snapshots: real 380/470-review data, pointers valid.
+  (Pre-walkthrough config had empty place_id + unverified=true from e2e
+  writes; the clean re-onboard fixed both. Backup retained at
+  phaseC_backup_20260824T175855 should rollback ever be needed.)
+
+S1 VERDICT: identity/config system verified end-to-end from zero — every
+onboarding step leaves user-business.json in the expected shape, dashboard
+matches disk at every checkpoint, self-monitoring invariants hold in both
+the zero-competitor and competitor paths.

@@ -1,14 +1,19 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-22 (v0.3.1).** For full detail see
+**Last updated: 2026-08-24 (v0.3.2 + systems hardening).** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
 **Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports),
 `VERSION_AUDIT_2026-08-22.md`, `DISCOVERY_DATAFLOW_AUDIT/FIX_PLAN.md`
-(✅ v0.3.1 seam fixes). Ops: `CLEAN_START_RUNBOOK.md` +
-`TROUBLESHOOTING.md`. Releases: `RELEASE_NOTES_v0.3.0/1.md`.
+(✅ v0.3.1 seam fixes), `SELF_MONITORING_AUDIT_2026-08-22.md` +
+`SELF_MONITORING_FIX_PLAN.md` (✅ v0.3.2 self-monitoring fix),
+`SYSTEMS_AUDIT_2026-08-24.md` + `SYSTEMS_FIX_PLAN.md` (✅ rate-limit fix,
+11-route tenant-scoping sweep, configSource provenance, e2e hardening —
+see phase-reports/systems-*.txt).
+Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md`.
+Releases: `RELEASE_NOTES_v0.3.0/1.md`.
 
 ---
 
@@ -21,8 +26,14 @@ State/version knowledge for AI agents (and humans) working on this repo.
   (`757a487` fix: discovery scrapes user-configured competitors).
   **Tag: `v0.3.1`.** Working tree clean. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
-  product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** — paste
-  Google Maps link → validate (short links, place URLs, `query_place_id=`,
+  product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
+  self-monitoring fix (2026-08-24)**: the active business itself is always a
+  scrape target via read-time `withSelfEntry()` synthesis (never persisted;
+  geo-stats consumers keep raw branches) — adding competitors no longer
+   silently disables main-cafe monitoring. Live-proven: crate-cafe 380 reviews
+   scraped alongside revolver-seminyak, `success=2/2`. Discovery-first flow:
+   paste Google Maps link → validate (short links, place URLs,
+  `query_place_id=``,
   hex-CID→ChIJ conversion) → onboarding prefill → manual competitor add →
   Start Monitoring; scheduler UI (`/api/schedule` ↔ `schedule.json` ↔
   `run_all.py --schedule`) and per-competitor Refresh buttons (trigger route →
@@ -36,7 +47,13 @@ State/version knowledge for AI agents (and humans) working on this repo.
   Step 2 is skipped; discovery scrapes derive targets from tenant config via
   `effective_listings.json` + `ROTHER_LISTINGS_PATH` env (root listings.json
   untouched in discovery mode); honest 422 on zero competitors; concurrent-run
-  detection in RunScreen.
+  detection in RunScreen. **Systems hardening (2026-08-24):** middleware rate
+  limit raised 20→120 req/min/path (old cap starved dashboard polling and
+  429s parsed as "no data"); ALL read routes join via
+  `resolveMonitoredConfig()` (11 routes swept off direct `readListings()` —
+  /api/reviews branch filter, alerts, new-reviews, correlation, history×3,
+  exports×3); `configSource` field + "Demo dataset" TopBar badge in fixed
+  mode; e2e offline-deterministic with `expect.poll` server assertions.
 - **Convergence status — Phase 3 hardening DONE (2026-08-19):** `src/` is
   the **v2 shell** (AppShell, 4 hubs, 28 lazy features, Cmd+K palette, geo-grid,
   Bali oklch design system) on v1's certified pipeline, with a **monitoring mode
@@ -122,10 +139,10 @@ From repo root:
 
 | Command | Count | Notes |
 |---|---|---|
-| `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
+| `npx vitest run` | 119/119 | 9 files (src/lib/gbp + lib, incl. self-target); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
 | `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
-| `npx playwright test` | 12/12 | Smoke (10: discovery landing, fixed-mode, KPI live data, mobile ×2 each incl. discovery flow) + Scheduler (2). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |
+| `npx playwright test` | 16/16 | Smoke (10) + Scheduler (2) + Discovery-persistence (4, incl. self-monitoring invariants ×2). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |
 
 > **IMPORTANT — `data/` backup discipline.** `tests/verify_baseline.py` deletes
 > `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13

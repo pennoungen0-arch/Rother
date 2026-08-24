@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
-import { readAllSnapshots, readLatestDelta, readListings, readAllDeltas } from "@/lib/gbp/server-data";
+import { readAllSnapshots, readLatestDelta, resolveMonitoredConfig, readAllDeltas } from "@/lib/gbp/server-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,8 +11,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "csv";
 
-    const [listings, snapshots, allDeltas] = await Promise.all([
-      readListings(),
+    // Phase D sweep: joins from the monitored config, not seed listings.
+    const [{ branches: configBranches }, snapshots, allDeltas] = await Promise.all([
+      resolveMonitoredConfig(),
       readAllSnapshots(),
       readAllDeltas(),
     ]);
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
 
     const rows: Record<string, unknown>[] = [];
 
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       for (const comp of branch.competitors) {
         const reviews = snapshots.get(comp.competitor_id) ?? [];
         const validRatings = reviews

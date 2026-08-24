@@ -57,6 +57,7 @@ export function HistoryComparisonSection({ refreshKey }: HistoryComparisonSectio
         competitor_id: c.competitor_id,
         name: c.name,
         branch_name: b.branch_name,
+        self: c.self,
       })),
     );
   }, [branches]);
@@ -125,7 +126,8 @@ export function HistoryComparisonSection({ refreshKey }: HistoryComparisonSectio
                 <SelectContent>
                   {competitorOptions.map((c) => (
                     <SelectItem key={c.competitor_id} value={c.competitor_id}>
-                      {c.name} · {c.branch_name}
+                      {c.name}
+                      {c.self ? " (You)" : ""} · {c.branch_name}
                     </SelectItem>
                   ))}
                 </SelectContent>

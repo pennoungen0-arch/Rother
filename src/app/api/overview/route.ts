@@ -11,9 +11,9 @@ import {
   readActiveBusiness,
   readAllSnapshots,
   readLatestDelta,
-  readListings,
   readRunSummary,
   readSelectors,
+  resolveMonitoredConfig,
 } from "@/lib/gbp/server-data";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,17 +34,18 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    // P2 / tenant scoping: prefer the active business's OWN branch config.
+    // P2 / tenant scoping + S6 provenance (Phase D): one choke point for the
+    // monitored config; `source` is surfaced to the UI as `configSource`.
     const active = await readActiveBusiness();
     const id = active?.id;
-    const branchConfig = active?.branches ?? (await readListings()).branches;
-
-    const [runSummary, selectors, snapshots, dataStatus] = await Promise.all([
-      readRunSummary(id),
-      readSelectors(),
-      readAllSnapshots(id),
-      assessDataStatus(id),
-    ]);
+    const [{ branches: branchConfig, source: configSource }, runSummary, selectors, snapshots, dataStatus] =
+      await Promise.all([
+        resolveMonitoredConfig(),
+        readRunSummary(id),
+        readSelectors(),
+        readAllSnapshots(id),
+        assessDataStatus(id),
+      ]);
 
     const totalBranches = branchConfig.length;
     const totalCompetitors = branchConfig.reduce(
@@ -104,6 +105,7 @@ export async function GET() {
           new_reviews_count: delta.length,
           last_scraped_at: lastScrapedAt && lastScrapedAt !== "" ? lastScrapedAt : null,
           verified: comp.verified,
+          self: comp.self,
         });
       }
       newReviewsLastRun += branchCount;
@@ -136,6 +138,7 @@ export async function GET() {
       errors: runSummary?.errors ?? [],
       isAlert,
       dataStatus,
+      configSource,
       newReviewsPerBranch,
       competitorStats,
     };

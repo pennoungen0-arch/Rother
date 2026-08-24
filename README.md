@@ -244,10 +244,10 @@ All test suites must stay green (Rule 1).
 
 | Command | Count | Notes |
 |---|---|---|
-| `npx vitest run` | 103/103 | 8 files (src/lib/gbp + lib); archive + e2e excluded |
+| `npx vitest run` | 119/119 | 9 files (src/lib/gbp + lib, incl. self-target); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
 | `npx eslint src` | exit 0 | 0 errors, 0 warnings |
-| `npx playwright test` | 12/12 | Smoke (10) + Scheduler (2) — **needs `npm run dev` running** |
+| `npx playwright test` | 16/16 | Smoke (10) + Scheduler (2) + Discovery-persistence (4) — **needs `npm run dev` running** |
 
 ### Full local gate (what CI runs)
 

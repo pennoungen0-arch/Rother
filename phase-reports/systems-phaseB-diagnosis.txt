@@ -1,0 +1,88 @@
+Phase B evidence & remediation — current-state diagnosis (2026-08-24)
+
+DECISION-TREE OUTCOME: "Snapshot dirs missing/corrupt after restore" →
+redo restore from backup carefully. DONE.
+
+FINDINGS
+
+B1. The morning's real data was never destroyed by a bug — the RESTORE
+    never landed:
+    - User's restore command was truncated/malformed
+      (`Copy-Item ...rother_data_backup data -Recurse .` — trailing dot),
+      so gbp-monitor/data stayed in its post-baseline-wipe state.
+    - Additionally the original backup itself was nested: `Copy-Item
+      gbp-monitor\data <existing temp dir> -Recurse` placed the tree at
+      `<temp>\data\...` instead of replacing the temp dir. Real data survived
+      ONLY inside that nesting: rother_data_backup\data\users\crate-cafe\
+      snapshots\{crate-cafe: 380 reviews @2026-08-24T04-26-59Z,
+      revolver-seminyak: 470 reviews @04-29-28Z (+16 older real snapshots)}.
+
+B2. What WAS in the tenant dir before remediation: single 5-review FIXTURE
+    snapshot per competitor (3 KB), written by today's Playwright fixtures-mode
+    runs on the empty post-wipe tree. latest.json pointers pointed at these.
+    → This is why "Crate Cafe data does not show up": dashboard honestly
+      served what was on disk — fixture stubs, not real reviews.
+    → Compounding factor suspected: pre-Phase-A rate limiting (20 req/min)
+      may ALSO have produced empty reads during manual sessions; limiter now
+      fixed at 120.
+
+B3. config/user-business.json state during inspection:
+    id=crate-cafe, name=Crate Cafe, branch crate-cafe with competitor
+    revolver-seminyak; place_id EMPTY but gmaps_place_id=ChIJOaEQDnk40i0Rzhou4NcRx-w
+    present (matches certified id) → withSelfEntry injection unaffected
+    (falls back to gmaps_place_id). unverified=true is cosmetic (badge only).
+    Note: e2e suites rewrite this file; treat it as volatile during test runs.
+
+REMEDIATION APPLIED
+- Removed fixture snapshot dirs for crate-cafe + revolver-seminyak;
+  copied REAL snapshot dirs from rother_data_backup\data\...\snapshots\.
+- Verified on disk: crate-cafe 380 / revolver-seminyak 470 via latest.json.
+- Verified live GET /api/overview:
+    totalCompetitors=2 totalReviews=850 dataStatus=ok
+    crate-cafe         reviews=380 avg=4.02 self=True
+    revolver-seminyak  reviews=470 avg=4.51 self=(absent)
+
+LESSONS / PROCESS FIXES FOR THE RUNBOOK
+1. Backup command must target a FRESH dir: Copy-Item gbp-monitor\data
+   <new-path> -Recurse (never into an existing folder).
+2. Restore must be verified immediately afterwards (count files / check
+   latest.json), not assumed.
+3. Run e2e suites only with the understanding that they overwrite
+   user-business.json AND (fixtures runs) tenant snapshots under
+   data/users/<id>/ — back up first, restore+verify after.
+
+STATUS: Phase B complete. No product code changed in this phase.
+Next: Phase C true-clean-start walkthrough.
+
+------------------------------------------------------------
+PHASE B ESCALATION (2026-08-24 16:24) � user screenshot
+imagetest/Screenshot (1570).png
+------------------------------------------------------------
+User showed All Reviews feature filtered Branch=Crate Cafe +
+Competitor=Crate Cafe => "No reviews match these filters",
+AFTER the data restore. Escalated per decision tree
+(config fine + data fine but feature wrong => S6 join bug).
+
+ROOT CAUSE (real tenant-scoping bug, S6 class):
+src/app/api/reviews/route.ts built its branch->competitors
+filter map from readListings() = ROOT SEED listings.json
+(comp-canggu-01...), never the active business's branches.
+Filtering by tenant branch "crate-cafe" => empty allowed-set
+=> 0 rows. Unfiltered views worked; pure competitor_id filters
+worked; ONLY branch filtering was broken.
+
+LIVE REPRO (before fix):
+  unfiltered=850 | branch_id=crate-cafe => 0 | competitor_id=crate-cafe => 380
+
+FIX: route now resolves branches via readActiveBusiness() +
+withSelfEntry(active), falling back to seed listings only in
+fixed mode (same pattern as /api/overview and /api/branches).
+
+LIVE VERIFY (after fix):
+  unfiltered=850 | branch=crate-cafe => 850
+  branch+self => 380 | branch+revolver => 470
+
+GATES: tsc clean, eslint clean, vitest 115/115.
+NOTE: this route was missed by the original P2 tenant-scoping
+sweep � worth a follow-up grep for any other route still
+calling readListings() for tenant joins (Phase D candidate).

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
-import { readAllDeltas } from "@/lib/gbp/server-data";
-import { readListings } from "@/lib/gbp/server-data";
+import { readAllDeltas, resolveMonitoredConfig } from "@/lib/gbp/server-data";
 import type { NewReviewsResponse } from "@/lib/gbp/types";
 
 export const dynamic = "force-dynamic";
@@ -35,16 +34,17 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    const [deltas, listings] = await Promise.all([
+    // Phase D sweep: label maps from the monitored config, not seed listings.
+    const [deltas, { branches: configBranches }] = await Promise.all([
       readAllDeltas(),
-      readListings(),
+      resolveMonitoredConfig(),
     ]);
 
     // Build id→name maps
     const compIdToName = new Map<string, string>();
     const compIdToBranchId = new Map<string, string>();
     const branchIdToName = new Map<string, string>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchIdToName.set(branch.branch_id, branch.branch_name);
       for (const comp of branch.competitors) {
         compIdToName.set(comp.competitor_id, comp.name);

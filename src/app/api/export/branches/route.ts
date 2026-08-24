@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
-import { readAllSnapshots, readLatestDelta, readListings } from "@/lib/gbp/server-data";
+import { readAllSnapshots, readLatestDelta, resolveMonitoredConfig } from "@/lib/gbp/server-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,14 +11,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "csv";
 
-    const [listings, snapshots] = await Promise.all([
-      readListings(),
+    // Phase D sweep: joins from the monitored config, not seed listings.
+    const [{ branches: configBranches }, snapshots] = await Promise.all([
+      resolveMonitoredConfig(),
       readAllSnapshots(),
     ]);
 
     const rows: Record<string, unknown>[] = [];
 
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       let totalReviews = 0;
       let totalNew = 0;
       let compCount = 0;

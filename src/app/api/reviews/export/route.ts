@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
 import type { Review } from "@/lib/gbp/types";
-import { readAllSnapshots, readListings } from "@/lib/gbp/server-data";
+import { readAllSnapshots, resolveMonitoredConfig } from "@/lib/gbp/server-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,15 +42,16 @@ export async function GET(request: Request) {
         )
       : null;
 
-    const [snapshots, listings] = await Promise.all([
+    // Phase D sweep: joins from the monitored config, not seed listings.
+    const [snapshots, { branches: configBranches }] = await Promise.all([
       readAllSnapshots(),
-      readListings(),
+      resolveMonitoredConfig(),
     ]);
 
     // Build id→name maps so the export is self-describing.
     const compIdToName = new Map<string, string>();
     const branchIdToName = new Map<string, string>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchIdToName.set(branch.branch_id, branch.branch_name);
       for (const comp of branch.competitors) {
         compIdToName.set(comp.competitor_id, comp.name);
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
 
     // Determine allowed competitor_ids from filters.
     const branchToCompIds = new Map<string, Set<string>>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchToCompIds.set(
         branch.branch_id,
         new Set(branch.competitors.map((c) => c.competitor_id)),

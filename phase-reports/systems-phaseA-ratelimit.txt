@@ -1,0 +1,41 @@
+Phase A evidence — e2e flake root-cause hunt & fixes (2026-08-24)
+
+SYMPTOM CHAIN
+1. v0.3.2 procedure run: Playwright 15/16 — Mobile self-monitoring invariant
+   failed, GET /api/business/branches returned seed-demo set.
+2. First fix attempt (await branches POST): still flaky under --repeat-each=3.
+3. Second attempt (offline /api/places mock): Mobile failures became
+   DETERMINISTIC — POST bodies correct but server-side reads returned [].
+4. Instrumented every writer endpoint (business POST / business/branches POST /
+   trigger persistUserBusiness) with file-based debug logging:
+   → ALL server writes were CORRECT on every iteration
+     (BRANCHES_POST ids=[revolver-seminyak] stored=[revolver-seminyak]).
+   → Conclusion: writes fine; READS were lying.
+5. Per-attempt logging inside the test's poll captured the smoking gun:
+   POLL_GET 200 {"branches":[...revolver...]}   ← early attempts fine
+   POLL_GET 429 {"ok":false,"error":"Too many requests...", stage:"rate_limited"}
+   → src/middleware.ts RATE_LIMIT_MAX=20 (per IP per path per minute).
+   The dashboard's own polling + test reads tripped it; 429 JSON bodies parse
+   to "no data" at every consumer.
+
+FIXES SHIPPED
+F1. middleware.ts: RATE_LIMIT_MAX 20 → 120 (+ rationale comment). Product-level
+    fix; also protects real users from mid-session starvation.
+F2. e2e: offline /api/places mock (mockPlacesApi) with real ChIJ ids — removes
+    Google short-link throttling dependency.
+F3. e2e: wait on committed list item ("Remove competitor" button) instead of
+    raw name text (sonner toast renders before React commits competitorList).
+F4. e2e: all server-side invariants use expect.poll (750ms intervals, 15s
+    window) — tolerant of shared mutable server state and transient 429s.
+
+VERIFICATION GATES
+- npx playwright test e2e/discovery-persistence.spec.ts --repeat-each=3 → 12/12
+- npx playwright test (full) → 16/16 (twice consecutively)
+- npx vitest run → 115/115 · tsc --noEmit clean · eslint clean
+- All debug instrumentation removed (git status shows only intended diffs)
+
+IMPLICATION FOR PHASE B
+The user's manual "Crate Cafe data does not show up" sessions likely included
+429-induced empty responses (dashboard auto-refresh polling + manual clicks).
+Phase B diagnosis must re-check current state with the limiter raised before
+concluding anything about data/config loss.

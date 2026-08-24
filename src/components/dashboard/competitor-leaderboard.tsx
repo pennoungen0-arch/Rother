@@ -277,6 +277,14 @@ function LeaderboardRow({
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-foreground">
           {comp.name}
+          {comp.self && (
+            <span
+              className="ml-1.5 rounded border border-primary/40 bg-primary/10 px-1 py-px align-middle text-[9px] font-semibold uppercase tracking-wide text-primary"
+              title="This is your own monitored business"
+            >
+              You
+            </span>
+          )}
         </div>
         <div className="truncate text-[10px] text-muted-foreground">
           {shortBranch}

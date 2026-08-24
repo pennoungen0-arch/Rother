@@ -33,6 +33,7 @@ import {
 } from "./paths";
 import { validateCompetitorId } from "./validate";
 import { businessDataDir } from "./paths";
+import { withSelfEntry, pickMonitoredConfig, type ConfigSource } from "./self-target";
 
 /** Strip `, original` suffix from a reviewer name if present. */
 function cleanReviewerName(name: string | null): string | null {
@@ -451,6 +452,25 @@ export async function assessDataStatus(
 }
 
 /**
+ * S6 provenance (SYSTEMS_FIX_PLAN Phase D) — the ONE choke point for "which
+ * monitored-config should this consumer join snapshots against".
+ *
+ * Tenant mode: the active business's branches augmented with the synthetic
+ * self entry (`withSelfEntry`). Fixed mode / pre-onboarding: the seed demo
+ * list, which IS the legitimate config there. `source` lets callers surface
+ * provenance (e.g. a "Demo dataset" badge) instead of silently masking.
+ */
+export async function resolveMonitoredConfig(): Promise<{
+  branches: BranchConfig[];
+  source: ConfigSource;
+}> {
+  const active = await readActiveBusiness();
+  if (active) return pickMonitoredConfig(active, []);
+  const seed = await readSeedListings();
+  return pickMonitoredConfig(null, seed.branches);
+}
+
+/**
  * P2 / tenant scoping — return the active business's OWN monitored branches
  * (persisted on `user-business.json`). Falls back to the seed demo listings
  * when no active business is selected (legacy/non-UI callers).
@@ -508,7 +528,10 @@ export async function writeEffectiveListings(
   const active = await readActiveBusiness();
   if (!active) return null;
   const id = businessId ?? active.id;
-  const branches = Array.isArray(active.branches) ? active.branches : [];
+  // v0.3.2 self-monitoring: the active business ITSELF is always a scrape
+  // target (when it has a resolvable place id), synthesized via
+  // `withSelfEntry` — never persisted, never displacing user competitors.
+  const branches = withSelfEntry(active);
   const totalCompetitors = branches.reduce(
     (n, b) => n + (b.competitors?.length ?? 0),
     0,

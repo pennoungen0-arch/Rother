@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
 import type { Review, ReviewsResponse } from "@/lib/gbp/types";
-import { readAllSnapshots, readListings } from "@/lib/gbp/server-data";
+import { readAllSnapshots, resolveMonitoredConfig } from "@/lib/gbp/server-data";
 import { parseRelativeDate } from "@/lib/gbp/format";
 
 export const dynamic = "force-dynamic";
@@ -52,14 +52,19 @@ export async function GET(request: Request) {
         )
       : null;
 
-    const [snapshots, listings] = await Promise.all([
+    // P2 / tenant scoping (fixed 2026-08-24, SYSTEMS_FIX_PLAN Phase B
+    // escalation + Phase D sweep): the branch→competitors filter map MUST
+    // come from resolveMonitoredConfig() (tenant branches + self entry),
+    // NOT the root seed listings — otherwise filtering by a tenant branch
+    // (e.g. "Crate Cafe") produced an empty allowed-set and zero rows.
+    const [{ branches: configBranches }, snapshots] = await Promise.all([
+      resolveMonitoredConfig(),
       readAllSnapshots(),
-      readListings(),
     ]);
 
     // Determine which competitor_ids to include based on branch filter.
     const branchToCompetitorIds = new Map<string, Set<string>>();
-    for (const branch of listings.branches) {
+    for (const branch of configBranches) {
       branchToCompetitorIds.set(
         branch.branch_id,
         new Set(branch.competitors.map((c) => c.competitor_id)),

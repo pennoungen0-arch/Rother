@@ -25,9 +25,16 @@ const API_KEY = process.env.API_KEY;
 
 // Simple in-memory rate limiter (per IP, per minute).
 // Reset on server restart — acceptable for internal pilot.
+//
+// v0.3.2: raised 20 → 120. The dashboard itself polls several API paths
+// (/api/scrape/status, /api/overview, ...) on refresh timers, so 20/min/path
+// could starve a SINGLE legitimate user mid-session — and made Playwright
+// suites trip 429s on shared paths, masquerading as data-loss flakes
+// (SYSTEMS_FIX_PLAN.md Phase A). 120/min/path still bounds abuse while
+// leaving ample headroom for polling clients.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_MAX = 120;
 
 function rateLimited(key: string): boolean {
   const now = Date.now();

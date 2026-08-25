@@ -1,0 +1,68 @@
+Phase 2 evidence — variance-proof deltas (2026-08-25)
+
+============================================================
+CHANGES SHIPPED
+============================================================
+1. storage/seen_store.py (NEW): per-competitor ever-seen ID union.
+   - load_seen / save_seen (tolerant, Rule 7: corrupt/missing ⇒ empty,
+     save never raises) / merge_seen (pure)
+   - split_candidates(new, seen, now, recency_days=30) →
+     (posted_new, backfill_discovered) — recency gate via review_date
+     (fallback: re-resolve relative_date; unparseable ⇒ conservative
+     posted-new so real reviews are never missed)
+   - is_first_harvest(seen, old_snapshot) — first-run flood detection
+   - Tenant-dir aware (mirrors snapshot_store's ROTHER_DATA_DIR)
+2. orchestration/run_all.py — delta step rewritten:
+   - union seeded from existing snapshot when the seen file is missing
+     (migration path)
+   - first harvest ⇒ baseline: delta suppressed, everything merges into
+     the union, never alerts (BASELINE log line)
+   - posted_new fires delta/alerts as before (reviews_new/*.json format
+     unchanged); backfill merged silently (BACKFILL log line + new
+     run_summary key `backfill_discovered`)
+   - union merged AFTER classification and persisted
+   - removed now-unused compute_new_reviews import (function retained in
+     storage/delta.py)
+
+============================================================
+TESTS
+============================================================
+- verify_baseline new Phase 8 (16 checks): union merge; variance scenario
+  (410-union → 510-render with 100 old-date IDs ⇒ 0 posted / 100 backfill);
+  genuinely-new (recent date ⇒ 1 posted); conservative missing-date default;
+  relative_date fallback resolution; 29/31-day recency boundary; seen-ID
+  never re-fires; first-harvest detection (3 cases); save/load roundtrip;
+  corrupt/missing file tolerance.
+- Baseline artifacts assertion updated for the new semantics: a fixtures run
+  is always a first harvest ⇒ no delta files; asserts seen-store unions
+  instead + exercises _append_new_reviews directly (delta-write path
+  coverage preserved).
+- verify_baseline: **159/159** (was 141).
+
+============================================================
+LIVE PROOF (two consecutive runs, the Phase 2 exit gate)
+============================================================
+Pre-fix baseline (Phase 0): two runs 20 min apart ⇒ 240 phantom "new".
+
+  Run 1 (20260825T104753Z, migration path — union seeded from existing
+  520/610 snapshots):
+    new_reviews = 0        (pre-fix: would have been render-jitter phantoms)
+    backfill_discovered = 70   (deeper render found old reviews; silent)
+    seen unions: crate-cafe 590 ids, revolver-seminyak 610 ids
+    success=2, total_reviews=1070
+
+  Run 2 (386ab32a, immediately after):
+    new_reviews = 0
+    backfill_discovered = 0
+    status=completed
+
+  ⇒ Zero phantom alerts across both runs. The recency gate correctly
+  classified 70 deeper-render discoveries as silent backfill; the union
+  absorbed all render jitter.
+
+NOTE (documented behavior): snapshot totals still fluctuate with render
+depth (1070 → 580 across runs) — that is the platform's virtualized window,
+now honest and alert-safe. The ever-seen union preserves every harvested ID
+for delta purposes regardless of what later renders show.
+
+STATUS: Phase 2 COMPLETE. Phase 3 (dashboard honesty) next.

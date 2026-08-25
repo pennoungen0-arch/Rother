@@ -233,6 +233,47 @@ _JS_OVERVIEW_PROBE = """() => {
   if (hours.length) out['opening_hours'] = hours;
   const todayEl = document.querySelector('[jsaction*="pane.openhours.wfvdle24.dropdown"] .ZDu9vd');
   if (todayEl) out['hours_status'] = clean(todayEl.textContent);
+
+  // Harvest honesty (HARVEST_FIX_PLAN Phase 1): the aggregate rating +
+  // review-count text live on the OVERVIEW panel and disappear once the
+  // Reviews tab is opened — extract them HERE, pre-tab. Verified live
+  // 2026-08-24 (_phase1_dom_probe.py): rating renders as
+  // span.ceNzKf[aria-label="4,2 bintang"] inside div.F7nice; the count
+  // (when present — FULL/logged variant) renders near it as an
+  // ulasan/reviews-labeled element.
+  const ratingEl = document.querySelector('span.ceNzKf[aria-label]')
+    || document.querySelector("span[aria-label*='bintang' i]")
+    || document.querySelector("span[aria-label*='star' i]");
+  if (ratingEl) {
+    const m = (ratingEl.getAttribute('aria-label') || '').match(/([\\d]+[.,]?[\\d]*)/);
+    if (m) out['google_rating'] = m[1];
+  }
+  if (!out['google_rating']) {
+    const f7 = document.querySelector('div.F7nice');
+    if (f7) { const m = clean(f7.textContent).match(/^([\\d]+[.,]?[\\d]*)/); if (m) out['google_rating'] = m[1]; }
+  }
+  // Count: aria-labeled ulasan/review elements (excluding write-review buttons),
+  // then F7nice container text, then body-text regex (EN + ID).
+  const countFromText = (t) => {
+    if (!t) return null;
+    let m = t.match(/([\\d][\\d.,\\u00a0]*)\\s*(ulasan|reviews?)/i);
+    if (m) return m[1];
+    m = t.match(/(ulasan|reviews?)\\s*[:\\-]?\\s*([\\d][\\d.,\\u00a0]*)/i);
+    return m ? m[2] : null;
+  };
+  let count = null;
+  for (const el of document.querySelectorAll("button[aria-label], span[aria-label], a[aria-label]")) {
+    const aria = el.getAttribute('aria-label') || '';
+    if (/tulis|write/i.test(aria)) continue;
+    const c = countFromText(aria);
+    if (c) { count = c; break; }
+  }
+  if (!count) {
+    const f7 = document.querySelector('div.F7nice');
+    if (f7) count = countFromText(clean(f7.parentElement ? f7.parentElement.textContent : ''));
+  }
+  if (!count) count = countFromText(clean(document.body.innerText).slice(0, 4000));
+  if (count) out['google_review_count'] = count;
   return JSON.stringify(out);
 }"""
 
@@ -342,7 +383,10 @@ def _capture_business_metadata(page, instrument: PipelineInstrument | None = Non
         body_text = page.locator("body").inner_text(timeout=3000)[:8000]
 
         if not metadata.get("google_review_count"):
-            review_matches = list(re.finditer(r"(\d[\d,.]*)\s*reviews?", body_text[:5000], re.IGNORECASE))
+            # EN + ID ("ulasan") — this Maps variant renders Indonesian.
+            review_matches = list(re.finditer(
+                r"(\d[\d.,\u00a0]*)\s*(?:ulasan|reviews?)", body_text[:5000], re.IGNORECASE,
+            ))
             if review_matches:
                 metadata["google_review_count"] = review_matches[0].group(1)
 
@@ -828,6 +872,35 @@ def _classify_variant(cards: int, aggregate: int | None) -> tuple[str, str]:
             f"{cards} distinct cards vs {aggregate} aggregate (REDUCED signature)",
         )
     return "unknown", f"{cards} distinct cards (aggregate={aggregate})"
+
+
+# Harvest completeness (HARVEST_FIX_PLAN Phase 1): how much of the listing's
+# true total did this capture window reach? Distinct from _classify_variant
+# (which detects the stale-NID REDUCED-variant signature). Google's panel
+# virtualizes and typically stops serving cards after ~500-1000, so
+# "reduced" here means "partial newest window", not a broken capture.
+_HARVEST_FULL_RATIO = 0.9
+
+
+def classify_harvest(harvested: int, google_count: int | None) -> tuple[str, str]:
+    """Classify harvest completeness vs Google's own aggregate count.
+
+    Returns ``(status, detail)`` where status is:
+      - ``full``    — harvested >= 90% of Google's count (or count tiny)
+      - ``reduced`` — harvested < 90% of Google's count (partial window)
+      - ``unknown`` — Google's count unavailable (probe degraded)
+    Pure logic — unit-testable offline.
+    """
+    if google_count is None or google_count <= 0:
+        return "unknown", (
+            f"{harvested} harvested; Google aggregate count unavailable"
+        )
+    if harvested >= google_count * _HARVEST_FULL_RATIO:
+        return "full", f"{harvested} of {google_count} reviews harvested"
+    return "reduced", (
+        f"{harvested} of {google_count} reviews harvested — "
+        "partial newest window (Google panel virtualization)"
+    )
 
 
 def probe_review_variant(context, url: str, selectors: dict, comp_id: str = "") -> dict:

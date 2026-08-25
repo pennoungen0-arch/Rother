@@ -10,6 +10,7 @@ import {
   assessDataStatus,
   readActiveBusiness,
   readAllSnapshots,
+  readHarvestInfo,
   readLatestDelta,
   readRunSummary,
   readSelectors,
@@ -79,6 +80,8 @@ export async function GET() {
       let branchCount = 0;
       for (const comp of branch.competitors) {
         const reviews = snapshots.get(comp.competitor_id) ?? [];
+        // Harvest honesty (HARVEST_FIX_PLAN Phase 3).
+        const hi = await readHarvestInfo(comp.competitor_id, id);
         const validRatings = reviews
           .map((r) => r.rating)
           .filter((r): r is number => r !== null && !Number.isNaN(r));
@@ -106,6 +109,8 @@ export async function GET() {
           last_scraped_at: lastScrapedAt && lastScrapedAt !== "" ? lastScrapedAt : null,
           verified: comp.verified,
           self: comp.self,
+          harvest_status: hi?.harvest_status,
+          google_review_count: hi?.google_review_count,
         });
       }
       newReviewsLastRun += branchCount;

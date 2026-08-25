@@ -973,6 +973,7 @@ def run(fixtures_mode: bool = False, competitor_filter: list[str] | None = None)
         "failed": 0,
         "skipped": 0,
         "new_reviews": 0,
+        "backfill_discovered": 0,
         "total_reviews": 0,
         "total_competitors": total_competitors,
         "preflight_warnings": len(warnings),
@@ -1213,7 +1214,6 @@ def _process_one_listing(
         from parser.review_parser import parse_reviews
         from parser.schema import review_to_dict
         from storage.snapshot_store import load_snapshot, save_snapshot
-        from storage.delta import compute_new_reviews
 
         parsed = parse_reviews(html, comp_id, branch_id, selectors, instrument=instrument)
         parsed_dicts = [review_to_dict(r) for r in parsed]
@@ -1232,11 +1232,42 @@ def _process_one_listing(
         # Compute collection efficiency and verdict.
         _compute_collection_metrics(comp_id, instrument)
 
-        # Step 3 — delta.
+        # Compute collection efficiency and verdict.
+        _compute_collection_metrics(comp_id, instrument)
+
+        # Step 3 — delta (variance-proof, HARVEST_FIX_PLAN Phase 2).
+        # Diff base is the cumulative ever-seen ID union, not the previous
+        # snapshot: render-depth jitter (Phase 0: 240 phantom "new" in 20
+        # minutes) can no longer manufacture alerts. Recency gate separates
+        # newly-POSTED (alert) from newly-DISCOVERED backfill (silent).
         failed_stage = "delta"
         t0 = time.time()
+        from storage.seen_store import (
+            is_first_harvest,
+            load_seen,
+            merge_seen,
+            save_seen,
+            split_candidates,
+        )
+
         old = load_snapshot(comp_id)
-        delta = compute_new_reviews(old, parsed_dicts)
+        seen = load_seen(comp_id)
+        first_run = is_first_harvest(seen, old)
+        if not seen and old:
+            # Migration: union file missing but a snapshot exists — seed the
+            # union from it so historical IDs never fire as new.
+            seen = {r["review_id"] for r in old if r.get("review_id")}
+
+        posted_new, backfill = split_candidates(parsed_dicts, seen)
+        if first_run:
+            # First-harvest flood suppression: everything is baseline.
+            posted_new, backfill = [], []
+            logger.info(
+                "BASELINE[%s]: first harvest — %d reviews seeded into the "
+                "ever-seen union; delta suppressed",
+                comp_id, len(parsed_dicts),
+            )
+        delta = posted_new
         stages["delta_s"] = round(time.time() - t0, 2)
         failed_stage = None
 
@@ -1247,6 +1278,19 @@ def _process_one_listing(
             _append_new_reviews(comp_id, delta, run_id=run_id)
             summary["new_reviews"] += len(delta)
             _structured_log(run_id, "delta", competitor=comp_id, new_reviews=len(delta))
+        if backfill:
+            summary["backfill_discovered"] = (
+                summary.get("backfill_discovered", 0) + len(backfill)
+            )
+            logger.info(
+                "BACKFILL[%s]: %d never-seen old review(s) merged silently",
+                comp_id, len(backfill),
+            )
+
+        # Merge the current render into the ever-seen union AFTER
+        # classification, then persist.
+        seen = merge_seen(seen, parsed_dicts)
+        save_seen(comp_id, seen)
 
         save_snapshot(comp_id, parsed_dicts, metadata=instrument.business_metadata)
         stages["save_s"] = round(time.time() - t0, 2)
@@ -1326,7 +1370,23 @@ def _compute_collection_metrics(comp_id: str, instrument) -> None:
         "exported_reviews": exported,
         "parser_efficiency": parser_eff,
     }
+    # Harvest honesty (HARVEST_FIX_PLAN Phase 1): classify how much of the
+    # listing's true total this capture window reached, using Google's own
+    # aggregate count. Exported = what we actually kept.
+    from harness.capture import classify_harvest
+
+    harvest_status, harvest_detail = classify_harvest(exported, google_count)
+    parser_efficiency["harvest_status"] = harvest_status
+    parser_efficiency["harvest_detail"] = harvest_detail
     instrument.set_parser_efficiency(parser_efficiency)
+
+    # Persist into business_metadata so save_snapshot (called after this)
+    # carries the harvest classification in the snapshot's metadata sidecar.
+    if instrument.business_metadata is None:
+        instrument.business_metadata = {}
+    instrument.business_metadata["harvest_status"] = harvest_status
+    instrument.business_metadata["harvest_detail"] = harvest_detail
+    instrument.business_metadata["google_review_count"] = google_count_raw
 
     # Collection efficiency (google_count -> dom_nodes)
     collection_pct = None

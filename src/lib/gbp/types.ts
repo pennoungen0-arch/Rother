@@ -267,6 +267,10 @@ export interface CompetitorStats {
     *  business itself (synthesized by `withSelfEntry`). UI shows a
     *  "Your business" badge. */
    self?: boolean;
+   /** Harvest honesty (HARVEST_FIX_PLAN Phase 3): full | reduced | unknown. */
+   harvest_status?: string;
+   /** Google's own aggregate count, e.g. "5.281" — absent when unknown. */
+   google_review_count?: string;
  }
 
 /** Health of the underlying data layer for the current request (D4 / TD-H06). */
@@ -319,6 +323,9 @@ export interface OverviewResponse {
     verified?: boolean;
     /** v0.3.2 self-monitoring: row belongs to the active business itself. */
     self?: boolean;
+    /** Harvest honesty (HARVEST_FIX_PLAN Phase 3). */
+    harvest_status?: string;
+    google_review_count?: string;
   }[];
   /** S6 provenance (Phase D): where the monitored config came from. */
   configSource?: "tenant" | "seed-demo";

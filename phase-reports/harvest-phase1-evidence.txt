@@ -1,0 +1,53 @@
+Phase 1 evidence — harvest honesty (2026-08-24)
+
+============================================================
+CHANGES SHIPPED
+============================================================
+1. harness/capture.py — _JS_OVERVIEW_PROBE extended: extracts
+   google_rating (span.ceNzKf[aria-label] / bintang|star fallback /
+   div.F7nice text) + google_review_count (aria-labeled ulasan/review
+   elements excluding write-review buttons → F7nice container → body
+   regex EN+ID) BEFORE the Reviews tab is opened. Seed flows into
+   _capture_business_metadata, so all post-tab strategies correctly skip.
+2. harness/capture.py — post-tab Strategy-4 regex now matches Indonesian
+   "ulasan" (was English-only; this variant renders id-ID).
+3. harness/capture.py — new pure classify_harvest(harvested, google_count)
+   → (full | reduced | unknown) with 90% threshold; distinct from
+   _classify_variant (stale-NID signature detector).
+4. orchestration/run_all.py — _compute_collection_metrics computes
+   harvest_status/detail and persists them into instrument.business_metadata
+   ⇒ save_snapshot metadata sidecar carries them; parser_efficiency.json
+   also carries them (both --run and --verify paths).
+
+============================================================
+RULE 3 LIVE-DOM VERIFICATION
+===================================================
+- _phase1_dom_probe.py (anonymous headless, id-ID): rating confirmed at
+  span.ceNzKf[aria-label="4,2 bintang"] inside div.F7nice; count NOT
+  rendered anonymously (only "Tulis ulasan") ⇒ count selector verified
+  against the logged-in FULL variant via the live run below.
+- Post-run live evidence (run a99ec000, 2026-08-24):
+    BEFORE: BUSINESS_META[crate-cafe] name=Crate Cafe rating=? reviews=?
+    AFTER:  BUSINESS_META[crate-cafe] name=Crate Cafe rating=4,2 reviews=5.281
+  Snapshot metadata sidecar now carries:
+    google_rating: "4,2"
+    google_review_count: "5.281"        ← the true total
+    harvest_status: "reduced"
+    harvest_detail: "520 of 5281 reviews harvested — partial newest
+                     window (Google panel virtualization)"
+    review_breakdown sums to 5,281 (independent cross-check)
+
+============================================================
+GATES
+============================================================
+- verify_baseline: 141/141 (132 + 9 new harvest-classification checks,
+  new Phase 7; boundary 90%-threshold cases covered)
+- Backup before baseline wipe: Temp\opencode\phase1_backup_20260824
+  (restored + verified after)
+- Live run a99ec000: crate-cafe 520 harvested, harvest_status=reduced,
+  google_review_count=5.281 — the user's exact question ("5,000+ reviews
+  but only ~500 retrieved") now answered BY THE SYSTEM ITSELF.
+
+NOTE: the count DID populate despite the count being absent in anonymous
+renders — because real runs use the logged-in FULL variant (NID session)
+where the count renders pre-tab. Selector set handles both.

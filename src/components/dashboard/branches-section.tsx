@@ -123,6 +123,18 @@ function CompetitorRow({
                 Your business
               </Badge>
             )}
+            {/* Harvest honesty (HARVEST_FIX_PLAN Phase 3): say when the
+                capture window is a partial slice of Google's true total. */}
+            {comp.harvest_status === "reduced" && comp.google_review_count && (
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 border-sky-500/50 bg-sky-500/15 px-1.5 py-0 text-[10px] font-semibold text-sky-700 dark:text-sky-300"
+                title={comp.name + ": newest-window harvest — Google reports more reviews than the panel renders"}
+              >
+                <AlertTriangle className="size-2.5" aria-hidden="true" />
+                Partial window
+              </Badge>
+            )}
             {comp.verified === false && (
               <Badge
                 variant="outline"
@@ -186,6 +198,14 @@ function CompetitorRow({
           <span className="font-semibold tabular-nums text-foreground">
             {comp.total_reviews}
           </span>
+          {comp.harvest_status === "reduced" && comp.google_review_count && (
+            <span
+              className="text-muted-foreground"
+              title="Google's review panel renders only the newest ~500 — the rest stays on Google"
+            >
+              of ~{comp.google_review_count} on Google
+            </span>
+          )}
         </div>
         <Separator orientation="vertical" className="h-4" />
         <div className="inline-flex items-center gap-1.5">
@@ -332,6 +352,15 @@ function CompetitorReviewList({
                 <ExternalLink className="size-3" aria-hidden="true" />
                 Google Maps
               </a>
+            )}
+            {comp.harvest_status === "reduced" && comp.google_review_count && (
+              <span
+                className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400"
+                title="Google's review panel virtualizes and renders only the newest ~500 cards per session — older reviews stay on Google. Monitoring (new-review detection) is unaffected."
+              >
+                <AlertTriangle className="size-3" aria-hidden="true" />
+                Harvested {comp.total_reviews} of ~{comp.google_review_count} on Google (newest window)
+              </span>
             )}
           </SheetDescription>
           <div className="mt-2 grid grid-cols-3 gap-2">

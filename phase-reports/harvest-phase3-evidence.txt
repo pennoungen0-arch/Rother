@@ -1,0 +1,40 @@
+Phase 3 evidence — dashboard honesty (2026-08-25)
+
+============================================================
+CHANGES SHIPPED
+============================================================
+1. src/lib/gbp/server-data.ts — new readHarvestInfo(competitorId,
+   businessId): reads the latest snapshot's .metadata.json sidecar and
+   returns {harvest_status, harvest_detail, google_review_count}. Returns
+   null gracefully when absent (fixtures snapshots carry no metadata).
+2. src/lib/gbp/types.ts — CompetitorStats + OverviewResponse.competitorStats
+   gain harvest_status? / google_review_count?.
+3. Routes: /api/branches + /api/overview attach the harvest fields to every
+   stats row (per-competitor metadata read, tenant-scoped).
+4. UI (branches-section.tsx):
+   - Card: sky "Partial window" badge when harvest_status=reduced, and
+     "of ~N on Google" suffix on the Reviews count (tooltip explains the
+     virtualized panel).
+   - Detail sheet: "Harvested X of ~N on Google (newest window)" line with
+     explanatory tooltip.
+
+============================================================
+LIVE VERIFICATION (dev server, tenant crate-cafe)
+============================================================
+/api/branches:
+  Crate Cafe:        reviews=410 harvest=reduced googleCount=5.281
+  Revolver Seminyak: reviews=170 harvest=reduced googleCount=8.435
+/api/overview: same fields per competitorStats row.
+(Bonus discovery: Revolver's true total is 8,435 — far above the ~610
+window. Both listings now honestly labelled "Partial window".)
+
+============================================================
+GATES
+============================================================
+tsc 0 · eslint clean · vitest 119/119 · Playwright 16/16 (fixtures
+snapshots carry no metadata ⇒ fields absent ⇒ UI renders gracefully —
+covered by the existing suite passing unchanged).
+
+NOTE: review totals currently on disk (410/170) reflect the latest render
+window after the Phase 2 gate runs + baseline wipe/restore cycle; the
+ever-seen unions preserve the full harvested history for delta purposes.

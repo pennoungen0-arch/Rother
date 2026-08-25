@@ -6,6 +6,7 @@ import {
   assessDataStatus,
   readActiveBusiness,
   readAllSnapshots,
+  readHarvestInfo,
   readLatestDelta,
   readAllDeltas,
   resolveMonitoredConfig,
@@ -57,6 +58,8 @@ export async function GET() {
       for (const comp of branch.competitors) {
         totalCompetitors += 1;
         const reviews = snapshots.get(comp.competitor_id) ?? [];
+        // Harvest honesty (HARVEST_FIX_PLAN Phase 3).
+        const hi = await readHarvestInfo(comp.competitor_id, id);
         const validRatings = reviews
           .map((r) => r.rating)
           .filter((r): r is number => r !== null && !Number.isNaN(r));
@@ -122,6 +125,8 @@ export async function GET() {
           trend_indicator: trend,
           verified: comp.verified,
           self: comp.self,
+          harvest_status: hi?.harvest_status,
+          google_review_count: hi?.google_review_count,
         });
       }
 

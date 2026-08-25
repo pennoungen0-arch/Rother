@@ -1,0 +1,71 @@
+Phase 0 evidence — variance quantification + metadata probe diagnosis
+(2026-08-24, read-only)
+
+============================================================
+PHASE 0.1 — RENDER VARIANCE QUANTIFIED
+============================================================
+
+Corrected pairing (the actual consecutive runs tonight, 20 min apart):
+
+  Run 1 (21:15, run 20260824T141555Z): EMPTY baseline (procedure's failed
+  restore had wiped data/) → crate-cafe 410, revolver 470 = 880 "new"
+  (first-harvest flood — every ID fires as new on an empty baseline).
+
+  Run 2 (21:35, run 20260824T143436Z): crate-cafe old=410 → new=510
+  ⇒ 100 "new"; revolver old=470 → new=610 ⇒ 140 "new". Total 240 —
+  matches run_summary. Google did not add 240 reviews in 20 minutes:
+  **100% of the reported delta was PHANTOM backfill discovery** — run 2's
+  scroll rendered DEEPER, surfacing old reviews run 1's shallower render
+  had missed.
+
+Supplementary pairs (backup 650/640-sets vs tonight 510/610-sets):
+  - crate-cafe 650→510: strict subset, 0 phantom, 140 IDs (21.5%) dropped
+    out of render.
+  - revolver 640→610: strict subset, 0 phantom, 30 IDs (4.9%) dropped out.
+
+CONCLUSION — variance has TWO faces around a ~410–650 render-depth jitter:
+  (a) EXPANSION between runs ⇒ phantom "new" deltas (false alerts);
+  (b) DROPOUT between runs ⇒ baseline silently shrinks (totals fluctuate,
+      historical IDs vanish from the "current" view).
+
+DESIGN REFINEMENT for Phase 2 (important):
+  A seen-ID union ALONE is insufficient. A deeper render legitimately
+  contains IDs never seen before (they'd fire once through the union too).
+  The discriminator for "newly POSTED" vs "newly DISCOVERED" is recency:
+  harvested reviews carry relative_date. Rule: new ID + recent date
+  (≤ N days, N≈30) ⇒ posted-new (alert); new ID + old/unparseable date
+  ⇒ backfill discovery (merge into union silently, count separately).
+  First-run flood: seed union from the first harvest, suppress/mark its
+  delta as "baseline", never alert.
+
+============================================================
+PHASE 0.2 — METADATA PROBE DIAGNOSIS (why rating=? reviews=?)
+============================================================
+
+capture.py has a 4-strategy google_review_count/rating extraction
+(LD-JSON aggregateRating → page title → h1 selectors → body-text regex
+for "N reviews"). It runs in the business_metadata phase — AFTER the
+Reviews tab has been clicked and the panel scrolled (log order:
+html_capture → business_metadata). By that point the overview panel —
+where the "5,009 reviews" text and rating summary live — is no longer in
+the rendered body; LD-JSON also fails on the tab-swapped DOM. Result:
+google_count=None ⇒ M16 harvest classification falls to "unknown" instead
+of the honest "reduced: 510 of ~5,009".
+
+Note: the separate _JS_OVERVIEW_PROBE (address/phone/website/hours) DOES
+run before the tab click — but it does not extract rating/count today.
+
+FIX DIRECTION (Phase 1, Rule 3 gated): extract google_rating +
+google_review_count inside the PRE-tab overview probe (where the count
+text is rendered), or run _capture_business_metadata before opening the
+reviews tab. Must be verified against a live DOM capture before coding.
+
+No raw HTML was persisted for tonight's runs (raw_html dir empty) — live
+DOM verification must be part of Phase 1 execution.
+
+============================================================
+STATUS
+============================================================
+Phase 0 COMPLETE. Both numbers recorded; Phase 2 design refined
+(union + recency gate + first-run suppression). Phase 1 fix direction
+identified (probe timing, pre-tab extraction).

@@ -54,6 +54,17 @@ Releases: `RELEASE_NOTES_v0.3.0/1.md`.
   /api/reviews branch filter, alerts, new-reviews, correlation, history×3,
   exports×3); `configSource` field + "Demo dataset" TopBar badge in fixed
   mode; e2e offline-deterministic with `expect.poll` server assertions.
+  **Harvest honesty + variance-proof deltas (2026-08-25):** aggregate
+  rating/count extracted PRE-tab (post-tab probe ran after the overview text
+  left the DOM); `classify_harvest()` emits `harvest_status`
+  (full/reduced/unknown) + Google's aggregate into run_summary + snapshot
+  metadata; deltas diffed against a per-competitor **ever-seen ID union**
+  (`storage/seen_store.py`) with a 30-day recency gate — render-depth jitter
+  can no longer manufacture phantom "new" alerts (was 240/run; now 0 across
+  consecutive live runs); backfill discoveries merge silently; dashboard
+  shows "Partial window" badge + "of ~N on Google". The ~500-review ceiling
+  is Google's virtualized panel, NOT a Rother cap (MAX_SCROLLS=400). See
+  `HARVEST_AUDIT_2026-08-24.md` + `HARVEST_FIX_PLAN.md`.
 - **Convergence status — Phase 3 hardening DONE (2026-08-19):** `src/` is
   the **v2 shell** (AppShell, 4 hubs, 28 lazy features, Cmd+K palette, geo-grid,
   Bali oklch design system) on v1's certified pipeline, with a **monitoring mode
@@ -132,7 +143,7 @@ Run from `gbp-monitor/`:
 
 | Command | Count | Notes |
 |---|---|---|
-| `python -m tests.verify_baseline` | 132/132 | **WIPES `data/`** — back it up first, restore after || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
+| `python -m tests.verify_baseline` | 159/159 | **WIPES `data/`** — back it up first, restore after. Includes Phase 7 harvest-classification + Phase 8 seen-store suites || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
 | `python -m tests.verify_variant_framework` | 32/32 | offline variant classifier |
 
 From repo root:

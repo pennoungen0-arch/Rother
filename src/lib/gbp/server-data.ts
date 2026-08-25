@@ -247,6 +247,38 @@ export interface SnapshotEntry {
   review_count: number;
 }
 
+/** Harvest honesty info (HARVEST_FIX_PLAN Phase 3) — from the latest
+ *  snapshot's metadata sidecar, written by the scraper. */
+export interface HarvestInfo {
+  harvest_status?: string;
+  harvest_detail?: string;
+  google_review_count?: string;
+}
+
+/**
+ * Read harvest completeness info for a competitor's LATEST snapshot.
+ * Returns null when no snapshot or no metadata sidecar exists (e.g.
+ * fixtures-mode snapshots carry no metadata).
+ */
+export async function readHarvestInfo(
+  competitorId: string,
+  businessId?: string,
+): Promise<HarvestInfo | null> {
+  validateCompetitorId(competitorId);
+  const root = businessId
+    ? path.join(businessDataDir(businessId), "snapshots")
+    : GBP_SNAPSHOTS_DIR;
+  const compDir = path.join(root, competitorId);
+  const latestPtr = path.join(compDir, "latest.json");
+  const latestFilename = await readJsonFile<string | null>(latestPtr, null);
+  if (!latestFilename) return null;
+  const metaPath = path.join(
+    compDir,
+    latestFilename.replace(/\.json$/, ".metadata.json"),
+  );
+  return readJsonFile<HarvestInfo | null>(metaPath, null);
+}
+
 /** List all available snapshot timestamps for a competitor. */
 export async function listSnapshots(
   competitorId: string,

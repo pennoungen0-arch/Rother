@@ -182,8 +182,38 @@ def verify_artifacts() -> None:
         f"got {total_reviews}, expected {EXPECTED_TOTAL_REVIEWS}",
     )
 
+    # HARVEST_FIX_PLAN Phase 2: a fixtures run is always the competitor's
+    # FIRST harvest (data/ is wiped) → baseline suppression ⇒ no delta files.
+    # The honest assertions are: seen-store unions were written, and the
+    # delta-write path still works (exercised directly below).
+    seen_files = list((DATA_DIR / "seen").glob("*.json")) if (DATA_DIR / "seen").exists() else []
+    check(
+        "seen-store union written per competitor",
+        len(seen_files) >= 3,
+        f"found {len(seen_files)} seen file(s) in data/seen/",
+    )
+    for sf in seen_files:
+        try:
+            data = json.loads(sf.read_text(encoding="utf-8"))
+            check(
+                f"seen {sf.name} has ids",
+                isinstance(data.get("review_ids"), list) and len(data["review_ids"]) > 0,
+            )
+        except Exception as e:
+            check(f"seen {sf.name} parseable", False, str(e))
+
+    # Delta-write path: exercise directly (fixtures suppression means the
+    # scraper itself no longer writes delta files on a first harvest).
+    from storage.seen_store import _seen_path  # noqa: F401  (import sanity)
+    from orchestration.run_all import _append_new_reviews
+
+    _append_new_reviews(
+        "comp-canggu-01",
+        [{"review_id": "baseline-test-1", "rating": 5.0}],
+        run_id="verify-baseline-delta-write",
+    )
     delta_files = list(REVIEWS_NEW_DIR.glob("*.json"))
-    check("at least one delta file exists", len(delta_files) > 0)
+    check("at least one delta file exists after direct write", len(delta_files) > 0)
     for df in delta_files:
         reviews = json.loads(df.read_text(encoding="utf-8"))
         check(
@@ -665,6 +695,130 @@ def _verify_stale_nid_guard() -> None:
     check("guard: 30 cards + 50 aggregate => unknown", v == "unknown")
 
 
+def _verify_harvest_classification() -> None:
+    """Offline checks for harvest-completeness classification (HARVEST_FIX_PLAN Phase 1).
+
+    classify_harvest answers "how much of the listing's true total did this
+    capture window reach" — distinct from the stale-NID variant guard above.
+    """
+    print("\n[Phase 7] Harvest classification offline tests...")
+
+    from harness.capture import classify_harvest
+
+    # Google count unavailable => unknown (probe degraded — the 2026-08-24
+    # symptom this phase fixes).
+    v, _ = classify_harvest(510, None)
+    check("harvest: no aggregate => unknown", v == "unknown")
+    v, _ = classify_harvest(510, 0)
+    check("harvest: zero aggregate => unknown", v == "unknown")
+
+    # Full: harvested >= 90% of Google's count.
+    v, _ = classify_harvest(500, 509)
+    check("harvest: 500 of 509 => full", v == "full")
+    v, _ = classify_harvest(8, 8)
+    check("harvest: small listing fully harvested => full", v == "full")
+    v, _ = classify_harvest(600, 5021)
+    check("harvest: 600 of 5021 => reduced", v == "reduced")
+
+    # Reduced: partial newest window (the Crate Cafe ~510-of-5009 case).
+    v, d = classify_harvest(510, 5009)
+    check("harvest: 510 of 5009 => reduced", v == "reduced")
+    check("harvest: reduced detail carries both numbers", "510" in d and "5009" in d)
+
+    # Boundary: exactly at the 90% threshold => full.
+    v, _ = classify_harvest(90, 100)
+    check("harvest: 90 of 100 (at threshold) => full", v == "full")
+    v, _ = classify_harvest(89, 100)
+    check("harvest: 89 of 100 (below threshold) => reduced", v == "reduced")
+
+
+def _verify_seen_store() -> None:
+    """Offline checks for the variance-proof delta base (HARVEST_FIX_PLAN Phase 2).
+
+    Scenario numbers mirror Phase 0 evidence: 410-ID union, deeper 510-render
+    with 100 never-seen OLD-date IDs must yield 0 posted / 100 backfill.
+    """
+    print("\n[Phase 8] Seen-store (variance-proof delta) offline tests...")
+
+    import tempfile
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    from storage.seen_store import (
+        is_first_harvest,
+        is_recently_posted,
+        load_seen,
+        merge_seen,
+        save_seen,
+        split_candidates,
+    )
+
+    now = datetime.now(timezone.utc)
+    recent_iso = (now - timedelta(days=2)).strftime("%Y-%m-%d")
+    old_iso = (now - timedelta(days=400)).strftime("%Y-%m-%d")
+
+    def rev(rid: str, date: str | None) -> dict:
+        return {"review_id": rid, "review_date": date, "relative_date": None}
+
+    # Pure union merge.
+    seen = merge_seen({"a"}, [{"review_id": "b"}, {"review_id": None}, {}])
+    check("seen: merge adds ids, skips id-less", seen == {"a", "b"})
+
+    # Variance scenario (Phase 0 numbers): deeper render, old-date backfill.
+    seen410 = {f"old{i}" for i in range(410)}
+    render510 = [rev(f"old{i}", old_iso) for i in range(410)] + [
+        rev(f"backfill{i}", old_iso) for i in range(100)
+    ]
+    posted, backfill = split_candidates(render510, seen410, now=now)
+    check("seen: variance 410->510 old-date => 0 posted", len(posted) == 0)
+    check("seen: variance 410->510 old-date => 100 backfill", len(backfill) == 100)
+
+    # Genuinely-new: recent-date never-seen ID => posted.
+    posted, backfill = split_candidates(
+        [rev("fresh1", recent_iso)], seen410, now=now
+    )
+    check("seen: recent never-seen => 1 posted", len(posted) == 1)
+    check("seen: recent never-seen => 0 backfill", len(backfill) == 0)
+
+    # Conservative default: unparseable/missing date => posted (never missed).
+    posted, _ = split_candidates([rev("nodate", None)], seen410, now=now)
+    check("seen: missing date => posted (conservative)", len(posted) == 1)
+    r = {"review_id": "x", "review_date": None, "relative_date": "2 hari lalu"}
+    check("seen: relative_date resolves for recency gate",
+          is_recently_posted(r, now=now) is True)
+
+    # Recency boundary: 29 days posted / 31 days backfill.
+    d29 = (now - timedelta(days=29)).strftime("%Y-%m-%d")
+    d31 = (now - timedelta(days=31)).strftime("%Y-%m-%d")
+    posted, backfill = split_candidates(
+        [rev("d29", d29), rev("d31", d31)], set(), now=now
+    )
+    check("seen: 29-day-old => posted", len(posted) == 1 and posted[0]["review_id"] == "d29")
+    check("seen: 31-day-old => backfill", len(backfill) == 1 and backfill[0]["review_id"] == "d31")
+
+    # Already-seen IDs never re-fire.
+    posted, backfill = split_candidates([rev("old0", old_iso)], seen410, now=now)
+    check("seen: seen id never re-fires", len(posted) == 0 and len(backfill) == 0)
+
+    # First-harvest detection.
+    check("seen: first harvest (no union, no snapshot)", is_first_harvest(set(), []) is True)
+    check("seen: migration (no union, snapshot exists) => not first",
+          is_first_harvest(set(), [rev("old0", old_iso)]) is False)
+    check("seen: union exists => not first", is_first_harvest({"a"}, []) is False)
+
+    # Save/load roundtrip in an isolated dir.
+    with tempfile.TemporaryDirectory() as td:
+        base = Path(td)
+        save_seen("comp-x", {"r1", "r2"}, base_dir=base)
+        loaded = load_seen("comp-x", base_dir=base)
+        check("seen: save/load roundtrip", loaded == {"r1", "r2"})
+        # Corrupt file => tolerant empty (Rule 7).
+        (base / "comp-broken.json").write_text("{not json", encoding="utf-8")
+        check("seen: corrupt file => tolerant empty",
+              load_seen("comp-broken", base_dir=base) == set())
+        check("seen: missing file => empty", load_seen("comp-missing", base_dir=base) == set())
+
+
 def main() -> int:
     print("=" * 60)
     print("GBP Monitor -- Baseline Verification")
@@ -701,6 +855,8 @@ def main() -> int:
 
     # M16: stale-NID guard offline tests.
     _verify_stale_nid_guard()
+    _verify_harvest_classification()
+    _verify_seen_store()
 
     print("\n" + "=" * 60)
     print(f"Results: {PASS} passed, {FAIL} failed")

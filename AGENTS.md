@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-24 (v0.3.2 + systems hardening).** For full detail see
+**Last updated: 2026-08-25 (v0.3.3 harvest honesty).** For full detail see
 `gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
@@ -11,9 +11,12 @@ State/version knowledge for AI agents (and humans) working on this repo.
 `SELF_MONITORING_FIX_PLAN.md` (✅ v0.3.2 self-monitoring fix),
 `SYSTEMS_AUDIT_2026-08-24.md` + `SYSTEMS_FIX_PLAN.md` (✅ rate-limit fix,
 11-route tenant-scoping sweep, configSource provenance, e2e hardening —
-see phase-reports/systems-*.txt).
+see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
+`HARVEST_FIX_PLAN.md` (✅ v0.3.3 harvest honesty + variance-proof deltas),
+`SESSION_SUMMARY_2026-08-25.md` (session index),
+`TAURI_COMPATIBILITY_RESEARCH_2026-08-25.md` (desktop pre-plan research).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md`.
-Releases: `RELEASE_NOTES_v0.3.0/1.md`.
+Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 
 ---
 

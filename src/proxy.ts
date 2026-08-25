@@ -47,7 +47,7 @@ function rateLimited(key: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only protect API routes

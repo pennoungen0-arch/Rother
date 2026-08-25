@@ -118,6 +118,19 @@ revolver 470, new-reviews labeled).
 - [x] configSource field + TopBar badge
 - [x] Full gates green
 
+### Phase A follow-up (discovered in procedure-run #2, 2026-08-24) · ✅ DONE
+
+`smoke.spec.ts` was NOT ported to the Phase A hardening — its Mobile
+"Discovery flow" flaked identically (live link resolution + toast-race text
+wait, smoke.spec.ts:165). Evidence: `phase-reports/systems-procedure2-results.txt` §I1.
+
+- [x] Extract shared `e2e/helpers/places-mock.ts` (mockPlacesApi + MOCK_PLACES)
+- [x] Port mock + "Remove competitor" committed-item wait to smoke.spec.ts
+      discovery test; discovery-persistence.spec.ts refactored onto the helper
+- [x] Verify: smoke+discovery `--repeat-each=3` → **42/42**; full suite **16/16**
+
+**ALL PLAN ITEMS COMPLETE.**
+
 ## Phase E — Closing gate · ~30 min (incl. one live scrape)
 
 - [ ] Full offline gates: vitest · tsc · eslint · playwright (all suites).

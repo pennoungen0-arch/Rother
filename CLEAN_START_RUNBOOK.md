@@ -97,20 +97,34 @@ npx eslint src          # expect silence (0 problems)
 
 ### D2. E2E suite (~30 sec, dev server must be running)
 ```powershell
-npx playwright test     # expect 12 passed (smoke 10 + scheduler 2)
+npx playwright test     # expect 16 passed (smoke 10 + scheduler 2 + discovery-persistence 4)
 ```
+⚠️ The e2e suite rewrites `config/user-business.json` and (fixtures runs)
+writes into `data/users/<id>/` — re-verify your config/data afterwards if you
+were mid-manual-testing.
 
 ### D3. Scraper suites (~2 min) ⚠️ wipes gbp-monitor/data/
 ```powershell
-Copy-Item gbp-monitor\data C:\Users\HP\AppData\Local\Temp\opencode\rother_data_backup -Recurse -Force
+# Back up to a FRESH dir (never into an existing folder) and VERIFY before proceeding:
+$bk = "C:\Users\HP\AppData\Local\Temp\opencode\rother_backup_$(Get-Date -Format yyyyMMddHHmmss)"
+New-Item -ItemType Directory $bk | Out-Null
+Copy-Item gbp-monitor\data "$bk\data" -Recurse
+if (-not (Test-Path "$bk\data\snapshots")) { throw "BACKUP FAILED — aborting" }
 cd gbp-monitor
 python -m tests.verify_baseline          # expect 132 passed, 0 failed
 python -m tests.verify_notifications     # expect 25 passed, 0 failed
 python -m tests.verify_variant_framework # expect 32 passed, 0 failed
 cd ..
-git restore gbp-monitor/data/            # put committed data back
+# Restore — SAME session, literal $bk; then VERIFY the restore immediately:
+Remove-Item -Recurse -Force gbp-monitor\data
+Copy-Item "$bk\data" gbp-monitor\data -Recurse
+if (-not (Test-Path "gbp-monitor\data\snapshots")) { throw "RESTORE FAILED — copy from $bk manually" }
 ```
-⚠️ NEVER skip the restore line, and never `git add -A` while deletions show.
+⚠️ NEVER skip the restore, never `git add -A` while deletions show, and never
+trust a `$variable` set in another terminal session (2026-08-24: `$bk` was
+empty at restore time → `data/` briefly lost; recovered via fresh live scrape).
+⚠️ If your tenant data lives under `data/users/<id>/`, verify those pointers
+too — see `phase-reports/systems-procedure2-results.txt` §I2.
 
 ---
 

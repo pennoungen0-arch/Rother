@@ -1,0 +1,76 @@
+Procedure-run #2 evidence & verdict — v0.3.2 (2026-08-24 ~21:00–21:45 local)
+
+CONTEXT: full Prepare→Run→Test procedure executed by the user against
+v0.3.2 (commit 769e5e7, tag v0.3.2), after the systems-hardening session.
+
+============================================================
+WINS (verified)
+============================================================
+W1. Backup discipline applied correctly: fresh-dir backup + IMMEDIATE
+    verification printed crate-cafe 650 / revolver-seminyak 640 BEFORE any
+    destructive step. (Phase B lesson learned and executed.)
+W2. All offline gates green:
+    - vitest 119/119 (9 files incl. self-target 16)
+    - tsc --noEmit clean · eslint src clean
+    - verify_baseline 132/132 · verify_notifications 25/25 ·
+      verify_variant_framework 32/32
+W3. SELF-MONITORING PROVEN FROM TRUE COLD START: fresh onboarding (no
+    competitors carried over) → live scrape scraped Crate Cafe as the
+    SELF target: 56 scroll iterations, 510 cards harvested, clean
+    bottom=stable_scroll detection, expand phase started normally.
+    This is the v0.3.2 headline feature working exactly as designed.
+W4. Live gate: run_summary success=2, failed=0, total_reviews=1120
+    (crate-cafe 510 + revolver-seminyak 610), new_reviews=240.
+W5. Concurrent-run 409 fired correctly during a double-trigger.
+W6. Post-run state healthy: latest.json pointers on the fresh snapshots;
+    overview serves the new data (the failed restore was superseded by the
+    successful live regeneration).
+
+============================================================
+ISSUES
+============================================================
+I1. Playwright 15/16 — smoke.spec.ts Mobile "Discovery flow" failed:
+    getByText('Revolver Seminyak') not visible within 10s (smoke.spec.ts:165).
+    ROOT CAUSE: same flake class already diagnosed and fixed in Phase A for
+    discovery-persistence.spec.ts, but NOT yet ported to smoke.spec.ts:
+      (a) smoke still resolves the Maps link LIVE (Google throttle risk),
+      (b) still waits on raw name text, which the sonner "Competitor added"
+          toast satisfies BEFORE React commits competitorList → Start
+          Monitoring can click with a stale empty closure.
+    FIX (pending): port mockPlacesApi() + "Remove competitor" committed-item
+    wait to smoke.spec.ts. Desktop passed; Mobile lost the race — identical
+    pattern to the Phase A signature.
+
+I2. Restore failed AGAIN — `Copy-Item "$bk\data" data` → "Cannot find path
+    'D:\data'": $bk evaluated EMPTY at restore time (the backup assignment
+    line was truncated in the session: `$(Get-Dat…`). data/ was deleted and
+    NOT restored from backup. MITIGATED BY LUCK+DESIGN: the live scrape the
+    user triggered next regenerated both snapshot sets fresh (510/610), so
+    no data is missing. The full 650/640 backup remains intact at:
+    Temp\opencode\rother_backup_20260824T210453
+    LESSON (runbook): never rely on a session variable across procedure
+    stages — either use the literal path, or guard: if (-not $bk) { throw }.
+    Also: restore-verify immediately (the step was skipped because the copy
+    errored; had the live scrape not followed, data/ would be empty).
+
+============================================================
+OBSERVATIONS (not bugs, on the radar)
+============================================================
+O1. Google rendering variance: crate-cafe rendered 650 reviews (~16:00 run)
+    vs 510 (this run) — same place, same selectors, same day. Scroll-depth
+    variance is a known scraper characteristic; the M6/M7 variant-framework
+    work exists to characterize it. Watch trend over time; do not treat
+    single-run drops as regressions.
+O2. Expected-noise lines confirmed benign: "[server-data] no file (using
+    fallback) …run_summary.json" pre-first-run; selector_report fallback;
+    category_scan fallback (never run for this tenant).
+O3. EBADENGINE (node 22.11 vs ^22.13) + npm 9 highs (dev-toolchain only) +
+    middleware→proxy deprecation notice: carried-over minor items, unchanged.
+
+============================================================
+STATUS
+============================================================
+- Procedure verdict: PASS with one known flake (I1) and one process slip
+  (I2, self-healed).
+- Pending follow-up: port Phase A hardening to smoke.spec.ts → expect 16/16.
+- Backup safety net: Temp\opencode\rother_backup_20260824T210453 (650/640).

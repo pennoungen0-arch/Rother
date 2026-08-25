@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { mockPlacesApi } from "./helpers/places-mock";
+
 /**
  * Smoke test — critical first-run flows:
  * 1. Discovery-first: landing screen renders with link input
@@ -129,6 +131,10 @@ test("Mobile viewport: landing screen renders correctly", async ({
 test("Discovery flow: paste link → add competitor → start monitoring", async ({
   page,
 }) => {
+  // Phase A follow-up hardening (SYSTEMS_FIX_PLAN): offline link resolution
+  // (Google throttling flaked repeat runs) — same treatment as
+  // discovery-persistence.spec.ts.
+  await mockPlacesApi(page);
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.evaluate(() => sessionStorage.clear());
@@ -161,7 +167,12 @@ test("Discovery flow: paste link → add competitor → start monitoring", async
   );
   await page.getByRole("button", { name: /Add/ }).click();
 
-  // 7. Should show competitor in list (first occurrence in the list, not toast)
+  // 7. Wait on the committed LIST ITEM (its Remove button) — the sonner toast
+  // renders from an external store BEFORE competitorList commits, so a raw
+  // text wait can pass too early (Phase A race, SYSTEMS_FIX_PLAN).
+  await expect(page.getByRole("button", { name: "Remove competitor" })).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.getByText("Revolver Seminyak").first()).toBeVisible({ timeout: 10_000 });
 
   // 8. Start monitoring - verify button exists and is enabled

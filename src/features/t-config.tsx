@@ -115,20 +115,27 @@ export default function ConfigFeature() {
           category: place.category,
           verified: place.provider === "gmaps",
         };
-        setBranches((prev) =>
-          prev.map((b) => ({
-            ...b,
-            competitors: [...(b.competitors ?? []), newCompetitor],
-          })),
-        );
-        // Persist updated branches
+        // Dedupe FIRST (before any state update): never add the same
+        // competitor_id twice.
+        if (branches.some((b) => (b.competitors ?? []).some((c) => c.competitor_id === compId))) {
+          toast.info("Already added", { description: `${place.name ?? "Competitor"} is already in your list` });
+          setCompetitorInput("");
+          return;
+        }
+        // Persist updated branches. NOTE: compute the next state from the
+        // current `branches` value — passing a state-updater FUNCTION into
+        // JSON.stringify silently serializes to `{}` (functions are
+        // omitted), which 400s on the server and persists nothing. The
+        // optimistic setBranches must use the SAME `next` as the POST.
+        const next = branches.map((b) => ({
+          ...b,
+          competitors: [...(b.competitors ?? []), newCompetitor],
+        }));
+        setBranches(next);
         await fetch("/api/business/branches", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ branches: prev => prev.map((b) => ({
-            ...b,
-            competitors: [...(b.competitors ?? []), newCompetitor],
-          })) }),
+          body: JSON.stringify({ branches: next }),
         });
         setCompetitorInput("");
         toast.success("Competitor added", { description: place.name ?? "Added to monitoring list" });
@@ -140,26 +147,22 @@ export default function ConfigFeature() {
     } finally {
       setAddingCompetitor(false);
     }
-  }, [competitorInput, addingCompetitor]);
+  }, [competitorInput, addingCompetitor, branches]);
 
   const removeCompetitor = React.useCallback(async (competitorId: string) => {
-    setBranches((prev) =>
-      prev.map((b) => ({
-        ...b,
-        competitors: (b.competitors ?? []).filter((c) => c.competitor_id !== competitorId),
-      })),
-    );
-    // Persist updated branches
+    // Same fix as addCompetitor: serialize DATA, not a state-updater function.
+    const next = branches.map((b) => ({
+      ...b,
+      competitors: (b.competitors ?? []).filter((c) => c.competitor_id !== competitorId),
+    }));
+    setBranches(next);
     await fetch("/api/business/branches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ branches: prev => prev.map((b) => ({
-        ...b,
-        competitors: (b.competitors ?? []).filter((c) => c.competitor_id !== competitorId),
-      })) }),
+      body: JSON.stringify({ branches: next }),
     });
     toast.success("Competitor removed", { description: "Removed from monitoring list" });
-  }, []);
+  }, [branches]);
 
   if (mode === "fixed") {
     return (

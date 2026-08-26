@@ -541,6 +541,190 @@ def _open_reviews_tab(page, selectors: dict, comp_id: str, instrument: PipelineI
     return False
 
 
+# HARVEST S3 (2026-08-25): Google's Reviews panel defaults to "Most relevant"
+# ordering, so a brand-new review can sit outside the rendered ~500-card
+# window entirely. Clicking the panel's own "Urutkan → Terbaru" (Sort →
+# Newest) control before scrolling makes the window strictly newest-first —
+# the single biggest monitoring-accuracy improvement available. Selectors
+# verified live 2026-08-25 (_phase_s3_sort_probe.py, id-ID variant):
+#   sort button: button[aria-label="Urutkan ulasan"]
+#   menu option: button text "Terbaru" (class wR3cXd fontLabelMedium)
+_SORT_BUTTON_CANDIDATES = [
+    "button[aria-label*='urutkan' i]",
+    "button[aria-label*='sort' i]",
+]
+
+# Count VISIBLE elements whose entire label is exactly Terbaru/Newest.
+# NOTE: the sort-menu options are NOT <button> elements (live DOM 2026-08-25:
+# plain divs/spans in the dropdown) — hence the broad element query.
+_COUNT_NEWEST_JS = """() => {
+  const clean = (s) => (s || '').replace(/\\s+/g, ' ').trim();
+  return [...document.querySelectorAll('button, div, span, li, [role="menuitem"], [role="option"]')]
+    .filter(el => {
+      if (el.offsetWidth === 0 && el.offsetHeight === 0) return false;
+      if (el.children.length > 1) return false;
+      return /^(terbaru|newest)$/i.test(clean(el.textContent));
+    }).length;
+}"""
+
+# Click the VISIBLE exact-text Terbaru/Newest element NEAREST the sort
+# control (the menu option drops adjacent to it; the app-rail nav item is
+# farther away).
+_CLICK_NEAREST_NEWEST_JS = """(sortSel) => {
+  const clean = (s) => (s || '').replace(/\\s+/g, ' ').trim();
+  // Re-find the sort button live: opening the menu can re-render the header
+  // and replace the original node (live evidence: 'sort button gone').
+  let sortBtn = document.querySelector(sortSel);
+  if (!sortBtn) {
+    sortBtn = [...document.querySelectorAll('button')].find(b =>
+      /urutkan|sort/i.test(b.getAttribute('aria-label') || ''));
+  }
+  if (!sortBtn) return { ok: false, reason: 'sort button gone' };
+  const sb = sortBtn.getBoundingClientRect();
+  const cands = [...document.querySelectorAll('button, div, span, li, [role="menuitem"], [role="option"]')]
+    .filter(el => {
+      if (el.offsetWidth === 0 && el.offsetHeight === 0) return false;
+      if (el.children.length > 1) return false;
+      return /^(terbaru|newest)$/i.test(clean(el.textContent));
+    });
+  if (cands.length === 0) return { ok: false, reason: 'no visible option' };
+  let best = null, bestD = Infinity;
+  for (const c of cands) {
+    const r = c.getBoundingClientRect();
+    const d = Math.hypot(r.x - sb.x, r.y - sb.y);
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  const info = { ok: true, count: cands.length, dist: Math.round(bestD) };
+  best.click();
+  return info;
+}"""
+
+
+def _close_sort_menu(page) -> None:
+    """Best-effort menu close so the panel is never left in menu state."""
+    try:
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(800)
+    except Exception:
+        pass
+
+
+def click_newest_sort(
+    page,
+    comp_id: str,
+    instrument=None,
+) -> bool:
+    """Switch the Reviews panel to Newest ordering. Best-effort (Rule 7).
+
+    Returns True when the panel is now newest-first; False ⇒ caller proceeds
+    with Google's default (most-relevant) ordering exactly as before.
+    """
+    sort_btn = None
+    used_candidate = None
+    for candidate in _SORT_BUTTON_CANDIDATES:
+        try:
+            sort_btn = page.query_selector(candidate)
+            if sort_btn:
+                used_candidate = candidate
+                break
+        except Exception:
+            continue
+    if not sort_btn:
+        logger.info(
+            "SORT_NEWEST[%s] sort control not found — proceeding with default ordering",
+            comp_id,
+        )
+        if instrument:
+            instrument.record_selector(
+                selector_key="reviews_sort_newest", primary=None,
+                fallback_used=False, matched=False,
+                detail="sort control not found (embedded/reduced variant?)",
+            )
+        return False
+    try:
+        # Count VISIBLE Terbaru/Newest buttons BEFORE opening the menu — the
+        # app rail also has a "Terbaru" nav button (live evidence 2026-08-26:
+        # a naive has-text click hit the NAV button and navigated away from
+        # the place panel entirely, harvesting 0 reviews).
+        visible_before = page.evaluate(_COUNT_NEWEST_JS)
+        sort_btn.click(timeout=4_000)
+        # The menu renders async — wait until a NEW visible Terbaru/Newest
+        # button appears (menu option), or time out.
+        option_opened = False
+        for _ in range(16):  # ~8s
+            page.wait_for_timeout(500)
+            if page.evaluate(_COUNT_NEWEST_JS) > visible_before:
+                option_opened = True
+                break
+        if not option_opened:
+            _close_sort_menu(page)
+            logger.warning(
+                "SORT_NEWEST[%s] sort menu did not open — proceeding with default ordering",
+                comp_id,
+            )
+            if instrument:
+                instrument.record_selector(
+                    selector_key="reviews_sort_newest", primary=used_candidate,
+                    fallback_used=True, matched=False,
+                    detail="sort menu did not open (menu closed)",
+                )
+            return False
+        # Click the menu option NEAREST the sort button — never the nav rail.
+        result = page.evaluate(_CLICK_NEAREST_NEWEST_JS)
+        if not result.get("ok"):
+            _close_sort_menu(page)
+            logger.warning(
+                "SORT_NEWEST[%s] menu option click failed (%s) — proceeding with default ordering",
+                comp_id, result.get("reason"),
+            )
+            if instrument:
+                instrument.record_selector(
+                    selector_key="reviews_sort_newest", primary=used_candidate,
+                    fallback_used=True, matched=False,
+                    detail=f"option click failed: {result.get('reason')}",
+                )
+            return False
+        # Switching to Terbaru re-fetches the list: the panel collapses and
+        # re-renders (live evidence: an immediate scroll saw height 584 /
+        # 0 cards and declared bottom via spinner_finished). Wait for the
+        # first review card of the re-sorted list before handing off.
+        try:
+            page.wait_for_selector("[data-review-id]", timeout=20_000)
+        except Exception:
+            page.wait_for_timeout(6_000)
+        page.wait_for_timeout(1_500)
+        logger.info(
+            "SORT_NEWEST[%s] applied via %r (menu candidates=%s, dist=%spx)",
+            comp_id, used_candidate, result.get("count"), result.get("dist"),
+        )
+        if instrument:
+            instrument.record_selector(
+                selector_key="reviews_sort_newest",
+                primary=used_candidate, fallback_used=False,
+                matched=True, match_count=1,
+                candidate=f"nearest-Terbaru(dist={result.get('dist')}px)",
+                detail="Newest ordering applied",
+            )
+        return True
+    except Exception as e:
+        # Rule 7: never leave the menu open or raise — close + fall back.
+        try:
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(800)
+        except Exception:
+            pass
+        logger.warning(
+            "SORT_NEWEST[%s] failed (%s) — menu closed, proceeding with default ordering",
+            comp_id, e,
+        )
+        if instrument:
+            instrument.record_selector(
+                selector_key="reviews_sort_newest", primary=used_candidate,
+                fallback_used=True, matched=False, detail=f"error: {e}",
+            )
+        return False
+
+
 def capture_listing_html(
     context,
     url: str,
@@ -615,6 +799,13 @@ def capture_listing_html(
 
         if time.time() > deadline:
             raise CaptureTimeoutError("open_reviews_tab", time.time() - start, total_timeout_s)
+
+        # Harvest S3 (HARVEST plan follow-up): switch the panel to Newest
+        # ordering so the rendered window reliably starts with the newest
+        # reviews. Best-effort — on failure we proceed with Google's default
+        # ordering exactly as before (Rule 7).
+        if tab_opened:
+            click_newest_sort(page, comp_id, instrument)
 
         if instrument:
             instrument.start_phase("scroll")

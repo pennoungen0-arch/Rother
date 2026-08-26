@@ -41,6 +41,11 @@ export interface Review {
   relative_date: string | null;
   /** ISO 8601 string. */
   scraped_at: string;
+  /** Approximate ISO date resolved from `relative_date` by the parser
+   *  (GMBE-parity fields; absent in pre-2026-08 snapshots). */
+  review_date?: string | null;
+  review_date_epoch?: number | null;
+  review_like_count?: number | null;
 }
 
 export interface RunSummaryError {

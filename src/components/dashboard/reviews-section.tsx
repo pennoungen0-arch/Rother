@@ -59,7 +59,7 @@ import { StarRating } from "./star-rating";
 import { EmptyState } from "./empty-state";
 import { ExportButtons } from "./export-buttons";
 import { CopyButton } from "./copy-button";
-import { cleanReviewerName } from "@/lib/gbp/format";
+import { cleanReviewerName, parseRelativeDate } from "@/lib/gbp/format";
 import type {
   BranchWithStats,
   Review,
@@ -74,6 +74,19 @@ interface ReviewsSectionProps {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
+
+/**
+ * Resolved sortable date (ISO `YYYY-MM-DD`) for a review row: the parser's
+ * approximated `review_date` first, then a client-side resolve of the
+ * relative string, then `scraped_at`. Empty string sorts oldest — reviews
+ * with no resolvable date sink to the bottom rather than chaos-sorting.
+ */
+function reviewDateValue(r: Review): string {
+  if (r.review_date) return r.review_date;
+  const parsed = parseRelativeDate(r.relative_date, r.scraped_at ?? "");
+  if (parsed) return parsed;
+  return r.scraped_at?.slice(0, 10) ?? "";
+}
 
 /** A single review row, enriched with display names. */
 interface ReviewRow extends Review {
@@ -278,7 +291,16 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
             {row.original.relative_date ?? "—"}
           </span>
         ),
-        sortingFn: "alphanumeric",
+        // S6 fix (2026-08-25): sort by RESOLVED date, not the raw
+        // relative_date string — "alphanumeric" on "10 bulan lalu" /
+        // "2 minggu lalu" produces lexicographic chaos ("10…" < "2…"),
+        // which made the Recent sort jump to ~10-11-month-old reviews.
+        // Prefer the parser's approximated review_date (ISO), fall back to
+        // a client-side resolve, then to scraped_at.
+        sortingFn: (rowA, rowB) =>
+          reviewDateValue(rowA.original).localeCompare(
+            reviewDateValue(rowB.original),
+          ),
       },
       {
         accessorKey: "competitor_name",

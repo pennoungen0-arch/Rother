@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Lightweight baseline verification script.
 
 Runs the scraper in --fixtures mode and validates that all expected output
@@ -183,7 +183,7 @@ def verify_artifacts() -> None:
     )
 
     # HARVEST_FIX_PLAN Phase 2: a fixtures run is always the competitor's
-    # FIRST harvest (data/ is wiped) → baseline suppression ⇒ no delta files.
+    # FIRST harvest (data/ is wiped) â†’ baseline suppression â‡’ no delta files.
     # The honest assertions are: seen-store unions were written, and the
     # delta-write path still works (exercised directly below).
     seen_files = list((DATA_DIR / "seen").glob("*.json")) if (DATA_DIR / "seen").exists() else []
@@ -230,7 +230,7 @@ def verify_artifacts() -> None:
               "run_summary" in log_content or "Run summary:" in log_content)
 
 
-# ── M13B Security regression tests ──────────────────────────────────
+# â”€â”€ M13B Security regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _verify_security() -> None:
@@ -339,12 +339,12 @@ def _verify_security() -> None:
         capture_output=True,
         text=True,
     )
-    # Our real config may have place_id issues — the important thing is the
+    # Our real config may have place_id issues â€” the important thing is the
     # CLI runs without crashing and returns either 0 or 1.
     check("sec: --validate-config exits cleanly", result.returncode in (0, 1))
 
 
-# ── M18 First-run polish tests ──────────────────────────────────────
+# â”€â”€ M18 First-run polish tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _verify_first_run_polish() -> None:
@@ -445,7 +445,7 @@ def _verify_first_run_polish() -> None:
         )
 
         # 5e  run() aborts cleanly (no traceback) when a config file is
-        #     missing — the pre-M18 behavior crashed with FileNotFoundError.
+        #     missing â€” the pre-M18 behavior crashed with FileNotFoundError.
         (tmp_path / "config" / "selectors.json").unlink(missing_ok=True)
         r = cli()
         no_traceback = "Traceback" not in r.stderr
@@ -464,7 +464,7 @@ def _verify_first_run_polish() -> None:
         )
 
 
-# ── M8 Acquisition offline tests ────────────────────────────────────
+# â”€â”€ M8 Acquisition offline tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _verify_gmbe_parity() -> None:
@@ -699,13 +699,13 @@ def _verify_harvest_classification() -> None:
     """Offline checks for harvest-completeness classification (HARVEST_FIX_PLAN Phase 1).
 
     classify_harvest answers "how much of the listing's true total did this
-    capture window reach" — distinct from the stale-NID variant guard above.
+    capture window reach" â€” distinct from the stale-NID variant guard above.
     """
     print("\n[Phase 7] Harvest classification offline tests...")
 
     from harness.capture import classify_harvest
 
-    # Google count unavailable => unknown (probe degraded — the 2026-08-24
+    # Google count unavailable => unknown (probe degraded â€” the 2026-08-24
     # symptom this phase fixes).
     v, _ = classify_harvest(510, None)
     check("harvest: no aggregate => unknown", v == "unknown")
@@ -819,6 +819,94 @@ def _verify_seen_store() -> None:
         check("seen: missing file => empty", load_seen("comp-missing", base_dir=base) == set())
 
 
+def _verify_newest_sort() -> None:
+    """Offline checks for the Newest-sort click (harvest S3 improvement).
+
+    The DOM interaction needs a live browser; here we verify the fallback
+    contract with stub pages (Rule 7: any failure â‡’ proceed with default
+    ordering, never raise).
+    """
+    print("\n[Phase 9] Newest-sort fallback offline tests...")
+
+    from harness.capture import click_newest_sort
+
+    class _FakeEl:
+        def __init__(self) -> None:
+            self.clicked = False
+
+        def click(self, timeout: int = 0) -> None:
+            self.clicked = True
+
+    class _PageNoSort:
+        def query_selector(self, sel: str):
+            return None
+
+    class _PageFullFlow:
+        """Sort menu opens (visible-option count increases) + option clicks."""
+
+        def __init__(self) -> None:
+            self.sort_el = _FakeEl()
+            self.option_el = _FakeEl()
+            self._n = 0
+
+        def query_selector(self, sel: str):
+            if "urutkan" in sel.lower() or "sort" in sel.lower():
+                return self.sort_el
+            return None
+
+        def evaluate(self, js: str, *args):
+            # The click JS takes a `sortSel` param; the count JS does not.
+            if "sortSel" not in js:
+                self._n += 1
+                return self._n
+            return {"ok": True, "count": 1, "dist": 60}
+
+        def wait_for_selector(self, sel: str, timeout: int = 0):
+            if "data-review-id" in sel:
+                return self.option_el
+            raise RuntimeError("not found")
+
+        def wait_for_timeout(self, ms: int) -> None:
+            pass
+
+    class _PageNoOption:
+        """Sort control present but the menu never opens (count never rises)."""
+
+        def query_selector(self, sel: str):
+            if "urutkan" in sel.lower() or "sort" in sel.lower():
+                return _FakeEl()
+            return None
+
+        def evaluate(self, js: str, *args):
+            return 1
+
+        def wait_for_timeout(self, ms: int) -> None:
+            pass
+
+        keyboard = type("Kb", (), {"press": staticmethod(lambda k: None)})()
+
+    class _PageBoom:
+        def query_selector(self, sel: str):
+            raise RuntimeError("dom exploded")
+
+        def evaluate(self, js: str, *args):
+            raise RuntimeError("dom exploded")
+
+        keyboard = type("Kb", (), {"press": staticmethod(lambda k: None)})()
+
+    ok = click_newest_sort(_PageFullFlow(), "comp-x", None)
+    check("sort: full flow returns True", ok is True)
+
+    ok = click_newest_sort(_PageNoSort(), "comp-x", None)
+    check("sort: no sort control => False (default ordering)", ok is False)
+
+    ok = click_newest_sort(_PageNoOption(), "comp-x", None)
+    check("sort: menu without option => False", ok is False)
+
+    ok = click_newest_sort(_PageBoom(), "comp-x", None)
+    check("sort: DOM explosion => False, never raises", ok is False)
+
+
 def main() -> int:
     print("=" * 60)
     print("GBP Monitor -- Baseline Verification")
@@ -857,6 +945,7 @@ def main() -> int:
     _verify_stale_nid_guard()
     _verify_harvest_classification()
     _verify_seen_store()
+    _verify_newest_sort()
 
     print("\n" + "=" * 60)
     print(f"Results: {PASS} passed, {FAIL} failed")

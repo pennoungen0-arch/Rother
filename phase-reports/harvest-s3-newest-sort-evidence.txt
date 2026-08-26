@@ -1,0 +1,55 @@
+Phase S3 evidence — Newest-sort click (2026-08-26)
+
+============================================================
+CHANGE SHIPPED
+============================================================
+harness/capture.py: click_newest_sort() — after the Reviews tab opens,
+the scraper clicks the panel's own "Urutkan ulasan" (Sort) control and
+selects "Terbaru" (Newest), making the rendered window strictly
+newest-first. Wired into capture_listing_html after _open_reviews_tab.
+
+Robustness (each element earned from a live failure):
+1. Menu-open detection: count VISIBLE exact-text Terbaru/Newest elements
+   before vs after the Urutkan click (the menu options are NOT <button>
+   elements — plain divs/spans; and the app rail has its own "Terbaru"
+   nav item, so naive has-text clicks NAVIGATED AWAY from the place panel
+   and harvested 0 reviews).
+2. Option click: JS picks the VISIBLE exact-text element NEAREST the sort
+   button (menu option drops adjacent; nav item is farther), re-querying
+   the live DOM (the header re-renders when the menu opens — original
+   node goes stale).
+3. Post-sort wait: wait for the first [data-review-id] card (up to 20s) —
+   switching sorts collapses and re-fetches the list (height 584/0 cards
+   immediately after the click).
+4. Rule 7 fallbacks: menu won't open / option missing / any error ⇒
+   Escape-close + proceed with Google's default ordering, exactly as
+   before. Never raises.
+
+============================================================
+RULE 3 + LIVE PROOF
+============================================================
+- Selector discovery: _phase_s3_sort_probe.py (logged-in context via
+  harness.browser; anonymous renders lack the Reviews tab entirely).
+  Sort button: button[aria-label="Urutkan ulasan"]; menu options are
+  plain elements with exact text Terbaru (screenshot:
+  phase-reports/phase_s3_menu_open.png).
+- Failure ladder (each fixed and re-proven live):
+    a) naive has-text click → navigated to the Terbaru activity feed,
+       0 reviews (screenshot phase_s3_after_sort.png)
+    b) menu-open left dangling → metadata captured name=Terbaru,
+       list detached, 0 reviews
+    c) fixed: run 79d6e9ef-adjacent final run —
+       SORT_NEWEST applied (selector_report: reviews_sort_newest
+       matched=True, fallback=False)
+- FINAL LIVE PROOF: harvest window now STARTS with the newest reviews:
+    first cards: 2026-08-26 (7 jam lalu), 2026-08-25 (1 hari lalu),
+                 2026-08-22 (4 hari lalu)
+  vs pre-fix relevance-ordered windows whose newest was Aug 12 and which
+  could miss brand-new reviews entirely.
+
+NOTE: the newest-sorted panel rendered ~80-310 cards before bottom
+(render-depth jitter, as documented). Window CONTENT is what matters for
+monitoring: it now always contains the newest reviews.
+
+GATES: verify_baseline 163/163 (4 new sort-fallback checks) ·
+Playwright 20/20 · tsc/eslint clean (dashboard untouched this phase).

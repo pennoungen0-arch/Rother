@@ -2,8 +2,80 @@
 
 Format per `EXECUTION_RULES.md` Rule 2. Every entry MUST include timestamp,
 file(s) changed, reason, and status (`PROVEN` / `UNPROVEN`). Newest entries
-at the top. Do not delete or rewrite past entries â€” this file is the
+at the top. Do not delete or rewrite past entries — this file is the
 project's memory across sessions.
+
+---
+
+## 2026-08-27T14:40:00+07:00
+- **Files:** `src/app/api/reviews/route.ts`
+- **Change:** **Fix: All Reviews page now sorts by review DATE, not scrape time.** Root cause: the API sorted by `scraped_at` (when Rother collected the review), so a review scraped a week ago appeared before a review posted 5 hours ago but scraped today. Changed the sort to use the resolved review date (from `relative_date` → ISO date), with `scraped_at` as a tiebreaker. Now recently POSTED reviews appear at the top regardless of when they were scraped.
+- **Reason:** User reported the "When" column in All Reviews only showed reviews up to "seminggu yang lalu" (a week ago) at the top — the newest review (Mrs Smith's from today) was buried.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0/0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T14:10:00+07:00
+- **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`
+- **Change:** **Fix: newest-review capture gap — sort verification + initial-viewport date logging.** Root cause investigation: the snapshot only had 1 review from today for crate-cafe ("6 jam lalu"), but Google Maps showed a 5-hour-old review. The "5 jam lalu" review in delta files was for **revolver-seminyak**, not crate-cafe — but the underlying issue is that the sort might not always take effect before the initial viewport is harvested. Fix: (1) Added sort verification in `click_newest_sort()` — after clicking "Terbaru", checks if the first review's relative_date is recent (hours/days). If it's weeks/months old, the sort likely failed — retries once. (2) Added first-review date logging to the initial viewport harvest in `scroll_review_container()` so future runs show whether the sort worked.
+- **Reason:** User reported Rother not picking up the newest review for Crate Cafe (5 hours old on Google Maps). Investigation revealed the sort might not always apply before harvesting begins.
+- **Status:** PROVEN — verify_baseline **163/163** · verify_notifications **25/25** · verify_variant_framework **32/32**.
+
+---
+
+## 2026-08-27T12:50:00+07:00
+- **Files:** `src/components/dashboard/reviews-section.tsx`
+- **Change:** **Fix: filter bar grid — rating column auto-sizes to content, dates get reasonable space.** Changed from `lg:grid-cols-12` with fixed col-spans to a flexible template: `[minmax(0,2fr)_minmax(0,2fr)_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]`. The Rating column now uses `auto` — it shrink-wraps to exactly fit the 5 star buttons. From/To get `1fr` each (usable date picker width), Branch/Competitor/Search get `2fr`.
+- **Reason:** User reported the previous 12-column layout made date inputs too small (8%) and rating row too wide (33%). The `auto` column sizes itself to the content.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0/0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T12:40:00+07:00
+- **Files:** `src/components/dashboard/reviews-section.tsx`
+- **Change:** **Fix: filter bar grid layout — rating row now stays on one row.** Changed from equal `lg:grid-cols-6` to weighted `lg:grid-cols-12` with col-span assignments: Branch (2), Competitor (2), Rating (4), From (1), To (1), Search (2). The date inputs now take less space, giving the rating buttons enough room to stay on a single row without wrapping. Also removed `flex-wrap` from the rating container since it's no longer needed.
+- **Reason:** User reported the 5-star rating button wrapping below the card boundary on the All Reviews filter bar.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0/0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T11:50:00+07:00
+- **Files:** `src/lib/gbp/scrape-runner.ts`, `src/app/api/scrape/stop/route.ts` (new), `src/features/t-config.tsx`, `src/features/t-scheduler.tsx`
+- **Change:** **Fix: stuck "running" state blocks all future triggers + add Stop button.** Root cause: `hasActiveRun()` only checked `status === "running"` — when a process was killed externally (page refresh, Ctrl+C), the `close` handler never fired, leaving the run stuck in "running" state forever. New triggers got blocked with a silent 409 (UI showed nothing). Fix: (1) `hasActiveRun()` now verifies the process is actually alive via `process.kill(pid, 0)` — dead processes are auto-marked "failed". (2) Added `stopRun()`/`stopAllRuns()` methods. (3) Added `DELETE /api/scrape/stop?runId=` endpoint. (4) Config "Run scan again" and Scheduler "Run now" now show a red "Stop" button during a live scrape that calls the stop endpoint.
+- **User observation:** Trigger worked once, then after stopping/removing competitors, "does not work at all" — the run was stuck in "running" state, blocking all subsequent triggers.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0/0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T11:20:00+07:00
+- **Files:** `src/features/t-config.tsx`, `src/features/t-scheduler.tsx`
+- **Change:** **Fix: scrape trigger UI now polls status and shows completion.** Root cause: `runAgain()` (Config) and `runNow()` (Scheduler) fired `/api/scrape/trigger` then immediately set `scanning = false` — the user saw only a brief flash of "Scanning..." then nothing. No progress, no completion toast, no data refresh. The trigger API itself was always working (runs completed successfully); the UI just never surfaced that. Fix: both handlers now poll `/api/scrape/status?runId=...` every 3s, show live progress ("Scraping… 1/3 competitors"), and fire a toast on completion/failure. Added `toast` import to scheduler.
+- **Reason:** User reported the "Run scan again" (Config) and "Run now" (Scheduler) buttons "do not work at all" — investigation proved the API worked but the UI gave zero feedback, making it appear broken.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0/0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T11:00:00+07:00
+- **Files:** `gbp-monitor/harness/scroll.py`
+- **Change:** **Fix: initial viewport harvest gap — newest reviews no longer missed.** Root cause: `scroll_review_container()` started its loop by scrolling to the bottom FIRST, then harvesting. After a "Terbaru" (newest) sort, the panel renders newest reviews at the top — but the immediate scroll virtualized those top cards before they were ever captured. A brand-new review (e.g. 5 hours old) sitting at the top of a newest-first list was scrolled past and lost. Fix: harvest the initial viewport BEFORE the first scroll iteration. The loop now captures the top ~350 visible cards (the newest ones after sorting) before scrolling deeper.
+- **Reason:** User reported that Crate Cafe's most recent review (5 hours old on Google Maps) was not captured by the scraper, despite the newest-sort being applied. Investigation revealed the scroll loop never harvested the initial viewport.
+- **Status:** PROVEN — verify_baseline **163/163** · verify_notifications **25/25** · verify_variant_framework **32/32**.
+
+---
+
+## 2026-08-27T10:00:00+07:00
+- **Files:** `src/lib/app-state.tsx`, `src/components/dashboard/reviews-section.tsx`, `src/components/shell/feature-page.tsx`
+- **Change:** **Post-v0.4.0 bug fixes — Today back button, rating filter overflow, feature page header.** (1) **Today back button fix:** `back()` in `app-state.tsx:148-155` was calling `setShowHubsState(true)` but AppShell rendering logic only checks `showToday` — clicking back from Today did nothing. Changed to `setShowTodayState(false)` so back correctly returns to Hub view. (2) **Rating filter overflow fix:** The 5-star rating buttons in `reviews-section.tsx:440` overflowed the card boundary on smaller viewports. Changed container from fixed `h-8` + `gap-1.5` to `h-auto min-h-8 flex-wrap gap-1 py-1` so buttons wrap within the card. (3) **Feature page header glitch fix:** `FeaturePage` header in `feature-page.tsx:81` lacked a background color, causing scrolling content to bleed through and create a glitchy appearance. Added `bg-background` and `shrink-0` to the header.
+- **Reason:** User-reported UI bugs during manual testing: back button on Today page non-functional, 5-star rating button overflowing card boundary, feature page header showing content bleed-through during scroll.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0 errors/0 warnings · Playwright **20/20**.
+
+---
+
+## 2026-08-27T06:50:00+07:00
+- **Files:** `src/features/today.tsx` (new), `src/features/runs.tsx` (new), `src/features/r-reviews-over-time-merged.tsx` (new), `src/lib/features.tsx`, `src/lib/app-state.tsx`, `src/components/shell/app-shell.tsx`, `src/components/shell/section-view.tsx`, `src/components/shell/hub.tsx`, `package.json`, `PRODUCTION_SETUP.md` (new), `RELEASE_CHECKLIST.md` (new), `SCREENSHOT_ANALYSIS_2026-08-27.md` (new), `SOLIDIFICATION_PLAN_2026-08-27.md` (new), `AGENTS.md`, `UX_AUDIT_2026-08-26.md`
+- **Change:** **v0.4.0 solidification — UX consolidation + production readiness.** (1) **Release hygiene:** secrets scan clean, data discipline verified, dead code analysis (ts-prune + vulture), npm/pip audit (vulnerabilities found), backup restore test 163/163 pass, doc consistency checked. (2) **Systems hardening:** added `dev:clean` script to package.json (EBUSY fix). (3) **Production readiness:** created `PRODUCTION_SETUP.md` with webhook/SMTP setup guides, GitHub Actions template, hours_status limitation documented. (4) **Tier 1 — "Today" composite screen:** new `src/features/today.tsx` with KPI row, Alerts, Rating Distribution, SnapshotGlance, partial-window honesty badge, quick navigation links. AppShell defaults to Today when data exists; "Hubs" button added to top bar. (5) **Tier 2 — Collapse run-management quartet:** new `src/features/runs.tsx` with Health / History / Compare / Logs tabs. Old features removed: `i-run-health`, `i-run-history`, `i-run-comparison`, `t-logs`. (6) **Tier 2 — Merge time views:** new `src/features/r-reviews-over-time-merged.tsx` with timeline/heatmap toggle. Old feature removed: `r-recency-heatmap`. (7) **Tier 3 — Default-pin 7 core features:** added `pinned` flag to FeatureDef, `getPinnedFeatures()`/`getUnpinnedFeatures()` helpers, FeatureGrid split into "Pinned" and "More analytics" sections. Pinned: KPIs, Rating Distribution, All Reviews, Alerts, Leaderboard, Config, Scrape Schedule. **Net: 28 → 25 features.**
+- **Reason:** UX audit (`UX_AUDIT_2026-08-26.md`) identified redundancies in the 28-feature dashboard. Solidification plan executed to consolidate, improve production readiness, and refresh documentation.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · eslint 0 errors/0 warnings · verify_baseline **163/163** · notifications 25/25 · variant 32/32.
 
 ---
 

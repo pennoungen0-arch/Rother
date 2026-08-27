@@ -116,8 +116,13 @@ export async function GET(request: Request) {
       return true;
     });
 
-    // Sort: newest scraped_at first (stable-ish: ties broken by review_id).
+    // Sort: newest review DATE first (resolved from relative_date), then by
+    // scraped_at as a tiebreaker. This ensures recently POSTED reviews appear
+    // at the top, not just recently SCRAPED ones.
     filtered.sort((a, b) => {
+      const dateA = parseRelativeDate(a.relative_date, a.scraped_at) ?? a.scraped_at?.slice(0, 10) ?? "";
+      const dateB = parseRelativeDate(b.relative_date, b.scraped_at) ?? b.scraped_at?.slice(0, 10) ?? "";
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
       const sa = a.scraped_at || "";
       const sb = b.scraped_at || "";
       if (sa !== sb) return sb.localeCompare(sa);

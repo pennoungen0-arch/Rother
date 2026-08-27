@@ -78,7 +78,7 @@ export function FeaturePage({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3 sm:px-6">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 py-3 sm:px-6">
         <Button variant="ghost" size="icon" onClick={back} aria-label="Back">
           <ArrowLeft />
         </Button>

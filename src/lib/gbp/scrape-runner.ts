@@ -274,9 +274,48 @@ class ScrapeRunManager {
 
   hasActiveRun(): boolean {
     for (const [, run] of this.runs) {
-      if (run.status === "running") return true;
+      if (run.status === "running") {
+        // Verify the process is actually alive — a killed/orphaned process
+        // leaves status stuck at "running" and blocks all future triggers.
+        if (run.proc.pid && this._isPidAlive(run.proc.pid)) {
+          return true;
+        }
+        // Process is dead but close handler didn't fire — mark as failed.
+        run.status = "failed";
+        run.error = "Process terminated unexpectedly";
+      }
     }
     return false;
+  }
+
+  /** Check if a PID is still alive (cross-platform). */
+  private _isPidAlive(pid: number): boolean {
+    try {
+      // process.kill(pid, 0) throws if the process does not exist
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Force-stop a running run by runId. Returns true if a run was stopped. */
+  stopRun(runId: string): boolean {
+    const run = this.runs.get(runId);
+    if (!run || run.status !== "running") return false;
+    killProcessTree(run.proc);
+    run.status = "failed";
+    run.error = "Stopped by user";
+    return true;
+  }
+
+  /** Force-stop ALL running runs (used by the "stop" API endpoint). */
+  stopAllRuns(): number {
+    let stopped = 0;
+    for (const [runId] of this.runs) {
+      if (this.stopRun(runId)) stopped++;
+    }
+    return stopped;
   }
 
   /** Start a scrape run. Returns the runId, or null if a run is already active. */

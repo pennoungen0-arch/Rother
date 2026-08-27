@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { LogOut, Search, UserCircle2 } from "lucide-react";
+import { LogOut, Search, UserCircle2, LayoutGrid } from "lucide-react";
 
 import { useAppState } from "@/lib/app-state";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
@@ -13,8 +13,9 @@ import { RunScreen } from "./run-screen";
 import { Hub } from "./hub";
 import { SectionView } from "./section-view";
 import { CommandPalette } from "./command-palette";
+import TodayFeature from "@/features/today";
 
-function TopBar() {
+function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
   const { user, business, mode, logout, setPaletteOpen } = useAppState();
   const targetLabel =
     mode === "fixed" ? "Competitor list" : business?.name ?? user?.email ?? "";
@@ -44,6 +45,17 @@ function TopBar() {
             ⌘K
           </kbd>
         </button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={onShowHubs}
+          aria-label="Show all hubs"
+        >
+          <LayoutGrid className="size-3.5" />
+          <span className="hidden sm:inline">Hubs</span>
+        </Button>
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
@@ -102,22 +114,26 @@ function TopBar() {
 }
 
 export function AppShell() {
-  const { user, business, mode, runStarted, hub } = useAppState();
+  const { user, business, mode, runStarted, hub, feature, showHubs, showToday, setHub, setFeature, setShowHubs, setShowToday } = useAppState();
 
   if (!user) return <LoginScreen />;
-  // Discovery mode requires onboarding the user's own business first. In
-  // fixed-list mode (v1) there is nothing to onboard — the configured
-  // competitor list from listings.json is the target.
   if (mode === "discovery" && !business) return <Onboarding />;
-  // Run gate: the 4 hub icons stay hidden until the user has triggered a
-  // scrape. In fixed mode this scans the configured competitor list; in
-  // discovery mode it scans the user's own business.
   if (!runStarted) return <RunScreen />;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <TopBar />
-      <main className="flex-1">{hub ? <SectionView /> : <Hub />}</main>
+      <TopBar onShowHubs={() => { setHub(null); setFeature(null); setShowToday(false); }} />
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {hub || feature ? (
+            <SectionView />
+          ) : showToday ? (
+            <TodayFeature />
+          ) : (
+            <Hub />
+          )}
+        </div>
+      </main>
       <CommandPalette />
     </div>
   );

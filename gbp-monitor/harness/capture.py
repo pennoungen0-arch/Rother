@@ -693,6 +693,34 @@ def click_newest_sort(
         except Exception:
             page.wait_for_timeout(6_000)
         page.wait_for_timeout(1_500)
+        # Verify the sort actually took effect: the panel should now show
+        # the newest reviews first. If the first review is older than ~7 days,
+        # the sort likely failed — retry once.
+        try:
+            first_review_rel = page.evaluate("""() => {
+                const el = document.querySelector('[data-review-id]');
+                if (!el) return null;
+                const card = el.closest('div[jsmodel]') || el.parentElement?.parentElement;
+                if (!card) return null;
+                const texts = card.querySelectorAll('span, div');
+                for (const t of texts) {
+                    const txt = t.textContent?.trim() || '';
+                    if (/^\\d+\\s*(jam|menit|hari|minggu|bulan|tahun|lalu|yang lalu)/i.test(txt)) return txt;
+                }
+                return null;
+            }""")
+            if first_review_rel and any(unit in first_review_rel.lower() for unit in ['hari', 'minggu', 'bulan', 'tahun']):
+                logger.warning(
+                    "SORT_NEWEST[%s] first review is '%s' — sort may not have applied, retrying",
+                    comp_id, first_review_rel,
+                )
+                # Retry: click the sort option again
+                result = page.evaluate(_CLICK_NEAREST_NEWEST_JS)
+                if result.get("ok"):
+                    page.wait_for_timeout(2_000)
+                    logger.info("SORT_NEWEST[%s] retry applied", comp_id)
+        except Exception:
+            pass  # Verification is best-effort; proceed regardless
         logger.info(
             "SORT_NEWEST[%s] applied via %r (menu candidates=%s, dist=%spx)",
             comp_id, used_candidate, result.get("count"), result.get("dist"),

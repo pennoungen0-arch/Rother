@@ -4,13 +4,10 @@ import {
   Activity,
   BarChart3,
   Bell,
-  CalendarClock,
   Cloud,
   Columns3,
   Download,
-  GitCompare,
   Gauge,
-  History,
   Languages,
   LayoutDashboard,
   MapPin,
@@ -19,7 +16,6 @@ import {
   Radar,
   RefreshCw,
   Ruler,
-  ScrollText,
   Settings2,
   Star,
   Store,
@@ -44,6 +40,7 @@ export type FeatureDef = {
   description: string;
   keywords: string[];
   icon: LucideIcon;
+  pinned?: boolean;
   load: () => Promise<{ default: ComponentType }>;
 };
 
@@ -83,16 +80,8 @@ export const FEATURES: FeatureDef[] = [
     description: "Branches, competitors, reviews, last run at a glance",
     keywords: ["kpi", "summary", "overview", "stats", "health"],
     icon: LayoutDashboard,
+    pinned: true,
     load: () => import("@/features/i-kpis"),
-  },
-  {
-    id: "i-run-health",
-    label: "Run Health",
-    hub: "insights",
-    description: "Last scrape success / failed / skipped",
-    keywords: ["health", "run", "scrape", "status", "errors"],
-    icon: Activity,
-    load: () => import("@/features/i-run-health"),
   },
   {
     id: "i-rating-distribution",
@@ -101,6 +90,7 @@ export const FEATURES: FeatureDef[] = [
     description: "Star ratings across all monitored reviews (1★–5★)",
     keywords: ["rating", "stars", "distribution", "1-5"],
     icon: Star,
+    pinned: true,
     load: () => import("@/features/i-rating-distribution"),
   },
   {
@@ -112,24 +102,6 @@ export const FEATURES: FeatureDef[] = [
     icon: MapPin,
     load: () => import("@/features/i-new-reviews-branch"),
   },
-  {
-    id: "i-run-comparison",
-    label: "Run Comparison",
-    hub: "insights",
-    description: "Diff two runs side by side",
-    keywords: ["compare", "runs", "diff"],
-    icon: GitCompare,
-    load: () => import("@/features/i-run-comparison"),
-  },
-  {
-    id: "i-run-history",
-    label: "Run History",
-    hub: "insights",
-    description: "Every run that produced new reviews",
-    keywords: ["history", "timeline", "runs"],
-    icon: History,
-    load: () => import("@/features/i-run-history"),
-  },
 
   // ── Reputation (reviews) ─────────────────────────────────────────────────
   {
@@ -139,16 +111,17 @@ export const FEATURES: FeatureDef[] = [
     description: "Searchable, filterable, paginated reviews",
     keywords: ["review", "search", "filter", "list"],
     icon: MessageSquare,
+    pinned: true,
     load: () => import("@/features/r-reviews"),
   },
   {
     id: "r-reviews-over-time",
     label: "Reviews over Time",
     hub: "reputation",
-    description: "Review count trend over time",
-    keywords: ["trend", "over time", "timeline"],
+    description: "Review count trend over time, with activity heatmap toggle",
+    keywords: ["trend", "over time", "timeline", "heatmap", "recency", "calendar"],
     icon: TrendingUp,
-    load: () => import("@/features/r-reviews-over-time"),
+    load: () => import("@/features/r-reviews-over-time-merged"),
   },
   {
     id: "r-review-lengths",
@@ -178,15 +151,6 @@ export const FEATURES: FeatureDef[] = [
     load: () => import("@/features/r-language"),
   },
   {
-    id: "r-recency-heatmap",
-    label: "Review Recency",
-    hub: "reputation",
-    description: "When reviews were posted",
-    keywords: ["recency", "heatmap", "calendar"],
-    icon: CalendarClock,
-    load: () => import("@/features/r-recency-heatmap"),
-  },
-  {
     id: "r-top-reviewers",
     label: "Top Reviewers",
     hub: "reputation",
@@ -202,6 +166,7 @@ export const FEATURES: FeatureDef[] = [
     description: "System and review alerts",
     keywords: ["alert", "notification", "warning"],
     icon: Bell,
+    pinned: true,
     load: () => import("@/features/r-alerts"),
   },
 
@@ -231,6 +196,7 @@ export const FEATURES: FeatureDef[] = [
     description: "Ranked competitors by metric",
     keywords: ["leaderboard", "rank", "top"],
     icon: Trophy,
+    pinned: true,
     load: () => import("@/features/c-leaderboard"),
   },
   {
@@ -305,16 +271,8 @@ export const FEATURES: FeatureDef[] = [
     description: "Manage monitored competitors and branches",
     keywords: ["config", "settings", "setup"],
     icon: Settings2,
+    pinned: true,
     load: () => import("@/features/t-config"),
-  },
-  {
-    id: "t-logs",
-    label: "Run Logs",
-    hub: "tools",
-    description: "Live data collection history",
-    keywords: ["logs", "history", "debug", "trace"],
-    icon: ScrollText,
-    load: () => import("@/features/t-logs"),
   },
   {
     id: "t-export",
@@ -332,7 +290,26 @@ export const FEATURES: FeatureDef[] = [
     description: "Automated scrape schedule",
     keywords: ["schedule", "cron", "scrape", "automation"],
     icon: RefreshCw,
+    pinned: true,
     load: () => import("@/features/t-scrape-schedule"),
+  },
+  {
+    id: "i-runs",
+    label: "Runs",
+    hub: "insights",
+    description: "Scrape run health, history, comparison, and logs",
+    keywords: ["runs", "health", "history", "compare", "logs", "scrape"],
+    icon: Activity,
+    load: () => import("@/features/runs"),
+  },
+  {
+    id: "t-today",
+    label: "Today",
+    hub: "insights",
+    description: "Your monitoring snapshot at a glance — alerts, new reviews, rating snapshot",
+    keywords: ["today", "dashboard", "snapshot", "overview", "home"],
+    icon: LayoutDashboard,
+    load: () => import("@/features/today"),
   },
 ];
 
@@ -340,4 +317,12 @@ export function getHub(id: HubId): HubDef {
   const h = HUBS.find((x) => x.id === id);
   if (!h) throw new Error(`Unknown hub: ${id}`);
   return h;
+}
+
+export function getPinnedFeatures(hub: HubId): FeatureDef[] {
+  return FEATURES.filter((f) => f.hub === hub && f.pinned);
+}
+
+export function getUnpinnedFeatures(hub: HubId): FeatureDef[] {
+  return FEATURES.filter((f) => f.hub === hub && !f.pinned);
 }

@@ -394,7 +394,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
         </CardHeader>
         <CardContent>
           {/* Filter bar */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Branch
@@ -437,7 +437,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Rating
               </label>
-              <div className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-transparent px-2">
+              <div className="flex h-auto min-h-8 items-center gap-1 rounded-md border border-input bg-transparent px-2 py-1">
                 {RATING_OPTIONS.map((r) => {
                   const active = selectedRatings.has(r);
                   return (

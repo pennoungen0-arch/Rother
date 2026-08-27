@@ -1,8 +1,9 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-25 (v0.3.3 harvest honesty).** For full detail see
-`gbp-monitor/CHANGELOG.md`, `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
+**Last updated: 2026-08-27 (v0.4.0 solidification + post-release bug fixes).**
+For full detail see `gbp-monitor/CHANGELOG.md`,
+`gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
 `docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
 **Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports),
@@ -14,9 +15,11 @@ State/version knowledge for AI agents (and humans) working on this repo.
 see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `HARVEST_FIX_PLAN.md` (✅ v0.3.3 harvest honesty + variance-proof deltas),
 `SESSION_SUMMARY_2026-08-25.md` (session index),
-`TAURI_COMPATIBILITY_RESEARCH_2026-08-25.md` (desktop pre-plan research).
-Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md`.
+`SCREENSHOT_ANALYSIS_2026-08-27.md` (full 46-screenshot review),
+`SOLIDIFICATION_PLAN_2026-08-27.md` (✅ Phase 1-4 + Phase 7-8 bug fixes complete).
+Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
+Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.
 
 ---
 
@@ -25,9 +28,7 @@ Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** v0.3.1 line
-  (`757a487` fix: discovery scrapes user-configured competitors).
-  **Tag: `v0.3.1`.** Working tree clean. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `0bfd4db` (fix: S1 config persistence + S6 review sorting + S3 newest-sort harvest). **Tag: `v0.3.1`.** Working tree has uncommitted v0.4.0 solidification + bug fix changes. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a
@@ -90,6 +91,29 @@ Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
   `rother02/` archived → `rother02-archive/` (untracked, excluded from
   build/test). Reference: `docs/engineering/CONVERGENCE_PLAN.md` +
   `ROTHER02_ANALYSIS.md`.
+- **UX consolidation (v0.4.0, 2026-08-27)**: 28 → 25 features via three merges:
+  Run Health + Run History + Run Comparison + Run Logs → **Runs** (tabbed);
+  Reviews over Time + Recency Heatmap → **Reviews over Time** (timeline/heatmap
+  toggle); Today composite added as default landing screen. Hubs now show
+  **Pinned** features first, then **More analytics**. See
+  `UX_AUDIT_2026-08-26.md` + `SOLIDIFICATION_PLAN_2026-08-27.md`.
+- **Post-v0.4.0 bug fixes (2026-08-27):** Today back button fixed (`back()` now
+  sets `showToday: false` instead of unused `showHubs: true`); rating filter
+  buttons wrap within card instead of overflowing; FeaturePage header gets
+  `bg-background` + `shrink-0` to prevent content bleed-through during scroll.
+  **Harvest fix (2026-08-27):** initial viewport now harvested BEFORE the first
+  scroll in `scroll_review_container()` — newest reviews no longer missed after
+  a "Terbaru" sort (the old loop scrolled to bottom first, virtualizing the top
+  cards before capture). **Trigger UI fix (2026-08-27):** Config "Run scan again"
+  and Scheduler "Run now" now poll `/api/scrape/status` and show live progress +
+  completion toast (the API always worked; the UI gave zero feedback, making it
+  appear broken). **Trigger stuck-state fix (2026-08-27):** `hasActiveRun()` now
+  verifies the process is actually alive via `process.kill(pid, 0)` — dead/orphaned
+  processes are auto-marked "failed" so they don't block future triggers. Added
+  `DELETE /api/scrape/stop` endpoint + red "Stop" button in Config and Scheduler
+  UIs. **Reviews sort fix (2026-08-27):** `/api/reviews` now sorts by resolved
+  review DATE (not `scraped_at`), so recently posted reviews appear at the top
+  regardless of when they were scraped. Test counts: vitest 119/119, Playwright 20/20, verify_baseline 163/163.
 
 ## Repo layout
 
@@ -105,7 +129,7 @@ Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 │   ├── data/             # snapshots/, reviews_new/, run_summary.json, run.log (partly gitignored)
 │   ├── tests/            # verify_baseline.py, verify_notifications.py, verify_variant_framework.py, fixtures/
 │   └── docs/engineering/ # CURRENT_STATE, SELECTOR_CERTIFICATION, PROJECT_SUMMARY, DOM_AUDIT...
-├── src/                  # Next.js 16 dashboard (v2 shell: AppShell, hubs, 28 features, palette)
+├── src/                  # Next.js 16 dashboard (v2 shell: AppShell, hubs, 25 features, palette)
 │   ├── app/api/          # 29 routes (v1 core + new-reviews + v2: geo-grid, discover, competitive-health...)
 │   ├── components/shell/ # AppShell, LoginScreen, Onboarding, RunScreen, Hub, SectionView, FeaturePage
 │   ├── components/dashboard/
@@ -146,7 +170,7 @@ Run from `gbp-monitor/`:
 
 | Command | Count | Notes |
 |---|---|---|
-| `python -m tests.verify_baseline` | 159/159 | **WIPES `data/`** — back it up first, restore after. Includes Phase 7 harvest-classification + Phase 8 seen-store suites || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
+| `python -m tests.verify_baseline` | 163/163 | **WIPES `data/`** — back it up first, restore after. Includes Phase 7 harvest-classification + Phase 8 seen-store suites || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
 | `python -m tests.verify_variant_framework` | 32/32 | offline variant classifier |
 
 From repo root:
@@ -155,8 +179,8 @@ From repo root:
 |---|---|---|
 | `npx vitest run` | 119/119 | 9 files (src/lib/gbp + lib, incl. self-target); archive + e2e excluded |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
-| `npx eslint src` | exit 0 | 0 errors, 4 pre-existing warnings |
-| `npx playwright test` | 16/16 | Smoke (10) + Scheduler (2) + Discovery-persistence (4, incl. self-monitoring invariants ×2). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |
+| `npx eslint src` | exit 0 | 0 errors, 0 warnings |
+| `npx playwright test` | 20/20 | Smoke (10) + Scheduler (2) + Discovery-persistence (4, incl. self-monitoring invariants ×2) + Config-persistence (4). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |
 
 > **IMPORTANT — `data/` backup discipline.** `tests/verify_baseline.py` deletes
 > `data/`. Production data (12 competitors / 5,021 reviews in committed Aug-13
@@ -181,7 +205,7 @@ From repo root:
   its errors as regressions. `imagetest/` is a leftover screenshot artifact
   (ignore). See `docs/engineering/CONVERGENCE_PLAN.md` + `ROTHER02_ANALYSIS.md`.
 - **Post-convergence hardening plan:** `docs/engineering/POST_CONVERGENCE_PLAN.md`
-  covers per-feature e2e (28 features), type consolidation, and UNPROVEN items
+  covers per-feature e2e (25 features), type consolidation, and UNPROVEN items
   (webhook/SMTP, GitHub Actions, hours_status).
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.

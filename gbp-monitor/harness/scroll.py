@@ -369,6 +369,51 @@ def scroll_review_container(
     harvested: dict[str, str] = {}
     max_harvested = 0
 
+    # Harvest the INITIAL viewport before scrolling. After a "newest" sort,
+    # the panel renders the newest reviews at the top — but the loop below
+    # scrolls to the bottom FIRST, which virtualizes those top cards before
+    # they are ever captured. Harvesting here fixes the gap.
+    try:
+        initial_cards = _harvest_review_cards(page, container_selector)
+        for card in initial_cards:
+            rid = card["id"]
+            if rid not in harvested:
+                harvested[rid] = card["html"]
+        if harvested:
+            # Log the first few review dates to verify sort order
+            try:
+                first_dates = page.evaluate("""(container) => {
+                    const ids = [];
+                    container.querySelectorAll('[data-review-id]').forEach(el => {
+                        const id = el.getAttribute('data-review-id');
+                        if (id && ids.length < 3) {
+                            const card = el.closest('div[jsmodel]') || el.parentElement?.parentElement;
+                            if (card) {
+                                const texts = card.querySelectorAll('span, div');
+                                for (const t of texts) {
+                                    const txt = t.textContent?.trim() || '';
+                                    if (/^\\d+\\s*(jam|menit|hari|minggu|bulan|tahun|lalu|yang lalu)/i.test(txt)) {
+                                        ids.push(txt);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    return JSON.stringify(ids);
+                }""")
+                logger.info(
+                    "SCROLL[%s] initial viewport harvested %d review(s) before scrolling (first dates: %s)",
+                    comp_id, len(harvested), first_dates or "unknown",
+                )
+            except Exception:
+                logger.info(
+                    "SCROLL[%s] initial viewport harvested %d review(s) before scrolling",
+                    comp_id, len(harvested),
+                )
+    except Exception as e:
+        logger.debug("initial viewport harvest failed: %s", e)
+
     for i in range(MAX_SCROLLS):
         if deadline is not None and time.time() >= deadline:
             bottom_reason = "timeout"

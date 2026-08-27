@@ -82,6 +82,10 @@ async function seedClientState(page: import("@playwright/test").Page) {
 
 async function openConfig(page: import("@playwright/test").Page) {
   await page.goto("/");
+  // Hub is the default landing — click Tools hub.
+  await expect(page.getByText("What do you want to look at?")).toBeVisible({
+    timeout: 15_000,
+  });
   await page.getByRole("button", { name: /Tools Account, config and export/ }).click();
   await page.getByRole("button", { name: /Configuration/ }).first().click();
   await expect(page.getByText("Competitors").first()).toBeVisible({ timeout: 10_000 });

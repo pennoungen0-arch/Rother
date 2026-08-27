@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, ToggleLeft, ToggleRight, Play, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, ToggleLeft, ToggleRight, Play, Calendar, CheckCircle, AlertCircle, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface ScheduleConfig {
   enabled: boolean;
@@ -26,6 +27,7 @@ export default function SchedulerFeature() {
   const [saving, setSaving] = React.useState(false);
   const [running, setRunning] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+  const [runId, setRunId] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -70,17 +72,68 @@ export default function SchedulerFeature() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      if (res.ok) {
-        setStatus("Scrape triggered — check status page for progress");
-        setTimeout(load, 2000);
-      } else {
+      if (!res.ok) {
         setStatus("Failed to trigger scrape");
+        setRunning(false);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data.runId) {
+        setRunId(data.runId);
+        setStatus("Scraping in progress…");
+        const poll = async () => {
+          try {
+            const sr = await fetch(`/api/scrape/status?runId=${data.runId}`);
+            if (!sr.ok) return;
+            const sd = await sr.json();
+            if (sd.progress?.total > 0) {
+              setStatus(`Scraping… ${sd.progress.completed}/${sd.progress.total} competitors`);
+            }
+            if (sd.status === "completed") {
+              setRunning(false);
+              setRunId(null);
+              const newReviews = sd.summary?.new_reviews ?? 0;
+              toast.success("Scrape completed", {
+                description: newReviews > 0 ? `Found ${newReviews} new reviews` : "No new reviews found",
+              });
+              setStatus("Scrape completed");
+              setTimeout(load, 2000);
+              return;
+            }
+            if (sd.status === "failed") {
+              setRunning(false);
+              setRunId(null);
+              toast.error("Scrape failed", { description: sd.error ?? "Unknown error" });
+              setStatus("Scrape failed");
+              return;
+            }
+            setTimeout(poll, 3000);
+          } catch {
+            // ignore poll errors
+          }
+        };
+        setTimeout(poll, 3000);
+      } else {
+        setStatus("Scrape triggered — check status page for progress");
+        setRunning(false);
+        setTimeout(load, 2000);
       }
     } catch {
       setStatus("Network error triggering scrape");
-    } finally {
       setRunning(false);
     }
+  };
+
+  const stopRun = async () => {
+    if (!runId) return;
+    try {
+      await fetch(`/api/scrape/stop?runId=${runId}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    setRunning(false);
+    setRunId(null);
+    setStatus("Scrape stopped.");
   };
 
   const formatISO = (iso: string | null) => {
@@ -214,6 +267,16 @@ export default function SchedulerFeature() {
                   </>
                 )}
               </Button>
+              {running && runId && (
+                <Button
+                  className="mt-2 w-full"
+                  onClick={stopRun}
+                  variant="destructive"
+                >
+                  <Square className="size-4 mr-2" />
+                  Stop
+                </Button>
+              )}
             </div>
           )}
 

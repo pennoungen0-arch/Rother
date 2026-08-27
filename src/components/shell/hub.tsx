@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { LayoutDashboard } from "lucide-react";
 import { HUBS } from "@/lib/features";
 import { useAppState } from "@/lib/app-state";
 import { cn } from "@/lib/utils";
@@ -13,28 +14,39 @@ import { FEATURES } from "@/lib/features";
  * than dumped all at once.
  */
 export function Hub() {
-  const { business, mode, openHub, setPaletteOpen } = useAppState();
+  const { business, mode, openHub, setPaletteOpen, setShowToday } = useAppState();
   const targetLabel =
     mode === "fixed" ? "Competitor list" : business?.name ?? "Your business";
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <p className="text-sm text-muted-foreground">{targetLabel}</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          What do you want to look at?
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Pick a category, or press{" "}
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
-            className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground"
-          >
-            ⌘K
-          </button>{" "}
-          to jump straight to a feature.
-        </p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{targetLabel}</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+            What do you want to look at?
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Pick a category, or press{" "}
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground"
+            >
+              ⌘K
+            </button>{" "}
+            to jump straight to a feature.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowToday(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+          title="Switch to Today view"
+        >
+          <LayoutDashboard className="size-3.5 text-primary" />
+          <span className="hidden sm:inline">Today</span>
+        </button>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { useLocalStorageState } from "@/lib/use-external-store";
+import { FEATURES } from "@/lib/features";
 
 export type User = { name: string; email: string; avatar?: string };
 export type BusinessProfile = {
@@ -39,6 +40,8 @@ interface AppState {
   runStarted: boolean;
   hub: HubId | null;
   feature: string | null;
+  showHubs: boolean;
+  showToday: boolean;
   paletteOpen: boolean;
   login: (u: User) => void;
   logout: () => void;
@@ -48,6 +51,10 @@ interface AppState {
   startRun: () => void;
   openHub: (h: HubId) => void;
   openFeature: (id: string) => void;
+  setHub: (h: HubId | null) => void;
+  setFeature: (id: string | null) => void;
+  setShowHubs: (v: boolean) => void;
+  setShowToday: (v: boolean) => void;
   back: () => void;
   setPaletteOpen: (v: boolean) => void;
 }
@@ -67,8 +74,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [business, setBusinessState] = useLocalStorageState<BusinessProfile | null>(KEY_BIZ, null);
   const [mode, setModeState] = useLocalStorageState<MonitoringMode>(KEY_MODE, "fixed");
   const [runStarted, setRunStarted] = useLocalStorageState<boolean>(KEY_RUN, false);
-  const [hub, setHub] = React.useState<HubId | null>(null);
-  const [feature, setFeature] = React.useState<string | null>(null);
+  const [hub, setHubState] = React.useState<HubId | null>(null);
+  const [feature, setFeatureState] = React.useState<string | null>(null);
+  const [showHubs, setShowHubsState] = React.useState(false);
+  const [showToday, setShowTodayState] = React.useState(false);
   const [paletteOpen, setPaletteOpen] = React.useState(false);
 
   const login = React.useCallback((u: User) => {
@@ -79,8 +88,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setBusinessState(null);
     setRunStarted(false);
-    setHub(null);
-    setFeature(null);
+    setHubState(null);
+    setFeatureState(null);
+    setShowHubsState(false);
     setPaletteOpen(false);
   }, [setUser, setBusinessState, setRunStarted]);
 
@@ -105,20 +115,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [setRunStarted]);
 
   const openHub = React.useCallback((h: HubId) => {
-    setHub(h);
-    setFeature(null);
+    setHubState(h);
+    setFeatureState(null);
+    setShowHubsState(false);
     setPaletteOpen(false);
   }, []);
 
   const openFeature = React.useCallback((id: string) => {
-    setFeature(id);
+    const f = FEATURES.find((x) => x.id === id);
+    if (f) setHubState(f.hub);
+    setFeatureState(id);
+    setShowHubsState(false);
     setPaletteOpen(false);
   }, []);
 
+  const setHubCallback = React.useCallback((h: HubId | null) => {
+    setHubState(h);
+  }, []);
+
+  const setFeatureCallback = React.useCallback((id: string | null) => {
+    setFeatureState(id);
+  }, []);
+
+  const setShowHubsCallback = React.useCallback((v: boolean) => {
+    setShowHubsState(v);
+  }, []);
+
+  const setShowTodayCallback = React.useCallback((v: boolean) => {
+    setShowTodayState(v);
+  }, []);
+
   const back = React.useCallback(() => {
-    setFeature((f) => {
+    setFeatureState((f) => {
       if (f) return null;
-      setHub(null);
+      setHubState(null);
+      setShowTodayState(false);
       return null;
     });
   }, []);
@@ -131,6 +162,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       runStarted,
       hub,
       feature,
+      showHubs,
+      showToday,
       paletteOpen,
       login,
       logout,
@@ -140,10 +173,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       startRun,
       openHub,
       openFeature,
+      setHub: setHubCallback,
+      setFeature: setFeatureCallback,
+      setShowHubs: setShowHubsCallback,
+      setShowToday: setShowTodayCallback,
       back,
       setPaletteOpen,
     }),
-    [user, business, mode, runStarted, hub, feature, paletteOpen, login, logout, setMode, setBusiness, setActiveBusiness, startRun, openHub, openFeature, back],
+    [user, business, mode, runStarted, hub, feature, showHubs, showToday, paletteOpen, login, logout, setMode, setBusiness, setActiveBusiness, startRun, openHub, openFeature, setHubCallback, setFeatureCallback, setShowHubsCallback, setShowTodayCallback, back],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

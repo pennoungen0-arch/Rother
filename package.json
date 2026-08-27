@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "dev:clean": "cmd /c \"taskkill /F /IM node.exe 2>nul & rmdir /s /q .next 2>nul\" && npm run dev",
     "build": "node .zscripts/build.mjs",
     "start": "node .next/standalone/server.js",
     "lint": "eslint .",

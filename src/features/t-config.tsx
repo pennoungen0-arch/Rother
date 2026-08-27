@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, RefreshCw, Store, Plus, Trash2, Link2 } from "lucide-react";
+import { Loader2, RefreshCw, Store, Plus, Trash2, Link2, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,9 +19,10 @@ import { toast } from "sonner";
  *   management (add/edit/remove competitors via Google Maps links).
  */
 export default function ConfigFeature() {
-  const { business, mode, startRun } = useAppState();
+  const { business, mode } = useAppState();
   const [scanning, setScanning] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+  const [runId, setRunId] = React.useState<string | null>(null);
   const [listings, setListings] = React.useState<
     { branch_id: string; branch_name: string; competitor_count: number }[] | null
   >(null);
@@ -82,14 +83,66 @@ export default function ConfigFeature() {
                 categoryId: business?.categoryId,
               }),
       });
-      setStatus(res.ok ? "Scan queued — refreshing your data." : "Could not start scan.");
+      if (!res.ok) {
+        setStatus("Could not start scan.");
+        setScanning(false);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data.runId) {
+        setRunId(data.runId);
+        setStatus("Scraping in progress…");
+        // Poll for completion
+        const poll = async () => {
+          try {
+            const sr = await fetch(`/api/scrape/status?runId=${data.runId}`);
+            if (!sr.ok) return;
+            const sd = await sr.json();
+            if (sd.progress?.total > 0) {
+              setStatus(`Scraping… ${sd.progress.completed}/${sd.progress.total} competitors`);
+            }
+            if (sd.status === "completed") {
+              setScanning(false);
+              setRunId(null);
+              const newReviews = sd.summary?.new_reviews ?? 0;
+              toast.success("Scrape completed", {
+                description: newReviews > 0 ? `Found ${newReviews} new reviews` : "No new reviews found",
+              });
+              return;
+            }
+            if (sd.status === "failed") {
+              setScanning(false);
+              setRunId(null);
+              toast.error("Scrape failed", { description: sd.error ?? "Unknown error" });
+              return;
+            }
+            setTimeout(poll, 3000);
+          } catch {
+            // ignore poll errors
+          }
+        };
+        setTimeout(poll, 3000);
+      } else {
+        setStatus("Scan queued — refreshing your data.");
+        setScanning(false);
+      }
     } catch {
       setStatus("Network error — try again.");
-    } finally {
       setScanning(false);
-      startRun();
     }
-  }, [mode, business, scanning, startRun]);
+  }, [mode, business, scanning]);
+
+  const stopRun = React.useCallback(async () => {
+    if (!runId) return;
+    try {
+      await fetch(`/api/scrape/stop?runId=${runId}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    setScanning(false);
+    setRunId(null);
+    setStatus("Scrape stopped.");
+  }, [runId]);
 
   // Discovery mode: add competitor to all branches
   const addCompetitor = React.useCallback(async () => {
@@ -211,6 +264,16 @@ export default function ConfigFeature() {
               </>
             )}
           </Button>
+          {scanning && runId && (
+            <Button
+              className="mt-2 w-full"
+              onClick={stopRun}
+              variant="destructive"
+            >
+              <Square className="size-4" />
+              Stop
+            </Button>
+          )}
           {status && (
             <p className="mt-3 text-center text-xs text-muted-foreground">{status}</p>
           )}
@@ -259,6 +322,16 @@ export default function ConfigFeature() {
             </>
           )}
         </Button>
+        {scanning && runId && (
+          <Button
+            className="mt-2 w-full"
+            onClick={stopRun}
+            variant="destructive"
+          >
+            <Square className="size-4" />
+            Stop
+          </Button>
+        )}
         {status && (
           <p className="mt-3 text-center text-xs text-muted-foreground">{status}</p>
         )}

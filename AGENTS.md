@@ -127,7 +127,11 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   to fully expand (scrollHeight > 1000px) after sorting — previously the scroll
   phase started against a collapsed panel (height=584px, 0 cards), harvesting
   0 reviews. `scroll_review_container` also detects collapsed panel and re-opens
-  the reviews tab if needed. Test counts: vitest 119/119, Playwright 20/20, verify_baseline 163/163.
+  the reviews tab if needed. **Panel expand fix Part 2 (2026-08-29):** Changed
+  from waiting for the panel to expand on its own to actively clicking the
+  reviews tab again if the panel is collapsed after sorting — waiting alone
+  didn't work because the panel never expands without user interaction. Test
+  counts: vitest 119/119, Playwright 20/20, verify_baseline 163/163.
 
 ## Repo layout
 

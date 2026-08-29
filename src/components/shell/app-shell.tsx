@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { LogOut, Search, UserCircle2, LayoutGrid } from "lucide-react";
+import { LogOut, Search, UserCircle2, LayoutGrid, RefreshCw, Square } from "lucide-react";
 
 import { useAppState } from "@/lib/app-state";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { LoginScreen } from "./login-screen";
 import { Onboarding } from "./onboarding";
 import { RunScreen } from "./run-screen";
@@ -17,8 +18,81 @@ import TodayFeature from "@/features/today";
 
 function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
   const { user, business, mode, logout, setPaletteOpen } = useAppState();
+  const [scanning, setScanning] = React.useState(false);
+  const [runId, setRunId] = React.useState<string | null>(null);
   const targetLabel =
     mode === "fixed" ? "Competitor list" : business?.name ?? user?.email ?? "";
+
+  const runScrape = async () => {
+    if (scanning) return;
+    setScanning(true);
+    toast.info("Starting scrape…");
+    try {
+      const res = await fetch("/api/scrape/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: mode === "fixed" ? JSON.stringify({}) : JSON.stringify({
+          name: business?.name,
+          location: business?.location,
+          category: business?.category,
+          categoryId: business?.categoryId,
+        }),
+      });
+      if (!res.ok) {
+        toast.error("Failed to start scrape");
+        setScanning(false);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data.runId) {
+        setRunId(data.runId);
+        const poll = async () => {
+          try {
+            const sr = await fetch(`/api/scrape/status?runId=${data.runId}`);
+            if (!sr.ok) return;
+            const sd = await sr.json();
+            if (sd.status === "completed") {
+              setScanning(false);
+              setRunId(null);
+              const newReviews = sd.summary?.new_reviews ?? 0;
+              toast.success("Scrape completed", {
+                description: newReviews > 0 ? `Found ${newReviews} new reviews` : "No new reviews found",
+              });
+              return;
+            }
+            if (sd.status === "failed") {
+              setScanning(false);
+              setRunId(null);
+              toast.error("Scrape failed", { description: sd.error ?? "Unknown error" });
+              return;
+            }
+            setTimeout(poll, 3000);
+          } catch {
+            // ignore poll errors
+          }
+        };
+        setTimeout(poll, 3000);
+      } else {
+        setScanning(false);
+        toast.success("Scrape triggered");
+      }
+    } catch {
+      toast.error("Network error");
+      setScanning(false);
+    }
+  };
+
+  const stopScrape = async () => {
+    if (!runId) return;
+    try {
+      await fetch(`/api/scrape/stop?runId=${runId}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    setScanning(false);
+    setRunId(null);
+    toast.info("Scrape stopped");
+  };
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -56,6 +130,30 @@ function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
           <LayoutGrid className="size-3.5" />
           <span className="hidden sm:inline">Hubs</span>
         </Button>
+
+        {scanning ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5"
+            onClick={stopScrape}
+            aria-label="Stop scrape"
+          >
+            <Square className="size-3.5" />
+            <span className="hidden sm:inline">Stop</span>
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
+            className="gap-1.5"
+            onClick={runScrape}
+            aria-label="Refresh data"
+          >
+            <RefreshCw className="size-3.5" />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />

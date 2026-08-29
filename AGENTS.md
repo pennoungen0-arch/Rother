@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-27 (v0.4.0 solidification + post-release bug fixes).**
+**Last updated: 2026-08-29 (v0.4.0 + post-release bug fixes continued).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -28,7 +28,7 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `0bfd4db` (fix: S1 config persistence + S6 review sorting + S3 newest-sort harvest). **Tag: `v0.3.1`.** Working tree has uncommitted v0.4.0 solidification + bug fix changes. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits).
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `0bfd4db` (fix: S1 config persistence + S6 review sorting + S3 newest-sort harvest). **Tag: `v0.3.1`.** Working tree has uncommitted v0.4.0 solidification + bug fix changes. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits). **Tag: `v0.3.3`** (latest).
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a
@@ -113,7 +113,21 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   `DELETE /api/scrape/stop` endpoint + red "Stop" button in Config and Scheduler
   UIs. **Reviews sort fix (2026-08-27):** `/api/reviews` now sorts by resolved
   review DATE (not `scraped_at`), so recently posted reviews appear at the top
-  regardless of when they were scraped. Test counts: vitest 119/119, Playwright 20/20, verify_baseline 163/163.
+  regardless of when they were scraped. **Header Refresh button (2026-08-27):**
+  TopBar now has a "Refresh" button (with refresh icon) between "Hubs" and
+  user info — one-click access to trigger scraping without navigating menus.
+  Button toggles to red "Stop" while scraping, polls status every 3s, shows
+  completion toast. **Duplicate place_id detection (2026-08-27):** `addCompetitor`
+  now detects when a competitor points to the same Google Maps place as an
+  existing competitor or the active business — shows warning instead of silently
+  adding duplicate. **Stale branches fix (2026-08-27):** `persistUserBusinessLight`
+  now detects business name change and regenerates ID + clears old branches,
+  preventing stale branches from persisting across business changes. **Panel
+  expand fix (2026-08-27):** `click_newest_sort` now waits for the reviews panel
+  to fully expand (scrollHeight > 1000px) after sorting — previously the scroll
+  phase started against a collapsed panel (height=584px, 0 cards), harvesting
+  0 reviews. `scroll_review_container` also detects collapsed panel and re-opens
+  the reviews tab if needed. Test counts: vitest 119/119, Playwright 20/20, verify_baseline 163/163.
 
 ## Repo layout
 

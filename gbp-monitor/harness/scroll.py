@@ -360,6 +360,39 @@ def scroll_review_container(
     if instrument:
         instrument.end_phase()
 
+    # Verify the panel is expanded (not collapsed). A collapsed panel has
+    # scrollHeight ~584px; an expanded panel has scrollHeight > 1000px.
+    # If collapsed, click the reviews tab to re-expand it.
+    try:
+        panel_height = page.evaluate(
+            """() => {
+                const el = document.querySelector('div.m6QErb[role="region"]');
+                return el ? el.scrollHeight : 0;
+            }"""
+        )
+        if panel_height and panel_height < 800:
+            logger.info(
+                "SCROLL[%s] panel collapsed (height=%d) — re-opening reviews tab",
+                comp_id, panel_height,
+            )
+            try:
+                tab_btn = page.query_selector("button[role='tab'][aria-label^='Ulasan']")
+                if tab_btn:
+                    tab_btn.click(timeout=4_000)
+                    page.wait_for_timeout(2_000)
+                    page.wait_for_function(
+                        """() => {
+                            const el = document.querySelector('div.m6QErb[role="region"]');
+                            return el && el.scrollHeight > 1000;
+                        }""",
+                        timeout=10_000,
+                    )
+                    page.wait_for_timeout(1_000)
+            except Exception:
+                page.wait_for_timeout(2_000)
+    except Exception:
+        pass
+
     previous_height = 0
     previous_dom = 0
     stable_count = 0

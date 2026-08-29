@@ -203,8 +203,17 @@ export function Onboarding() {
       if (data.places?.length > 0) {
         const place = data.places[0];
         const compId = slugify(place.name ?? gmapsUrl);
+        const resolvedPlaceId = place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : place.place_id ?? null;
         if (competitorList.some((c) => c.competitor_id === compId)) {
           toast.info("Already added", { description: `${place.name ?? "This competitor"} is already in your list` });
+        } else if (resolvedPlaceId && competitorList.some((c) => c.place_id === resolvedPlaceId || c.gmaps_place_id === resolvedPlaceId)) {
+          toast.warning("Duplicate place", {
+            description: `${place.name ?? "This competitor"} points to the same Google Maps place as an existing competitor. Each place can only be monitored once.`,
+          });
+        } else if (resolvedPlaceId && gmapsBusinessId && resolvedPlaceId === gmapsBusinessId) {
+          toast.warning("Same as your business", {
+            description: `${place.name ?? "This competitor"} is the same Google Maps place as your own business.`,
+          });
         } else {
           setCompetitorList((list) => [
             ...list,
@@ -212,8 +221,8 @@ export function Onboarding() {
               competitor_id: compId,
               name: place.name ?? gmapsUrl,
               gmaps_url: gmapsUrl,
-              place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
-              gmaps_place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+              place_id: resolvedPlaceId,
+              gmaps_place_id: resolvedPlaceId,
               osm_place_id: place.place_id?.startsWith("coord/") || place.place_id?.startsWith("osm/") ? place.place_id : null,
               lat: place.lat,
               lng: place.lng,
@@ -232,7 +241,7 @@ export function Onboarding() {
     } finally {
       setAddingCompetitor(false);
     }
-  }, [competitorList]);
+  }, [competitorList, gmapsBusinessId]);
 
   const removeCompetitor = React.useCallback((competitorId: string) => {
     const removed = competitorList.find((c) => c.competitor_id === competitorId);

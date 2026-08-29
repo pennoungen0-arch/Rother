@@ -693,6 +693,22 @@ def click_newest_sort(
         except Exception:
             page.wait_for_timeout(6_000)
         page.wait_for_timeout(1_500)
+        # Wait for the panel to fully expand after sort. A collapsed panel
+        # has height ~584px with 0 visible cards; an expanded panel has
+        # height > 1000px. Without this wait, the scroll phase starts
+        # against a collapsed panel and harvests 0 reviews.
+        try:
+            page.wait_for_function(
+                """() => {
+                    const el = document.querySelector('div.m6QErb[role="region"]');
+                    if (!el) return false;
+                    return el.scrollHeight > 1000;
+                }""",
+                timeout=15_000,
+            )
+        except Exception:
+            page.wait_for_timeout(3_000)
+        page.wait_for_timeout(1_000)
         # Verify the sort actually took effect: the panel should now show
         # the newest reviews first. If the first review is older than ~7 days,
         # the sort likely failed — retry once.

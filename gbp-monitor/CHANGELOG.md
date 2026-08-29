@@ -7,6 +7,38 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-27T16:15:00+07:00
+- **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`
+- **Change:** **Fix: wait for reviews panel to expand after sort.** After `click_newest_sort`, the reviews panel collapses and re-renders. The code waited for `[data-review-id]` but not for the panel to fully expand (scrollHeight > 1000px). This caused the scroll phase to start against a collapsed panel (height=584px, 0 cards), harvesting 0 reviews. Fix: (1) In `click_newest_sort`, wait for `div.m6QErb[role='region']` scrollHeight > 1000px after sort. (2) In `scroll_review_container`, detect collapsed panel and re-open the reviews tab if needed.
+- **Reason:** Scrape of shady-shack returned 0 reviews because the panel collapsed after sorting and the scroll phase started immediately.
+- **Status:** PROVEN — verify_baseline **163/163** · vitest **119/119** · tsc 0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T16:05:00+07:00
+- **Files:** `src/app/api/business/route.ts`, `gbp-monitor/config/user-business.json`
+- **Change:** **Fix: clear stale branches when business name changes.** The `persistUserBusinessLight` function used `body.branches ?? existing.branches`, which preserved old branches when the user updated the business name/link in onboarding (because `body.branches` is `undefined` in Step 1 before branches are added). This caused "Crate Cafe" to persist as a branch even after the user changed the business to "Shady Shack". Fix: detect name change and regenerate ID + clear branches when the name changes. Also manually fixed the existing `user-business.json` to clear the stale "crate-cafe" branch.
+- **Reason:** User changed the business from "Crate Cafe" to "Shady Shack" but the old "Crate Cafe" branch persisted, showing up as a competitor in the dashboard.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T15:45:00+07:00
+- **Files:** `src/components/shell/onboarding.tsx`
+- **Change:** **Fix: detect duplicate place_id when adding competitors.** The `addCompetitor` function only checked for duplicate `competitor_id`, not duplicate `place_id`. This allowed adding multiple competitors pointing to the same Google Maps place (e.g., adding "Shady Shack" via short link when the business itself was already "Shady Shack" with the same place_id). Now detects: (1) existing competitor with same place_id → "Duplicate place" warning, (2) resolved place_id matches the active business → "Same as your business" warning. Also fixed a bug where `place_id`/`gmaps_place_id` were set to `null` when the API returned them without the `gmaps/` prefix.
+- **Reason:** User added a competitor via short link `https://maps.app.goo.gl/sM4yQqMVzCPz8q64A` that resolved to the same place_id as their existing business. The duplicate was silently added, causing confusion about why reviews weren't showing separately.
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · Playwright **20/20**.
+
+---
+
+## 2026-08-27T15:05:00+07:00
+- **Files:** `src/components/shell/app-shell.tsx`
+- **Change:** **Add header Refresh button for one-click scraping.** Added a "Refresh" button (with refresh icon) in the TopBar header row, between "Hubs" and user info. When clicked, triggers `/api/scrape/trigger`, polls status every 3s, shows completion toast. Button toggles to red "Stop" while scraping. Provides easy access to refresh data without navigating to Config or Scheduler pages.
+- **Reason:** User requested easy access to refresh scraping without going through multiple menus — "in normal use case, I would like to access the refresh data button easily."
+- **Status:** PROVEN — vitest **119/119** · tsc 0 · Playwright **20/20**.
+
+---
+
 ## 2026-08-27T14:40:00+07:00
 - **Files:** `src/app/api/reviews/route.ts`
 - **Change:** **Fix: All Reviews page now sorts by review DATE, not scrape time.** Root cause: the API sorted by `scraped_at` (when Rother collected the review), so a review scraped a week ago appeared before a review posted 5 hours ago but scraped today. Changed the sort to use the resolved review date (from `relative_date` → ISO date), with `scraped_at` as a tiebreaker. Now recently POSTED reviews appear at the top regardless of when they were scraped.

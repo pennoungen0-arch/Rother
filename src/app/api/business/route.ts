@@ -56,9 +56,12 @@ async function persistUserBusinessLight(body: BusinessBody): Promise<ActiveBusin
   } catch {
     // no prior business file — start fresh
   }
+  const newName = body.name?.trim();
+  const nameChanged = newName && existing.name && newName !== existing.name;
+  const newId = nameChanged ? slugify(newName) : (existing.id ?? slugify(newName ?? "business"));
   const business: ActiveBusiness = {
-    id: existing.id ?? slugify(body.name ?? "business"),
-    name: body.name?.trim() || existing.name || "Your business",
+    id: newId,
+    name: newName || existing.name || "Your business",
     location: body.location?.trim() || existing.location || "",
     category: body.category ?? existing.category,
     categoryId: body.categoryId ?? existing.categoryId,
@@ -70,7 +73,7 @@ async function persistUserBusinessLight(body: BusinessBody): Promise<ActiveBusin
     country: body.country ?? existing.country,
     postcode: body.postcode ?? existing.postcode,
     unverified: body.unverified ?? existing.unverified,
-    branches: body.branches ?? existing.branches,
+    branches: body.branches ?? (nameChanged ? [] : existing.branches),
     scrapedAt: new Date().toISOString(),
   };
   await fs.writeFile(

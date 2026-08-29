@@ -1,5 +1,7 @@
 # Progress Report — 2026-08-29 (v0.4.0 Post-Release Bug Fixes)
 
+**Commit:** `b6e2228` | **Timestamp:** `2026-08-29T14:54:13+07:00`
+
 ## Overview
 
 Final hardening of Rother's Google Maps scraping pipeline. After `click_newest_sort`

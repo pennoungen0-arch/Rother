@@ -7,7 +7,7 @@ project's memory across sessions.
 
 ---
 
-## 2026-08-29T05:24:00+07:00
+## 2026-08-29T14:54:13+07:00
 - **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`,
   `gbp-monitor/tests/verify_baseline.py`
 - **Change:** **Fix: panel collapse after sort causes 0 reviews (FINAL).** Root cause

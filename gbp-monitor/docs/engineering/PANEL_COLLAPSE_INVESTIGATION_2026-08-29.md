@@ -1,6 +1,7 @@
 # Panel Collapse After Sort Investigation & Fix
 
 **Date:** 2026-08-29
+**Commit:** `b6e2228` (2026-08-29T14:54:13+07:00)
 **Author:** Kilo
 **Status:** PROVEN (code fix) / INCONCLUSIVE (newest reviews — blocked by Google soft-block)
 

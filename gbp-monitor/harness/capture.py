@@ -12,6 +12,14 @@ from harness.selectors import resolve_selectors
 
 logger = logging.getLogger("gbp-monitor.capture")
 
+from datetime import datetime, timezone
+def _sort_structured_log(comp_id: str, **kwargs):
+    """Emit a JSON-structured log line for sort outcomes (monitorable)."""
+    record = {"comp_id": comp_id, "stage": "sort",
+              "ts": datetime.now(timezone.utc).isoformat()}
+    record.update(kwargs)
+    logger.info("JSONLOG: %s", json.dumps(record, default=str))
+
 _OPTIONAL_ELEMENT_TIMEOUT_MS = 4000
 
 
@@ -630,6 +638,8 @@ def click_newest_sort(
         except Exception:
             continue
     if not sort_btn:
+        _sort_structured_log(comp_id, outcome="sort_control_not_found",
+                             reason="embedded/reduced variant or selector mismatch")
         logger.info(
             "SORT_NEWEST[%s] sort control not found — proceeding with default ordering",
             comp_id,
@@ -657,6 +667,8 @@ def click_newest_sort(
                 option_opened = True
                 break
         if not option_opened:
+            _sort_structured_log(comp_id, outcome="sort_menu_not_opened",
+                                 reason="menu did not render within timeout")
             _close_sort_menu(page)
             logger.warning(
                 "SORT_NEWEST[%s] sort menu did not open — proceeding with default ordering",
@@ -672,6 +684,8 @@ def click_newest_sort(
         # Click the menu option NEAREST the sort button — never the nav rail.
         result = page.evaluate(_CLICK_NEAREST_NEWEST_JS)
         if not result.get("ok"):
+            _sort_structured_log(comp_id, outcome="sort_option_click_failed",
+                                 reason=result.get("reason"))
             _close_sort_menu(page)
             logger.warning(
                 "SORT_NEWEST[%s] menu option click failed (%s) — proceeding with default ordering",
@@ -705,6 +719,8 @@ def click_newest_sort(
                 timeout=10_000,
             )
         except Exception:
+            _sort_structured_log(comp_id, outcome="panel_collapsed",
+                                 action="skipped_sort_reopen_tab")
             logger.warning(
                 "SORT_NEWEST[%s] panel collapsed after sort — skipping sort, re-opening tab",
                 comp_id,
@@ -730,6 +746,9 @@ def click_newest_sort(
             except Exception:
                 pass
             return False
+        _sort_structured_log(comp_id, outcome="sort_applied",
+                             selector=used_candidate, candidates=result.get("count"),
+                             distance_px=result.get("dist"))
         logger.info(
             "SORT_NEWEST[%s] applied via %r (menu candidates=%s, dist=%spx)",
             comp_id, used_candidate, result.get("count"), result.get("dist"),

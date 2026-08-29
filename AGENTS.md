@@ -28,7 +28,7 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
 - **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
   Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `0bfd4db` (fix: S1 config persistence + S6 review sorting + S3 newest-sort harvest). **Tag: `v0.3.1`.** Working tree has uncommitted v0.4.0 solidification + bug fix changes. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits). **Tag: `v0.3.3`** (latest).
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `0bfd4db` (fix: S1 config persistence + S6 review sorting + S3 newest-sort harvest). **Tag: `v0.3.1`.** Working tree has uncommitted v0.4.0 solidification + bug fix changes. **Tag: `v0.2.0`** at `ac5f70b` (converged HEAD, 52 commits). **Tag: `v0.3.3`** (latest). **Post-v0.4.0 panel collapse fix (2026-08-29):** after `click_newest_sort`, the Google Maps reviews panel collapses and the tab strip disappears, making re-expansion impossible. Fixed by skipping the sort when the panel collapses (proceeding with default ordering) and re-navigating + re-resolving the container selector in the scroll phase. 7 businesses tested: all went from 0 → 121-988+ reviews.
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a

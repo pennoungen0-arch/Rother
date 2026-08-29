@@ -361,19 +361,24 @@ def scroll_review_container(
         instrument.end_phase()
 
     # Verify the panel is expanded (not collapsed). A collapsed panel has
-    # scrollHeight ~584px; an expanded panel has scrollHeight > 1000px.
-    # If collapsed, click the reviews tab to re-expand it.
+    # 0 review cards; an expanded panel has review cards.
+    # The sort phase in capture.py handles most collapses by re-opening the
+    # tab, but if the panel is still collapsed here, re-navigate to restore.
     try:
-        panel_height = page.evaluate(
-            """() => {
-                const el = document.querySelector('div.m6QErb[role="region"]');
-                return el ? el.scrollHeight : 0;
-            }"""
+        card_count = page.eval_on_selector(
+            container_selector,
+            "el => el.querySelectorAll('[data-review-id]').length"
         )
-        if panel_height and panel_height < 800:
+        if not card_count or card_count == 0:
             logger.info(
-                "SCROLL[%s] panel collapsed (height=%d) — re-opening reviews tab",
-                comp_id, panel_height,
+                "SCROLL[%s] panel collapsed (0 review cards in container) — re-navigating to restore",
+                comp_id,
+            )
+            place_url = page.url
+            page.goto(place_url, wait_until="domcontentloaded", timeout=15_000)
+            page.wait_for_timeout(2_000)
+            container_selector = _resolve_container_with_fallback(
+                page, selectors, tracker=tracker, comp_id=comp_id, instrument=instrument
             )
             try:
                 tab_btn = page.query_selector("button[role='tab'][aria-label^='Ulasan']")
@@ -382,10 +387,9 @@ def scroll_review_container(
                     page.wait_for_timeout(2_000)
                     page.wait_for_function(
                         """() => {
-                            const el = document.querySelector('div.m6QErb[role="region"]');
-                            return el && el.scrollHeight > 1000;
+                            return document.querySelectorAll('[data-review-id]').length > 0;
                         }""",
-                        timeout=10_000,
+                        timeout=15_000,
                     )
                     page.wait_for_timeout(1_000)
             except Exception:

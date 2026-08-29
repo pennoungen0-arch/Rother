@@ -7,6 +7,36 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-29T05:24:00+07:00
+- **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`,
+  `gbp-monitor/tests/verify_baseline.py`
+- **Change:** **Fix: panel collapse after sort causes 0 reviews (FINAL).** Root cause
+  identified and fixed with a two-pronged approach:
+  (1) `click_newest_sort` in `capture.py`: after the sort is applied, if the reviews panel
+  collapses (`scrollHeight < 800px` or element not found), **skip the sort** and return False
+  — proceed with Google's default ordering. Waiting alone doesn't work because the panel
+  needs a click to re-expand but the tab strip is gone after sort. Better to harvest with default
+  ordering than 0 reviews.
+  (2) `scroll_review_container` in `scroll.py`: if the panel is collapsed during the scroll phase,
+  **re-navigate** to the business page, re-open the reviews tab, and **re-resolve the container
+  selector** (the DOM changes after re-navigation, making the old selector stale).
+  (3) Fixed `if panel_height and panel_height < 800:` → `if panel_height is not None and
+  panel_height < 800:` in both files — the old condition treated `0` (element not found) as falsy
+  and skipped the collapse detection entirely.
+  (4) Updated `_PageFullFlow` mock in `verify_baseline.py` to return a large panel height (5000)
+  when checking `scrollHeight`, so the test simulates an expanded panel.
+- **Reason:** 7 businesses (Bumbu Bali, Salsa Verde, Byrd House Bali, Lilla Pantai, Suluban
+  Cliff Bali Villa, KAFE, Single Fin Bali) all harvested 0 reviews because the sort caused the
+  reviews panel to collapse and the tab strip disappeared, making re-expansion impossible.
+- **Status:** PROVEN — verify_baseline **163/163** · vitest **119/119** · tsc 0 · eslint 0 errors.
+  Live scrape results: Bumbu Bali 0→500, Salsa Verde 0→567 (PASS), Byrd House Bali 0→558,
+  Lilla Pantai 28→628, Suluban Cliff 0→121 (PASS), KAFE 98→268, Single Fin Bali 0→988+ (timeout).
+  **Limitation:** Newest reviews not retrieved due to Google's per-IP soft-block (REDUCED variant).
+  Sort is skipped when panel collapses; reviews harvested in default (relevance) ordering.
+  See `docs/engineering/PANEL_COLLAPSE_INVESTIGATION_2026-08-29.md` for full analysis.
+
+---
+
 ## 2026-08-29T03:05:00+07:00
 - **Files:** `gbp-monitor/harness/capture.py`
 - **Change:** **Fix: actively re-open reviews tab after sort (Part 2).** The previous fix waited for the panel to expand on its own after sorting, but the panel never expands without user interaction. Changed to actively click the reviews tab again if the panel is collapsed (scrollHeight < 800px) after sorting. This forces the panel to re-render with the sorted reviews.

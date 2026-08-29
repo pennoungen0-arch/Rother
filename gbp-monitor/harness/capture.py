@@ -693,21 +693,28 @@ def click_newest_sort(
         except Exception:
             page.wait_for_timeout(6_000)
         page.wait_for_timeout(1_500)
-        # After sort, the panel may collapse (height ~584px, 0 cards). If it
-        # stays collapsed, click the reviews tab again to re-expand it.
-        # Waiting alone doesn't work — the panel needs a click to re-render.
+        # After sort, try to wait for reviews to reappear (Google re-fetches).
+        # If they don't reappear within 10s, the sort broke the panel —
+        # skip the sort and re-open the reviews tab to restore the panel
+        # with default ordering. Better to harvest with default ordering than 0.
         try:
-            panel_height = page.evaluate(
+            page.wait_for_function(
                 """() => {
-                    const el = document.querySelector('div.m6QErb[role="region"]');
-                    return el ? el.scrollHeight : 0;
-                }"""
+                    return document.querySelectorAll('[data-review-id]').length > 0;
+                }""",
+                timeout=10_000,
             )
-            if panel_height and panel_height < 800:
-                logger.info(
-                    "SORT_NEWEST[%s] panel collapsed (height=%d) — re-opening reviews tab",
-                    comp_id, panel_height,
-                )
+        except Exception:
+            logger.warning(
+                "SORT_NEWEST[%s] panel collapsed after sort — skipping sort, re-opening tab",
+                comp_id,
+            )
+            try:
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(500)
+            except Exception:
+                pass
+            try:
                 tab_btn = page.query_selector("button[role='tab'][aria-label^='Ulasan']")
                 if tab_btn:
                     tab_btn.click(timeout=4_000)
@@ -720,36 +727,9 @@ def click_newest_sort(
                         timeout=15_000,
                     )
                     page.wait_for_timeout(1_500)
-        except Exception:
-            page.wait_for_timeout(2_000)
-        # Verify the sort actually took effect: the panel should now show
-        # the newest reviews first. If the first review is older than ~7 days,
-        # the sort likely failed — retry once.
-        try:
-            first_review_rel = page.evaluate("""() => {
-                const el = document.querySelector('[data-review-id]');
-                if (!el) return null;
-                const card = el.closest('div[jsmodel]') || el.parentElement?.parentElement;
-                if (!card) return null;
-                const texts = card.querySelectorAll('span, div');
-                for (const t of texts) {
-                    const txt = t.textContent?.trim() || '';
-                    if (/^\\d+\\s*(jam|menit|hari|minggu|bulan|tahun|lalu|yang lalu)/i.test(txt)) return txt;
-                }
-                return null;
-            }""")
-            if first_review_rel and any(unit in first_review_rel.lower() for unit in ['hari', 'minggu', 'bulan', 'tahun']):
-                logger.warning(
-                    "SORT_NEWEST[%s] first review is '%s' — sort may not have applied, retrying",
-                    comp_id, first_review_rel,
-                )
-                # Retry: click the sort option again
-                result = page.evaluate(_CLICK_NEAREST_NEWEST_JS)
-                if result.get("ok"):
-                    page.wait_for_timeout(2_000)
-                    logger.info("SORT_NEWEST[%s] retry applied", comp_id)
-        except Exception:
-            pass  # Verification is best-effort; proceed regardless
+            except Exception:
+                pass
+            return False
         logger.info(
             "SORT_NEWEST[%s] applied via %r (menu candidates=%s, dist=%spx)",
             comp_id, used_candidate, result.get("count"), result.get("dist"),

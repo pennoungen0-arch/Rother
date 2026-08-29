@@ -858,6 +858,13 @@ def _verify_newest_sort() -> None:
             # The click JS takes a `sortSel` param; the count JS does not.
             if "sortSel" not in js:
                 self._n += 1
+                # Panel height check: return a large value (expanded panel)
+                if "m6QErb" in js and "scrollHeight" in js:
+                    return 5000
+                # Review card count check (wait_for_function uses this):
+                # return > 0 so the panel appears intact
+                if "data-review-id" in js:
+                    return 5
                 return self._n
             return {"ok": True, "count": 1, "dist": 60}
 
@@ -868,6 +875,11 @@ def _verify_newest_sort() -> None:
 
         def wait_for_timeout(self, ms: int) -> None:
             pass
+
+        def wait_for_function(self, js: str, timeout: int = 0) -> None:
+            pass
+
+        keyboard = type("Kb", (), {"press": staticmethod(lambda k: None)})()
 
     class _PageNoOption:
         """Sort control present but the menu never opens (count never rises)."""

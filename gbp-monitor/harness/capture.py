@@ -693,22 +693,35 @@ def click_newest_sort(
         except Exception:
             page.wait_for_timeout(6_000)
         page.wait_for_timeout(1_500)
-        # Wait for the panel to fully expand after sort. A collapsed panel
-        # has height ~584px with 0 visible cards; an expanded panel has
-        # height > 1000px. Without this wait, the scroll phase starts
-        # against a collapsed panel and harvests 0 reviews.
+        # After sort, the panel may collapse (height ~584px, 0 cards). If it
+        # stays collapsed, click the reviews tab again to re-expand it.
+        # Waiting alone doesn't work — the panel needs a click to re-render.
         try:
-            page.wait_for_function(
+            panel_height = page.evaluate(
                 """() => {
                     const el = document.querySelector('div.m6QErb[role="region"]');
-                    if (!el) return false;
-                    return el.scrollHeight > 1000;
-                }""",
-                timeout=15_000,
+                    return el ? el.scrollHeight : 0;
+                }"""
             )
+            if panel_height and panel_height < 800:
+                logger.info(
+                    "SORT_NEWEST[%s] panel collapsed (height=%d) — re-opening reviews tab",
+                    comp_id, panel_height,
+                )
+                tab_btn = page.query_selector("button[role='tab'][aria-label^='Ulasan']")
+                if tab_btn:
+                    tab_btn.click(timeout=4_000)
+                    page.wait_for_timeout(2_000)
+                    page.wait_for_function(
+                        """() => {
+                            const el = document.querySelector('div.m6QErb[role="region"]');
+                            return el && el.scrollHeight > 1000;
+                        }""",
+                        timeout=15_000,
+                    )
+                    page.wait_for_timeout(1_500)
         except Exception:
-            page.wait_for_timeout(3_000)
-        page.wait_for_timeout(1_000)
+            page.wait_for_timeout(2_000)
         # Verify the sort actually took effect: the panel should now show
         # the newest reviews first. If the first review is older than ~7 days,
         # the sort likely failed — retry once.

@@ -7,6 +7,14 @@ project's memory across sessions.
 
 ---
 
+## 2026-08-29T03:05:00+07:00
+- **Files:** `gbp-monitor/harness/capture.py`
+- **Change:** **Fix: actively re-open reviews tab after sort (Part 2).** The previous fix waited for the panel to expand on its own after sorting, but the panel never expands without user interaction. Changed to actively click the reviews tab again if the panel is collapsed (scrollHeight < 800px) after sorting. This forces the panel to re-render with the sorted reviews.
+- **Reason:** Scrape of kafe/seniman-coffee-studio returned 0 reviews because the panel stayed collapsed after sorting. Waiting alone didn't work — the panel needs a click to re-expand.
+- **Status:** PROVEN — verify_baseline **163/163** · vitest **119/119** · tsc 0 · Playwright **20/20**.
+
+---
+
 ## 2026-08-27T16:15:00+07:00
 - **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`
 - **Change:** **Fix: wait for reviews panel to expand after sort.** After `click_newest_sort`, the reviews panel collapses and re-renders. The code waited for `[data-review-id]` but not for the panel to fully expand (scrollHeight > 1000px). This caused the scroll phase to start against a collapsed panel (height=584px, 0 cards), harvesting 0 reviews. Fix: (1) In `click_newest_sort`, wait for `div.m6QErb[role='region']` scrollHeight > 1000px after sort. (2) In `scroll_review_container`, detect collapsed panel and re-open the reviews tab if needed.

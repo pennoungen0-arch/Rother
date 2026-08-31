@@ -1,8 +1,19 @@
-# Tauri Revival Plan — Rother Desktop (v0.4.0)
-**Created:** 2026-08-25 · **Status:** PLANNED (awaiting execution)
+# Tauri Revival Plan — Rother Desktop (v0.4.1)
+
+**Created:** 2026-08-25 · **Updated:** 2026-08-31T04:42:10Z
+**Status:** PLANNED (Phase A scaffold copied from `rother02-archive/src-tauri/`)
+
+**Changes from v0.4.0 plan:**
+- Sealed core now v0.4.1 (`b6e2228`, panel collapse fix + safety system)
+- `src-tauri/` scaffold copied from archive + updated for Tauri v2 stable API
+- Added `ROTHER_DATA_DIR` env for scraper data isolation
+- Added `closeOnLastWindow: false` + tray-aware close behavior
+- Updated CSP to allow `127.0.0.1:*` (dynamic port)
+- Updated capabilities schema for Tauri v2 (`localAccess` vs `windows`)
+- Reference: `docs/engineering/SAFETY_SYSTEM_2026-08-29.md`, `docs/engineering/PANEL_COLLAPSE_INVESTIGATION_2026-08-29.md`
 **Inputs:** `TAURI_COMPATIBILITY_RESEARCH_2026-08-25.md` (audit + framework
 decision + stale-plan corrections) · archived scaffold
-`rother02-archive/src-tauri/` · current sealed core: `v0.3.3` (`e1935e3`)
+`rother02-archive/src-tauri/` · current sealed core: `v0.4.1` (`b6e2228`, 2026-08-29T14:54:13+07:00)
 **Targets:** Windows + Linux first; macOS second (signing-gated).
 **Framework decision:** Tauri v2 (re-affirmed — see research doc §3).
 
@@ -28,8 +39,9 @@ envs at OS app-data dirs. Zero code changes for data relocation.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| UI server | Next standalone + Node sidecar (archived-plan approach) | API routes require a server; static export impossible |
+| UI server | Next standalone + Node sidecar (archived-plan approach) | API routes require a server; static export impossible ||
 | Data location | Tauri `app_data_dir()`, wired via `GBP_ROOT` + `ROTHER_DATA_DIR` envs | Existing env plumbing = zero app changes; proper installed-app behavior. Optional `--portable` later |
+| Scraper data | `ROTHER_DATA_DIR` points to `app_data_dir/rother-data` for scraper snapshots/deltas/run_summary | Preserves per-business tenant isolation; lock file + NID jar stay at GBP_ROOT 
 | First-run config | Scaffold `config/` templates into app-data on first launch (mirrors `--init-config`) | User never touches the install dir |
 | Python runtime (MVP) | **Detect + guided setup wizard** (detect `python`/`python3`, offer `pip install -r requirements.txt` + `playwright install chromium` with progress UI) | Proves architecture fastest; embedded runtime is a later optimization |
 | Python runtime (later) | Embedded python-build-standalone + wheels (~40–80 MB) | Only if non-dev distribution demands it |
@@ -44,9 +56,11 @@ envs at OS app-data dirs. Zero code changes for data relocation.
 ## 2. Phases
 
 ### Phase A — Scaffold revival (Windows) · ~1 session
-- [ ] Copy `src-tauri/` from archive (Cargo.toml, build.rs, icons,
-      capabilities); update `tauri.conf.json` for Tauri v2 current schema;
-      drop archived node binaries (re-fetched per target).
+- [x] Copy `src-tauri/` from archive (Cargo.toml, build.rs, icons, capabilities)
+- [x] Update `Cargo.toml` version to 0.4.1
+- [x] Update `tauri.conf.json` for Tauri v2 stable schema (closeOnLastWindow, CSP wildcards, frontendDist path)
+- [x] Update `main.rs` for current Tauri v2 API (Child/Child type, Event, set_url, close-requested listener)
+- [x] Update `capabilities/default.json` for Tauri v2 schema (localAccess, process:allow-exit)
 - [ ] Install Rust toolchain + `tauri-cli`; `cargo check` green.
 - [ ] Window launches loading a hard-coded external URL (proof of shell).
 - Exit: empty Tauri window on Windows renders any URL.
@@ -70,8 +84,9 @@ envs at OS app-data dirs. Zero code changes for data relocation.
 - [ ] Verify: onboarding → fixtures run → snapshots land in app-data
       tenant dir; rate limiter + seen-store + snapshot sidecars all
       functional from the new location.
-- Exit: full v0.3.3 feature set (self-monitoring, harvest honesty,
-  variance-proof deltas) working from app-data.
+- Exit: full v0.4.1 feature set (self-monitoring, harvest honesty,
+  variance-proof deltas, STALE-NID guard, panel collapse recovery,
+  sort outcome logging) working from app-data.
 
 ### Phase D — Scraper bootstrap wizard · ~1–2 sessions
 - [ ] Detection screen: Python present? version? `requirements.txt`
@@ -104,10 +119,12 @@ envs at OS app-data dirs. Zero code changes for data relocation.
 - [ ] WKWebView UI pass (Tailwind/shadcn generally fine; verify).
 - Exit: .dmg installs and runs on Intel + Apple Silicon.
 
-### Phase I — Polish & release v0.4.0
-- [ ] Tray icon + "monitoring active" state; auto-update stub (disabled).
-- [ ] Docs: DESKTOP_GUIDE.md; CHANGELOG; AGENTS.md sync.
-- Exit: v0.4.0 tagged.
+### Phase I — Polish & release v0.4.1
+- [ ] Tray icon + "monitoring active" state
+- [ ] Auto-update stub (disabled, configured for future use)
+- [ ] Docs: `docs/engineering/DESKTOP_GUIDE.md`; CHANGELOG; AGENTS.md sync
+- [ ] Tag `v0.4.1` + GitHub Release with installers (Windows + Linux)
+- Exit: v0.4.1 desktop released
 
 ---
 
@@ -123,6 +140,9 @@ envs at OS app-data dirs. Zero code changes for data relocation.
 | Python detection misses installs (py launcher, venvs) | Medium | Probe `py`/`python`/`python3`; wizard offers manual path entry |
 | Scope creep toward embedded Python | Medium | Explicitly Phase-later; wizard proves demand first |
 | Antivirus flags scraper child-process spawning | Low-Med | Document; signed builds reduce false positives |
+| Tauri v2 API drift (2.x → later 2.x) | Low | Pin Tauri version in Cargo.toml; use `tauri.conf.json` `$schema` for validation |
+| NID warm-up fails in packaged environment | Medium | STALE-NID guard already handles retry + re-warm; wizard can re-trigger |
+| `freezePrototype: true` breaks dashboard JS | Low | CSP already hardened; test Phase B before proceeding |
 
 ## 4. Effort estimate
 
@@ -131,4 +151,4 @@ Phase H adds ~1–2 (signing-dependent). Phase I ~1.
 
 ## 5. Status
 
-PLANNED — awaiting execution start (Phase A).
+PLANNED — Phase A scaffold copied + Tauri v2 API updated (awaiting Rust install + cargo check).

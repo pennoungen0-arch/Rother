@@ -28,6 +28,11 @@ Thumbs.db
 
 # build output (covered by vitest exclude; safeguard for git)
 /dist
+
+# Tauri desktop build artifacts + large binaries
+/src-tauri/binaries/
+/src-tauri/target/
+/src-tauri/gen/
 *.pem
 
 # debug

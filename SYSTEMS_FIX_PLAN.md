@@ -129,6 +129,13 @@ wait, smoke.spec.ts:165). Evidence: `phase-reports/systems-procedure2-results.tx
       discovery test; discovery-persistence.spec.ts refactored onto the helper
 - [x] Verify: smoke+discovery `--repeat-each=3` → **42/42**; full suite **16/16**
 
+### Phase B — Copy-logs + enhanced scraper logging · ✅ DONE (2026-09-05)
+
+- [x] Copy button added to LogsSection (navigator.clipboard + blob fallback)
+- [x] Human-readable logging in run_all.py: run-start banner, acquisition status, per-listing harvest summary, final run summary
+- [x] TAURI_SCRAPING_ANALYSIS_2026-09-05.md created with full scraping system analysis
+- [x] Committed: 8b6f549
+
 **ALL PLAN ITEMS COMPLETE.**
 
 ## Phase E — Closing gate · ~30 min (incl. one live scrape)

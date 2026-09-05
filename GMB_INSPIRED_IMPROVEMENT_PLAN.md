@@ -68,16 +68,15 @@ It polls and auto-hides once `!loading && hasData` is true.
 - [x] Auto-hides once data exists (loading/hasData guard)
 - [x] TS + ESLint clean, committed
 
-## Phase 5 — Cleanup & Documentation · LOW · ~1h
+## Phase 5 — Cleanup & Documentation · ✅ DONE (2026-09-05)
 
-- [ ] Update `AGENTS.md` with harvest-window feature count bump (25→26
-      or document as enhancement, not new feature).
-- [ ] Update `TAURI_SCRAPING_ANALYSIS_2026-09-05.md` §9 with this plan
-      as the actionable follow-up.
-- [ ] Remove stale temp files: `_phase0_variance.py`, `_phase1_dom_probe.py`
-      (already deleted) — verify clean.
-- [ ] Run final gates: `npx vitest run && npx tsc --noEmit && npx eslint src`.
-- Exit: all gates green, plan checkboxes filled.
+- [x] `AGENTS.md` updated with harvest-window feature count + GMB analysis
+      reference; `TAURI_SCRAPING_ANALYSIS_2026-09-05.md` §9 updated with
+      actionable plan pointer; `GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md`
+      added as new doc.
+- [x] Stale temp files: already deleted (verified in Phase 1).
+- [x] Final gates: vitest 119/119, tsc 0, eslint 0, playwright 20/20.
+- [x] Plan checkboxes all filled; plan status updated.
 
 ---
 

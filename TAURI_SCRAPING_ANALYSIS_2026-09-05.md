@@ -159,5 +159,23 @@ Added human-readable log lines to `run_all.py` at four key points:
    ============================================================
    ```
 
+## 10. Actionable follow-up: GMB-Inspired Improvement Plan
+
+Based on the analysis above and the GMB Everywhere comparison
+(`GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md`), the following
+improvements have been implemented as `GMB_INSPIRED_IMPROVEMENT_PLAN.md`:
+
+| Phase | Focus | Status |
+|---|---|---|
+| 1 | Review filters in UI (already existed — keyword, rating, date, branch, competitor) | ✅ |
+| 2 | Harvest window header ("of ~N on Google" — already existed) | ✅ |
+| 3 | Comparison table view (Radar/Table toggle in c-comparison) | ✅ `1096c7a` |
+| 4 | Tauri startup indicator (StartupBanner on Today screen) | ✅ `9085973` |
+| 5 | Cleanup & docs | ✅ this entry |
+
+Key insight from the GMB comparison: Rother is architecturally ahead on
+the monitoring/persistence side (snapshot deltas, alert detection); the
+gap is in presentation. All improvements here are presentation-layer.
+
 ## Status
-Analysis complete. Copy-logs + enhanced logging implemented; commit pending.
+Analysis + action items complete. All code committed.

@@ -16,7 +16,10 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `HARVEST_FIX_PLAN.md` (✅ v0.3.3 harvest honesty + variance-proof deltas),
 `SESSION_SUMMARY_2026-08-25.md` (session index),
 `SCREENSHOT_ANALYSIS_2026-08-27.md` (full 46-screenshot review),
-`SOLIDIFICATION_PLAN_2026-08-27.md` (✅ Phase 1-4 + Phase 7-8 bug fixes complete).
+`SOLIDIFICATION_PLAN_2026-08-27.md` (✅ Phase 1-4 + Phase 7-8 bug fixes complete),
+`TAURI_SCRAPING_ANALYSIS_2026-09-05.md` (Tauri scraping system audit + copy-logs + enhanced logging),
+`GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md` (GMB Everywhere feature analysis → Rother comparison table + startup banner),
+`GMB_INSPIRED_IMPROVEMENT_PLAN.md` (✅ all 5 phases complete).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.

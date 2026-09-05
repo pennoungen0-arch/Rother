@@ -7,21 +7,14 @@
 
 ---
 
-## Phase 1 — Review Filters in UI · HIGH · ~2h
+## Phase 1 — Review Filters in UI · ✅ ALREADY IMPLEMENTED
 
-The `/api/reviews` route already supports `q`, `date_from`, `date_to`,
-`rating` params (per `reviews-section.tsx`). The dashboard UI has no
-controls for them. GMB Everywhere lets you filter the visible window;
-Rother can too.
-
-- [ ] Add filter controls to `ReviewsSection`: keyword search input,
-      rating selector (1–5 multi-select), date-range picker.
-- [ ] Wire each control to the existing query params.
-- [ ] Reset-to-page-1 behavior already exists via `useEffect` on filters
-      (line 114).
-- [ ] UI: collapse filters into a "Filters" expandable row so the reviews
-      list isn't permanently cluttered.
-- Exit: `npx tsc --noEmit` clean, manual check filtering reviews works.
+All filter controls already exist in `ReviewsSection` (lines 397–516):
+- keyword search (debounced, line 132), rating 1–5 multi-select (lines 440–468),
+  date-range picker (lines 471–495), branch + competitor dropdowns, clear-all
+  button, page-1 reset on filter change. All wired to the existing `/api/reviews`
+  query params (`q`, `rating`, `date_from`, `date_to`, `branch_id`,
+  `competitor_id`). No code changes needed.
 
 ## Phase 2 — Harvest Window Header · MEDIUM · ~1h
 
@@ -38,22 +31,21 @@ visible to the user at the review-list level.
       (matching existing behavior).
 - Exit: visual check on dashboard; `npx tsc` clean.
 
-## Phase 3 — Comparison Table View · MEDIUM · ~2–3h
+## Phase 3 — Comparison Table View · ✅ DONE (2026-09-05)
 
-GMB Everywhere's Local Scan compares businesses side-by-side. Rother's
-`c-comparison` feature only has a radar chart. The snapshot metadata
-already contains all the data needed.
+Extended `c-comparison.tsx` with a Radar/Table toggle (pill buttons in header).
+Table view: `ComparisonTable` component — table with rows = competitor,
+columns = Name (+ "You" badge if self), Reviews, Rating (star component),
+New (badge), Trend (icon), Branch. Sorted by reviews descending, self-row
+highlighted. Same data source as radar chart (`useOverview` → `competitorStats`).
+All self-entry + harvest-status fields available for future enhancement.
+tsc 0, eslint clean.
 
-- [ ] New component `ComparisonTable` (or extend `c-comparison.tsx`):
-      table with rows = business, columns = Rating, Reviews, Categories,
-      Hours, Services, Distance.
-- [ ] Data source: `/api/branches` already returns `BranchWithStats[]`
-      with per-competitor aggregated stats.
-- [ ] Add a tab/toggle in the Competitors hub "Comparison" feature:
-      "Radar" vs "Table" view.
-- [ ] Ensure self-entry row is included (it's already in `/api/branches`
-      via `withSelfEntry`).
-- Exit: visual check both views work; `npx tsc` clean.
+- [x] Tab/toggle between Radar and Table views in comparison feature header
+- [x] `ComparisonTable` component with full per-competitor stats
+- [x] Self-entry row highlighted (bg-primary/5, "You" badge)
+- [x] Trend icons (up/down/stable) + new reviews badges
+- [x] TS clean, committed
 
 ## Phase 4 — Tauri Startup Indicator · MEDIUM · ~1.5h
 

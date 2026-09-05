@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowDownToLine,
+  Check,
+  Copy,
   Info,
   Pause,
   Play,
@@ -114,6 +116,22 @@ export function LogsSection() {
   const [error, setError] = React.useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [lastFetch, setLastFetch] = React.useState<Date | null>(null);
+
+  // Copy all visible log lines to clipboard.
+  const [copied, setCopied] = React.useState(false);
+  const copyLogs = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers / Tauri context.
+      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      await navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [lines]);
 
   // Always-latest fetch function.
   const fetchLogs = React.useCallback(
@@ -279,6 +297,25 @@ export function LogsSection() {
                   aria-hidden="true"
                 />
                 <span className="hidden sm:inline">Refresh</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyLogs}
+                disabled={lines.length === 0}
+                aria-label="Copy all visible logs to clipboard"
+              >
+                {copied ? (
+                  <>
+                    <Check className="size-3.5 text-emerald-500" aria-hidden="true" />
+                    <span className="hidden sm:inline">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Copy</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>

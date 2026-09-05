@@ -681,27 +681,40 @@ def _preflight_checks(fixtures_mode: bool) -> list[str]:
                 f"Run: pip install -r requirements.txt"
             )
 
-    # --- 4. Playwright Chromium binary (live mode) ---
-    if not fixtures_mode:
-        try:
-            import subprocess
+     # --- 4. Playwright Chromium binary (live mode) ---
+        if not fixtures_mode:
+            try:
+                import os
+                import shutil as shutil_mod
 
-            result = subprocess.run(
-                [sys.executable, "-m", "playwright", "install", "--check", "chromium"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            if result.returncode != 0:
-                stderr_lower = result.stderr.lower()
-                stdout_lower = result.stdout.lower()
-                if "chromium" not in stdout_lower and "chromium" not in stderr_lower:
-                    warnings.append(
-                        "Playwright Chromium binary not installed. "
-                        "Run: playwright install chromium"
+                # Check if Chromium is installed by looking for the browser directory
+                appdata = os.environ.get("LOCALAPPDATA") or os.environ.get("HOME")
+                browsers_path = os.path.join(appdata, "ms-playwright") if appdata else None
+                chromium_installed = False
+                if browsers_path and os.path.isdir(browsers_path):
+                    for entry in os.listdir(browsers_path):
+                        if "chromium" in entry.lower() and not entry.endswith(".zip"):
+                            full_path = os.path.join(browsers_path, entry)
+                            if os.path.isdir(full_path):
+                                chromium_installed = True
+                                break
+
+                if not chromium_installed:
+                    # Fallback: try launching chromium
+                    import subprocess
+                    result = subprocess.run(
+                        [sys.executable, "-c",
+                         "from playwright.sync_api import sync_playwright as sp;"
+                         "p=sp().start();b=p.chromium.launch();b.close();p.stop();print('ok')"],
+                        capture_output=True, text=True, timeout=30,
                     )
-        except Exception as e:
-            warnings.append(f"Could not verify Playwright installation: {e}")
+                    if result.returncode != 0 or "ok" not in result.stdout.lower():
+                        warnings.append(
+                            "Playwright Chromium binary not installed. "
+                            "Run: playwright install chromium"
+                        )
+            except Exception as e:
+                warnings.append(f"Could not verify Playwright installation: {e}")
 
     # --- 5. Mock URL detection (live mode) ---
     if not fixtures_mode:
@@ -899,6 +912,13 @@ def run(fixtures_mode: bool = False, competitor_filter: list[str] | None = None)
     rid = _run_id()
     mode = "fixtures" if fixtures_mode else "live"
     _structured_log(rid, "run_start", mode=mode)
+    logger.info("=" * 60)
+    logger.info("ROTH RUN STARTING — mode=%s run_id=%s", mode, rid)
+    logger.info("  Rother v0.3.3 — Google Business Profile review monitor")
+    logger.info("  Pipeline: Playwright capture → Parse → Variance-proof delta → Store")
+    logger.info("  Harvest window: newest ~500 reviews (Google's virtualized panel)")
+    logger.info("  Delta base: cumulative ever-seen ID union + 30-day recency gate")
+    logger.info("=" * 60)
 
     _acquire_lock(rid)
 
@@ -1048,6 +1068,12 @@ def run(fixtures_mode: bool = False, competitor_filter: list[str] | None = None)
                             succeeded=warmed, duration_s=warmed_duration)
         else:
             _structured_log(rid, "acquisition_reuse", storage_state=str(reuse_state))
+            logger.info("ACQUISITION: reusing NID session from %s", reuse_state)
+
+        logger.info("ACQUISITION COMPLETE — browser context ready")
+        logger.info("  Config: %d branch(es), %d competitor(s) total",
+                    len(listings.get("branches", [])),
+                    sum(len(b.get("competitors", [])) for b in listings.get("branches", [])))
 
         # M16: stale-NID guard — probe the reused jar before committing to a run.
         probe_url = _first_probe_url(listings)
@@ -1134,6 +1160,24 @@ def run(fixtures_mode: bool = False, competitor_filter: list[str] | None = None)
     summary["duration_seconds"] = round(time.time() - run_start_wall, 1)
     summary["browser_launch_s"] = browser_launch_duration
     _finish_and_write_summary(summary, run_id=rid)
+
+    # Human-readable final summary.
+    dur = summary["duration_seconds"]
+    logger.info("=" * 60)
+    logger.info("ROTH RUN COMPLETE — %s", rid)
+    logger.info("  Mode: %s | Duration: %.0fs | Browser launch: %.1fs", mode, dur, browser_launch_duration)
+    logger.info("  Results: %d succeeded, %d failed, %d skipped",
+                summary["success"], summary["failed"], summary["skipped"])
+    logger.info("  Reviews: %d total harvested, %d new (alert-worthy), %d backfill (silent)",
+                summary["total_reviews"], summary["new_reviews"], summary.get("backfill_discovered", 0))
+    if summary["new_reviews"] > 0:
+        logger.info("  ALERT: %d new review(s) detected — notifications pending", summary["new_reviews"])
+    elif summary["failed"] > 0:
+        logger.warning("  ⚠ %d listing(s) failed — check errors in run_summary.json", summary["failed"])
+    else:
+        logger.info("  All clear — no new reviews, no failures")
+    logger.info("=" * 60)
+
     _release_lock()
     return summary
 
@@ -1299,7 +1343,18 @@ def _process_one_listing(
         summary["success"] += 1
         summary["total_reviews"] += len(parsed_dicts)
 
-        _structured_log(run_id, "listing_done", competitor=comp_id,
+        # Human-readable listing summary: harvest status, new reviews, backfill.
+        hs = (instrument.business_metadata or {}).get("harvest_status", "unknown")
+        gc = (instrument.business_metadata or {}).get("google_review_count", "?")
+        logger.info("LISTING COMPLETE[%s]: %d reviews harvested (%s — Google reports %s)", comp_id, len(parsed_dicts), hs, gc)
+        if delta:
+            logger.info("  ↳ %d NEW review(s) detected (alert-worthy, posted within 30 days)", len(delta))
+        if backfill:
+            logger.info("  ↳ %d backfill review(s) silently merged (older reviews never seen before)", len(backfill))
+        elif first_run:
+            logger.info("  ↳ First harvest — all %d reviews seeded as baseline (no alerts)", len(parsed_dicts))
+
+        _structured_log(rid, "listing_done", competitor=comp_id,
                         reviews=len(parsed_dicts), delta=len(delta), **stages)
 
     except Exception as e:

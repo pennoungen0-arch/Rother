@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, ArrowLeft, Bell, BarChart3, LayoutDashboard, MessageSquare, Settings2, Star, Trophy, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, Bell, BarChart3, Loader2, MessageSquare, Settings2, Star, Trophy, TrendingUp } from "lucide-react";
 
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
@@ -24,6 +24,87 @@ const QUICK_LINKS = [
   { id: "t-config", label: "Config", icon: Settings2 },
   { id: "t-scrape-schedule", label: "Schedule", icon: Activity },
 ];
+
+/**
+ * First-run / startup banner: shown on the Today screen when no scrape data
+ * exists yet. Detects an active background scrape by polling the status API
+ * and shows a non-blocking progress banner so users know data is arriving.
+ */
+function StartupBanner() {
+  const [active, setActive] = React.useState<null | {
+    runId: string; progress?: { completed: number; total: number }
+  }>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const r = await fetch("/api/scrape/status?active=1");
+        if (!r.ok || cancelled) return;
+        const d = await r.json();
+        if (d.active && d.runId) {
+          setActive({ runId: d.runId, progress: d.progress ?? undefined });
+        } else {
+          setActive(null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    check();
+    const id = setInterval(check, 4000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  if (!active) {
+    return (
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="flex items-center gap-3 p-4">
+          <Loader2 className="size-4 text-amber-600 animate-spin" />
+          <div className="text-sm">
+            <span className="font-medium text-amber-800 dark:text-amber-300">First run detected</span>
+            <span className="text-muted-foreground"> — your businesses are being configured. Run a scrape to start monitoring.</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const p = active.progress;
+  const completed = p?.completed ?? 0;
+  const total = p?.total ?? 0;
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-3">
+          <Loader2 className="size-4 text-primary animate-spin" />
+          <div className="text-sm">
+            <span className="font-medium text-primary">Scraping in progress</span>
+            {total > 0 && (
+              <span className="ml-1 text-muted-foreground">
+                — {completed}/{total} businesses processed
+              </span>
+            )}
+          </div>
+        </div>
+        {total > 0 && (
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${Math.min(100, (completed / total) * 100)}%` }}
+            />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {total > 0 && completed > 0
+            ? `${total - completed} business${total - completed === 1 ? "" : "es"} remaining — reviews will appear as each completes.`
+            : "Initialising scraper — reviews will appear shortly."}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function TodayFeature() {
   const { data, loading } = useOverview();
@@ -61,18 +142,21 @@ export default function TodayFeature() {
         </div>
       </div>
 
-      {loading && !data ? (
-        <div className="space-y-6">
-          <div className="h-28 animate-pulse rounded-xl bg-muted/40" />
-          <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
-        </div>
-      ) : !hasData ? (
-        <EmptyState
-          icon={BarChart3}
-          title="No data yet"
-          description="Run your first scrape to populate the Today dashboard."
-        />
-      ) : (
+        {/* First-run / startup indicator: show when no data exists yet */}
+        {!loading && !hasData && <StartupBanner />}
+
+        {loading && !data ? (
+          <div className="space-y-6">
+            <div className="h-28 animate-pulse rounded-xl bg-muted/40" />
+            <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+          </div>
+        ) : !hasData ? (
+          <EmptyState
+            icon={BarChart3}
+            title="No data yet"
+            description="Run your first scrape to populate the Today dashboard."
+          />
+        ) : (
         <>
           <KpiRow />
 

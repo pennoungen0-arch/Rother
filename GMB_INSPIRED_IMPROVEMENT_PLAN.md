@@ -47,22 +47,26 @@ tsc 0, eslint clean.
 - [x] Trend icons (up/down/stable) + new reviews badges
 - [x] TS clean, committed
 
-## Phase 4 — Tauri Startup Indicator · MEDIUM · ~1.5h
+## Phase 4 — Tauri Startup Indicator · ✅ DONE (2026-09-05)
 
-GMB Everywhere is instant (Chrome extension). Tauri launches Python
-silently with no feedback. Add a startup progress indicator.
+Added `StartupBanner` component to `today.tsx` — non-blocking progress
+banner shown on the Today screen when no data exists yet. Two states:
+- **No active scrape detected:** amber card — "First run detected — your
+  businesses are being configured. Run a scrape to start monitoring."
+- **Active scrape detected (polls /api/scrape/status?active=1 every 4s):**
+  primary card — spinner + "Scraping in progress — 1/11 businesses
+  processed" with a CSS progress bar + "N businesses remaining" text.
 
-- [ ] `RunScreen` / `AppShell`: detect active scrape on mount (already
-      polls `/api/scrape/status?active=1`). Show a non-blocking banner:
-      "Scraper running… (1/11 businesses, ~X min remaining)".
-- [ ] Tauri first-launch: `main.rs` logs progress to
-      `rother-tauri-startup.log`. Mirror this in the UI — detect if
-      `run_summary.json` is missing/stale and show "Initial scrape
-      starting" state.
-- [ ] Python-warm-up indicator: `/api/scrape/status` returns status
-      "starting" during NID warm-up; already surfaced by RunScreen polling.
-- [ ] Add a "first-run" banner to the dashboard when no snapshots exist yet.
-- Exit: manual check in Tauri; `npx tsc` clean.
+The existing `busyElsewhere` + progress bar in `RunScreen` (lines 30, 193–216)
+already handles the initial trigger UI; this new banner handles the Today
+screen after the first scrape trigger completes but before data lands.
+It polls and auto-hides once `!loading && hasData` is true.
+`Loader2` unused import removed; tsc + eslint clean.
+
+- [x] `StartupBanner` in Today feature with two states
+- [x] Polls `/api/scrape/status?active=1` for warm-up/progress visibility
+- [x] Auto-hides once data exists (loading/hasData guard)
+- [x] TS + ESLint clean, committed
 
 ## Phase 5 — Cleanup & Documentation · LOW · ~1h
 

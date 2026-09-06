@@ -7,6 +7,15 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T18:50:00+07:00 — Today page: expandable cards + quick nav in header
+- **Files:** `src/features/today.tsx`
+- **Change:** **Today page redesigned for simplified overview experience.**
+  1. **Expandable Branches/Competitors cards:** New `ExpandableMetricCard` component — shows count on the card face, click to expand and see actual branch names with competitor counts (e.g., "Crate Cafe — 2 competitors") and competitor names with branch detail. Animated chevron indicator (right → down). Empty state when no branches/competitors configured.
+  2. **Quick Navigation moved from footer to header:** Now appears as compact pill-style buttons between the Today title and the KPI cards. Removed the card wrapper — just inline buttons for faster access.
+  3. **New layout order:** Header → Quick Nav → Expandable Branches/Competitors → KPI Row → Last Scrape Summary → Alerts/Rating Distribution → Snapshot Glance.
+- **Reason:** Today page is the simplified overview — users need to see branch/competitor structure at a glance without navigating to Config. Quick Navigation was buried at the footer and rarely found.
+- **Status:** PROVEN — vitest 133/133, tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T17:30:00+07:00 — Feature card refresh button visual feedback
 - **Files:** `src/components/dashboard/reviews-over-time-card.tsx`, `competitor-correlation.tsx`, `competitor-rating-dist-comparison.tsx`, `review-lengths-card.tsx`, `review-recency-heatmap.tsx`, `run-comparison-card.tsx`, `review-language-distribution.tsx`, `review-word-cloud.tsx`, `run-history-timeline.tsx`, `top-reviewers.tsx`
 - **Change:** **All feature card refresh buttons now show loading spinner + disabled state.** The round refresh buttons on feature cards (Reviews over Time, Heatmap, Word Cloud, etc.) were working correctly (they re-fetch that specific card's data from the API), but had no visual feedback — users clicked and saw nothing happen. Now all 10 components show a spinning `RefreshCw` icon while loading and are disabled during fetch.

@@ -204,8 +204,12 @@ fn kill_process_on_port(port: u16) -> bool {
         if let Some(pid_str) = parts.last() {
             if let Ok(pid) = pid_str.trim().parse::<u32>() {
                 if pid > 0 {
+                    // Y7 fix (TAURI_AUDIT_2026-09-06): use /T to kill the
+                    // entire process tree, matching killProcessTreeByPid.
+                    // Without /T, children (Python scraper spawned by
+                    // the Node sidecar) survive and hold the lock.
                     let _ = Command::new("cmd")
-                        .args(["/C", &format!("taskkill /F /PID {}", pid)])
+                        .args(["/C", &format!("taskkill /T /F /PID {}", pid)])
                         .status();
                     return true;
                 }

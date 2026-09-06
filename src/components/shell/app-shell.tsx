@@ -41,31 +41,16 @@ function useScrapeStatus(): {
       const r = await fetch("/api/scrape/status?active=1");
       if (!r.ok) return;
       const d = await r.json();
-      if (!d.active) {
+      if (!d.active || !d.runId) {
         setState((s) => (s.active ? { active: false, runId: null, completed: 0, total: 0, currentCompetitor: null } : s));
         return;
       }
-    } catch {
-      return;
-    }
-    if (!state.runId) {
-      // Need the active runId to poll detail; fetch list of runs.
-      try {
-        const r = await fetch("/api/scrape/status");
-        if (r.ok) {
-          const d = await r.json();
-          if (d.runId && d.status === "running") {
-            setState((s) => ({ ...s, runId: d.runId, active: true }));
-          }
-        }
-      } catch {}
-      return;
-    }
-    try {
-      const r = await fetch(`/api/scrape/status?runId=${state.runId}`);
-      if (!r.ok) return;
-      const d = await r.json();
-      const logTail: string[] = d.logTail ?? [];
+      // R2 fix (TAURI_AUDIT_2026-09-06): runId now included in ?active=1 response
+      const runId: string = d.runId;
+      const sr = await fetch(`/api/scrape/status?runId=${runId}`);
+      if (!sr.ok) return;
+      const sd = await sr.json();
+      const logTail: string[] = sd.logTail ?? [];
       let currentCompetitor: string | null = null;
       let completed = 0;
       let total = 0;
@@ -87,17 +72,19 @@ function useScrapeStatus(): {
           }
         } catch {}
       }
-      if (d.progress?.total > 0) {
-        completed = d.progress.completed;
-        total = d.progress.total;
+      if (sd.progress?.total > 0) {
+        completed = sd.progress.completed;
+        total = sd.progress.total;
       }
-      if (d.status === "completed" || d.status === "failed") {
+      if (sd.status === "completed" || sd.status === "failed") {
         setState({ active: false, runId: null, completed: 0, total: 0, currentCompetitor: null });
       } else {
-        setState((s) => ({ ...s, active: true, completed, total, currentCompetitor }));
+        setState((s) => ({ ...s, active: true, runId, completed, total, currentCompetitor }));
       }
-    } catch {}
-  }, [state.runId]);
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
 
   // Poll every 3s while there's an active run.
   React.useEffect(() => {

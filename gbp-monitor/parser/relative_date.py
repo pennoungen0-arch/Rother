@@ -47,6 +47,7 @@ _add(r"(\d+)\s+jam\s+lalu", "hour")
 _add(r"se?jam\s+lalu", "hour", 1)
 _add(r"(\d+)\s+hari\s+lalu", "day")
 _add(r"sehari\s+lalu", "day", 1)
+_add(r"kemarin", "day", 1)  # Y3 fix: "yesterday" in Indonesian
 _add(r"(\d+)\s+minggu\s+lalu", "week")
 _add(r"(\d+)\s+bulan\s+lalu", "month")
 _add(r"sebulan\s+lalu", "month", 1)

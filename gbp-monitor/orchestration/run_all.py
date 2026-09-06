@@ -1332,10 +1332,12 @@ def _process_one_listing(
         failed_stage = "save"
         t0 = time.time()
 
-        # P2-F3: When the first harvest produces 0 reviews (REDUCED variant,
-        # broken selector, panel collapse), skip saving an empty snapshot and
-        # empty seen-store. This preserves the first-harvest state so the
-        # next run is still treated as baseline (no phantom "new" alerts).
+        # P2-F3 + Y11 fix: When the first harvest produces 0 reviews
+        # (REDUCED variant, broken selector, panel collapse), skip
+        # saving an empty snapshot and empty seen-store. Count this as
+        # skipped (not success) so the dashboard surfaces the underlying
+        # problem instead of masking it as a clean run.
+        first_harvest_skipped = False
         if first_run and len(parsed_dicts) == 0:
             logger.warning(
                 "FIRST_HARVEST_SKIP[%s]: 0 reviews on first harvest — "
@@ -1345,7 +1347,12 @@ def _process_one_listing(
             )
             _structured_log(run_id, "first_harvest_skip",
                             competitor=comp_id, reason="0_reviews")
-        else:
+            summary["skipped"] += 1
+            stages["save_s"] = round(time.time() - t0, 2)
+            failed_stage = None
+            first_harvest_skipped = True
+
+        if not first_harvest_skipped:
             if delta:
                 _append_new_reviews(comp_id, delta, run_id=run_id)
                 summary["new_reviews"] += len(delta)
@@ -1365,11 +1372,11 @@ def _process_one_listing(
             save_seen(comp_id, seen)
 
             save_snapshot(comp_id, parsed_dicts, metadata=instrument.business_metadata)
-        stages["save_s"] = round(time.time() - t0, 2)
-        failed_stage = None
+            stages["save_s"] = round(time.time() - t0, 2)
+            failed_stage = None
 
-        summary["success"] += 1
-        summary["total_reviews"] += len(parsed_dicts)
+            summary["success"] += 1
+            summary["total_reviews"] += len(parsed_dicts)
 
         # Human-readable listing summary: harvest status, new reviews, backfill.
         hs = (instrument.business_metadata or {}).get("harvest_status", "unknown")
@@ -1581,6 +1588,7 @@ def _capture_with_retries(
     """
     from harness.capture import capture_listing_html, CaptureTimeoutError
     from harness.scroll import SelectorNotFoundError
+    from harness.browser import PageCrashError
 
     last_exc: Exception | None = None
     for attempt in range(_NETWORK_RETRY_MAX + 1):
@@ -1594,6 +1602,10 @@ def _capture_with_retries(
         except SelectorNotFoundError:
             raise
         except CaptureTimeoutError:
+            raise
+        except PageCrashError:
+            # Y10 fix (TAURI_AUDIT_2026-09-06): a crashed page always
+            # crashes again — do not retry (avoids 3-9s wasted backoff).
             raise
         except Exception as e:
             last_exc = e

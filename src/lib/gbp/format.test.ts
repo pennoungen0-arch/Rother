@@ -154,6 +154,10 @@ describe("parseRelativeDate", () => {
   it("parses English: yesterday", () => {
     expect(parseRelativeDate("yesterday", scrapedAt)).toBe("2026-07-22");
   });
+
+  it("parses Indonesian: kemarin (Y3 fix)", () => {
+    expect(parseRelativeDate("kemarin", scrapedAt)).toBe("2026-07-22");
+  });
 });
 
 describe("cleanReviewerName", () => {

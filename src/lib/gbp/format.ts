@@ -82,6 +82,7 @@ export function parseRelativeDate(
     // Indonesian days/weeks/months/years
     [/(\d+)\s*hari\s+lalu/, (n) => ref.setDate(ref.getDate() - n)],
     [/^sehari\s+lalu$/, () => ref.setDate(ref.getDate() - 1)],
+    [/^kemarin$/, () => ref.setDate(ref.getDate() - 1)], // Y3 fix: "yesterday" in Indonesian
     [/(\d+)\s*minggu\s+lalu/, (n) => ref.setDate(ref.getDate() - n * 7)],
     [/^seminggu\s+lalu$/, () => ref.setDate(ref.getDate() - 7)],
     [/(\d+)\s*bulan\s+lalu/, (n) => ref.setMonth(ref.getMonth() - n)],

@@ -76,7 +76,7 @@ function findPython(): { executable: string; version: string } | null {
   const candidates = ["python3", "python"];
   for (const cmd of candidates) {
     try {
-      const result = spawnSync(cmd, ["--version"], {
+      const result = spawnSync(/*turbopackIgnore: true*/ cmd, ["--version"], {
         encoding: "utf-8",
         timeout: 5_000,
         stdio: ["ignore", "pipe", "pipe"],
@@ -228,7 +228,7 @@ export async function runCategoryScan(input: {
   else if (mode === "cached") args.push("--cached");
 
   await new Promise<void>((resolve, reject) => {
-    const proc = spawn(python.executable, args, {
+    const proc = spawn(/*turbopackIgnore: true*/ python.executable, args, {
       cwd: GBP_ROOT,
       env: { ...process.env, ROTHER_DATA_DIR: dataDir },
       stdio: ["ignore", "pipe", "pipe"],
@@ -273,19 +273,30 @@ class ScrapeRunManager {
   }
 
   hasActiveRun(): boolean {
-    for (const [, run] of this.runs) {
+    return this.getActiveRunId() !== null;
+  }
+
+  /**
+   * Return the runId of the currently-active scrape, or null if none.
+   * Also performs the liveness check (marks dead processes as failed).
+   * Used by `/api/scrape/status?active=1` so the persistent TopBar
+   * indicator can show per-competitor progress across navigations
+   * and after server restarts (see TAURI_AUDIT_2026-09-06 R2).
+   */
+  getActiveRunId(): string | null {
+    for (const [runId, run] of this.runs) {
       if (run.status === "running") {
         // Verify the process is actually alive — a killed/orphaned process
         // leaves status stuck at "running" and blocks all future triggers.
         if (run.proc.pid && this._isPidAlive(run.proc.pid)) {
-          return true;
+          return runId;
         }
         // Process is dead but close handler didn't fire — mark as failed.
         run.status = "failed";
         run.error = "Process terminated unexpectedly";
       }
     }
-    return false;
+    return null;
   }
 
   /** Check if a PID is still alive (cross-platform). */
@@ -379,13 +390,11 @@ class ScrapeRunManager {
     // - Fixed mode: config/listings.json (via ROTHER_DATA_DIR)
     // - Discovery mode: config/user-business.json (via ROTHER_DATA_DIR)
     // No CLI args needed for business config.
+    // NOTE: GBP_MONITOR_STORAGE_STATE / GBP_MONITOR_COOKIES_FILE env vars
+    // are NOT currently read by the Python orchestrator — all scrapes
+    // share the global data/storage_state.json (see TAURI_AUDIT_2026-09-06 R1).
     const args = ["-m", "orchestration.run_all"];
-    if (mode === "live") {
-      const session =
-        process.env.GBP_MONITOR_STORAGE_STATE ??
-        process.env.GBP_MONITOR_COOKIES_FILE;
-      if (session) args.push("--session", session);
-    } else {
+    if (mode !== "live") {
       args.push("--fixtures");
     }
 
@@ -411,7 +420,7 @@ class ScrapeRunManager {
         ? Math.min(filteredIds.length, baseTotal)
         : baseTotal;
 
-    const proc = spawn(python.executable, args, {
+    const proc = spawn(/*turbopackIgnore: true*/ python.executable, args, {
       cwd: GBP_ROOT,
       env,
       stdio: ["ignore", "pipe", "pipe"],

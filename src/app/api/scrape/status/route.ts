@@ -9,8 +9,12 @@ export async function GET(request: NextRequest) {
   // can detect an in-flight scrape from other sessions before offering Run.
   const active = request.nextUrl.searchParams.get("active");
   if (active === "1") {
+    // R2 fix (TAURI_AUDIT_2026-09-06): include runId so the persistent
+    // TopBar indicator can show per-competitor progress across
+    // navigations and after server restarts.
+    const runId = scrapeRunManager.getActiveRunId();
     return NextResponse.json(
-      { ok: true, active: scrapeRunManager.hasActiveRun() },
+      { ok: true, active: runId !== null, runId },
       { headers: { "Cache-Control": "no-store" } },
     );
   }

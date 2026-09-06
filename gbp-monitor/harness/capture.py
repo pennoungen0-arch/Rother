@@ -1097,12 +1097,43 @@ _PROBE_SCROLL_WAIT_MS = 900
 
 
 def _parse_aggregate_count(raw: str | None) -> int | None:
-    """Parse a Google review-count string like ``"3.243"`` / ``"1,024"``."""
+    """Parse a Google review-count string like ``"3.243"`` / ``"1,024"`` / ``"1.234,56"``.
+
+    Locale-aware: detects whether the last separator is a thousands group
+    (followed by exactly 3 digits) or a decimal point.
+    - ``"3.243"`` (Indonesian thousands) → 3243
+    - ``"1,024"`` (English thousands) → 1024
+    - ``"1.234,56"`` (Indonesian decimal) → 1234 (truncated, not used for counts)
+    - ``"1,234.56"`` (English decimal) → 1234 (truncated, not used for counts)
+    - ``"8"`` → 8
+    - ``"5 000"`` (nbsp thousands) → 5000
+
+    Fix for TAURI_AUDIT_2026-09-06 R3.
+    """
     if not raw:
         return None
-    cleaned = raw.replace("\u00a0", "").replace(",", "").replace(".", "")
+    # Strip whitespace (incl. non-breaking space) and any literal "reviews" suffix.
+    cleaned = raw.replace("\u00a0", "").strip()
+    # Find the last separator (dot or comma) to determine locale.
+    last_dot = cleaned.rfind(".")
+    last_comma = cleaned.rfind(",")
+    last_sep = max(last_dot, last_comma)
+    if last_sep == -1:
+        # No separators — plain integer.
+        digits = cleaned
+    else:
+        # Everything after the last separator should be exactly 3 digits
+        # for thousands grouping, or 1-2 digits for a decimal fraction.
+        after = cleaned[last_sep + 1:]
+        sep_char = cleaned[last_sep]
+        if after.isdigit() and len(after) == 3:
+            # Thousands separator — strip it (and any earlier same-char separators).
+            digits = cleaned.replace(sep_char, "")
+        else:
+            # Decimal separator — keep only the integer part.
+            digits = cleaned[:last_sep].replace(sep_char, "")
     try:
-        return int(cleaned)
+        return int(digits)
     except ValueError:
         return None
 

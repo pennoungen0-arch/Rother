@@ -511,6 +511,10 @@ def _verify_gmbe_parity() -> None:
     iso, _ = resolve_relative_date("yesterday", now)
     check("gmbe: 'yesterday' resolves", iso == "2026-08-12", f"got {iso}")
 
+    iso, _ = resolve_relative_date("kemarin", now)
+    check("gmbe: 'kemarin' (ID yesterday) resolves (Y3 fix)",
+          iso == "2026-08-12", f"got {iso}")
+
     iso, ep = resolve_relative_date("nonsense text here", now)
     check("gmbe: unparseable -> (None, None)", iso is None and ep is None, f"got {(iso, ep)}")
 
@@ -669,6 +673,17 @@ def _verify_stale_nid_guard() -> None:
     check("guard: rejects junk", _parse_aggregate_count("abc") is None)
     check("guard: rejects empty", _parse_aggregate_count("") is None)
     check("guard: rejects None", _parse_aggregate_count(None) is None)
+    # R3 fix (TAURI_AUDIT_2026-09-06): locale-aware decimal handling.
+    check("guard: parses '1.234.567' (ID thousands)",
+          _parse_aggregate_count("1.234.567") == 1234567)
+    check("guard: parses '1,234,567' (EN thousands)",
+          _parse_aggregate_count("1,234,567") == 1234567)
+    # Decimal values (non-round counts) return None — Google's review
+    # count is always integer, so we can safely reject decimal inputs.
+    check("guard: rejects '1.234,56' (ID decimal)",
+          _parse_aggregate_count("1.234,56") is None)
+    check("guard: rejects '1,234.56' (EN decimal)",
+          _parse_aggregate_count("1,234.56") is None)
 
     # FULL variant: hundreds of mounted cards.
     v, _ = _classify_variant(cards=350, aggregate=3467)

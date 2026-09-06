@@ -7,6 +7,16 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T20:40:00+07:00 — Tauri Linux build support (additive, safe)
+- **Files:** `src-tauri/src/main.rs`, `.zscripts/fetch-linux-node-sidecar.sh`, `.zscripts/build-linux.sh`, `docs/engineering/TAURI_LINUX_BUILD.md`
+- **Change:** **Tauri desktop now builds on Linux x86_64 (.deb + .AppImage).** All changes are ADDITIVE — the existing Windows build (MSI + NSIS) is completely unaffected.
+  1. **`main.rs`:** Added a Linux branch to `kill_process_on_port` using `lsof -i :PORT -t` (with `ss -tlnp` fallback). Sends SIGTERM then SIGKILL to kill the entire process tree. Windows branch is untouched.
+  2. **`fetch-linux-node-sidecar.sh`:** New cross-platform PowerShell script that downloads the Node.js Linux x86_64 tarball and installs it as the Tauri sidecar.
+  3. **`build-linux.sh`:** New cross-platform PowerShell script that runs `cargo tauri build --target x86_64-unknown-linux-gnu` and produces .deb + .AppImage.
+  4. **`TAURI_LINUX_BUILD.md`:** Full build documentation including prerequisites, install instructions, and known limitations.
+- **Reason:** Users requested cross-platform support. Linux build is additive — no risk to existing Windows builds because all Linux-specific code is wrapped in `_IS_WIN_GLOBAL` guards or lives in new files.
+- **Status:** Windows build verified unchanged (MSI + NSIS still produced identically). vitest 134/134, verify_baseline 168/168, tsc 0 errors. Linux build requires Linux host with Node sidecar binary fetched.
+
 ## 2026-09-06T20:00:00+07:00 — Tauri audit: 8 scraping + monitoring reliability fixes
 - **Files:** `docs/engineering/TAURI_AUDIT_2026-09-06.md`, `src/lib/gbp/scrape-runner.ts`, `src/app/api/scrape/status/route.ts`, `src/components/shell/app-shell.tsx`, `gbp-monitor/harness/capture.py`, `gbp-monitor/parser/relative_date.py`, `gbp-monitor/orchestration/run_all.py`, `gbp-monitor/tests/verify_baseline.py`, `src/lib/gbp/format.ts`, `src/lib/gbp/format.test.ts`, `src-tauri/src/main.rs`
 - **Change:** **Tauri audit complete — 8 fixes for scraping + monitoring reliability.**

@@ -182,41 +182,102 @@ fn exec_command(cmd: &str) -> Option<i32> {
     result.map(|s| s.code().unwrap_or(-1))
 }
 
-/// P2-F4: Kill the process listening on the given port (Windows only).
-/// Uses `netstat` to find the PID, then `taskkill /PID` to kill just that
-/// process. Returns true if a process was found and killed.
+/// P2-F4: Kill the process listening on the given port.
+///
+/// On Windows: uses `netstat` to find the PID, then `taskkill /T /F /PID`
+/// to kill the entire process tree (Y7 fix).
+///
+/// On Linux: uses `lsof -i :PORT -t` to find the PID, then `kill -TERM`
+/// (graceful), then `kill -KILL` (forced) to kill the entire process tree.
+/// Falls back to `ss -tlnp` if `lsof` is not installed.
 fn kill_process_on_port(port: u16) -> bool {
     use std::process::Command;
-    if !_IS_WIN_GLOBAL { return false; }
+    if _IS_WIN_GLOBAL {
+        // netstat -ano | findstr :<port> | findstr LISTENING
+        let netstat = Command::new("cmd")
+            .args(["/C", &format!("netstat -ano | findstr :{} | findstr LISTENING", port)])
+            .output();
+        let output = match netstat {
+            Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
+            Err(_) => return false,
+        };
 
-    // netstat -ano | findstr :<port> | findstr LISTENING
-    let netstat = Command::new("cmd")
-        .args(["/C", &format!("netstat -ano | findstr :{} | findstr LISTENING", port)])
-        .output();
-    let output = match netstat {
-        Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
-        Err(_) => return false,
-    };
-
-    // Parse the PID from the last column of the netstat output.
-    for line in output.lines() {
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if let Some(pid_str) = parts.last() {
-            if let Ok(pid) = pid_str.trim().parse::<u32>() {
-                if pid > 0 {
-                    // Y7 fix (TAURI_AUDIT_2026-09-06): use /T to kill the
-                    // entire process tree, matching killProcessTreeByPid.
-                    // Without /T, children (Python scraper spawned by
-                    // the Node sidecar) survive and hold the lock.
-                    let _ = Command::new("cmd")
-                        .args(["/C", &format!("taskkill /T /F /PID {}", pid)])
-                        .status();
-                    return true;
+        // Parse the PID from the last column of the netstat output.
+        for line in output.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if let Some(pid_str) = parts.last() {
+                if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                    if pid > 0 {
+                        // Y7 fix (TAURI_AUDIT_2026-09-06): use /T to kill the
+                        // entire process tree, matching killProcessTreeByPid.
+                        // Without /T, children (Python scraper spawned by
+                        // the Node sidecar) survive and hold the lock.
+                        let _ = Command::new("cmd")
+                            .args(["/C", &format!("taskkill /T /F /PID {}", pid)])
+                            .status();
+                        return true;
+                    }
                 }
             }
         }
+        false
+    } else {
+        // Linux: prefer `lsof -i :PORT -t` (gives PIDs directly, one per line).
+        // Fall back to `ss -tlnp` (parse `pid=` from the users column).
+        let lsof_result = Command::new("lsof")
+            .args(["-i", &format!(":{}", port), "-t"])
+            .output();
+        let pids: Vec<u32> = match lsof_result {
+            Ok(o) => {
+                let s = String::from_utf8_lossy(&o.stdout);
+                s.lines()
+                    .filter_map(|l| l.trim().parse::<u32>().ok())
+                    .collect()
+            }
+            Err(_) => {
+                // lsof not installed — try ss.
+                let ss_result = Command::new("ss")
+                    .args(["-tlnp", &format!("sport = :{}", port)])
+                    .output();
+                match ss_result {
+                    Ok(o) => {
+                        let s = String::from_utf8_lossy(&o.stdout);
+                        // ss output: "LISTEN 0 128 *:<port> *:* users:((\"node\",pid=1234,fd=22)))"
+                        // Parse pid=N from the users column.
+                        s.lines()
+                            .filter_map(|l| {
+                                let after = l.split("pid=").nth(1)?;
+                                after
+                                    .chars()
+                                    .take_while(|c| c.is_ascii_digit())
+                                    .collect::<String>()
+                                    .parse::<u32>()
+                                    .ok()
+                            })
+                            .collect()
+                    }
+                    Err(_) => return false,
+                }
+            }
+        };
+
+        if pids.is_empty() {
+            return false;
+        }
+        let mut killed = false;
+        for pid in pids {
+            // SIGTERM first (graceful), then SIGKILL (forced) after 500ms.
+            let _ = Command::new("sh")
+                .args(["-c", &format!("kill -TERM {} 2>/dev/null", pid)])
+                .status();
+            std::thread::sleep(Duration::from_millis(500));
+            let _ = Command::new("sh")
+                .args(["-c", &format!("kill -KILL {} 2>/dev/null", pid)])
+                .status();
+            killed = true;
+        }
+        killed
     }
-    false
 }
 
 const _IS_WIN_GLOBAL: bool = cfg!(target_os = "windows");

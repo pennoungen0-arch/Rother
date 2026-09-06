@@ -7,6 +7,15 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T17:10:00+07:00 — Descriptive KPI labels + clickable info tooltips
+- **Files:** `src/components/dashboard/kpi-row.tsx`
+- **Change:** **KPI labels expanded + Branches/Competitors info tooltips.**
+  1. **KPI labels expanded:** "Branches" → "Branches Monitored", "Competitors" → "Competitors Tracked", "Reviews Monitored" → "Reviews Collected", "New (Latest)" → "New Alerts (Latest)", "Last Run" → "Last Scrape Run".
+  2. **Branches KPI card:** Clickable info icon shows tooltip explaining what branches are + lists actual branch names being monitored.
+  3. **Competitors KPI card:** Clickable info icon explains what competitors are + lists actual competitor names being tracked.
+- **Reason:** Users didn't understand what KPI metrics meant or what data they referred to. Tooltips provide context-specific explanations.
+- **Status:** PROVEN — vitest 133/133, tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T16:40:00+07:00 — When column sort fix + parseRelativeDate edge cases
 - **Files:** `src/lib/gbp/format.ts`, `src/lib/gbp/format.test.ts`, `src/components/dashboard/reviews-section.tsx`
 - **Change:** **Fix "When" column sort in All Reviews + expand `parseRelativeDate` coverage.**

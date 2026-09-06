@@ -124,10 +124,11 @@ export function ReviewLengthsCard({ refreshKey }: ReviewLengthsCardProps) {
             variant="ghost"
             size="sm"
             onClick={fetchData}
+            disabled={loading}
             className="text-xs text-muted-foreground hover:text-foreground"
             aria-label="Refresh review lengths"
           >
-            <RefreshCw className="size-3.5" aria-hidden="true" />
+            <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
           </Button>
         </div>
       </CardHeader>

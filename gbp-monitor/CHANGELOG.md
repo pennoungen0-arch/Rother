@@ -7,6 +7,19 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T20:00:00+07:00 — Tauri audit: 8 scraping + monitoring reliability fixes
+- **Files:** `docs/engineering/TAURI_AUDIT_2026-09-06.md`, `src/lib/gbp/scrape-runner.ts`, `src/app/api/scrape/status/route.ts`, `src/components/shell/app-shell.tsx`, `gbp-monitor/harness/capture.py`, `gbp-monitor/parser/relative_date.py`, `gbp-monitor/orchestration/run_all.py`, `gbp-monitor/tests/verify_baseline.py`, `src/lib/gbp/format.ts`, `src/lib/gbp/format.test.ts`, `src-tauri/src/main.rs`
+- **Change:** **Tauri audit complete — 8 fixes for scraping + monitoring reliability.**
+  1. **R1:** Deleted dead `--session` CLI push in `scrape-runner.ts` (Python argparse silently dropped it).
+  2. **R2:** Added `runId` to `?active=1` response so persistent TopBar indicator shows per-competitor progress across navigations and after server restarts.
+  3. **R3:** Made `_parse_aggregate_count` locale-aware — correctly handles ID thousands ("1.234.567") vs EN thousands ("1,234,567") vs decimal inputs (rejected).
+  4. **Y3/Y17:** Added `kemarin` (Indonesian "yesterday") to both Python and TypeScript relative-date parsers.
+  5. **Y7:** Changed `taskkill /F /PID` to `taskkill /T /F /PID` in `kill_process_on_port` to kill entire process tree.
+  6. **Y10:** Added `PageCrashError` re-raise in `_capture_with_retries` — no more retrying crashed pages.
+  7. **Y11:** Don't count `first_harvest_skip` as `success` — count as `skipped` so the dashboard surfaces the underlying problem.
+- **Reason:** Comprehensive audit of Tauri scraping + monitoring systems identified 3 critical (RED) and 5 important (YELLOW) failure modes.
+- **Status:** PROVEN — vitest 134/134 (1 new), verify_baseline 168/168 (6 new), tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T18:50:00+07:00 — Today page: expandable cards + quick nav in header
 - **Files:** `src/features/today.tsx`
 - **Change:** **Today page redesigned for simplified overview experience.**

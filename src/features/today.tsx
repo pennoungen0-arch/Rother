@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, ArrowLeft, Bell, BarChart3, Clock, Loader2, MessageSquare, Settings2, Star, Trophy, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, Bell, BarChart3, Building2, ChevronDown, ChevronRight, Clock, Loader2, MapPin, MessageSquare, Settings2, Star, Store, Trophy, TrendingUp } from "lucide-react";
 
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
@@ -14,6 +14,7 @@ import { RatingDistributionChart } from "@/components/dashboard/charts/rating-di
 import { useOverview } from "@/lib/gbp/use-overview";
 import { useAppState } from "@/lib/app-state";
 import { FEATURES } from "@/lib/features";
+import { useBranches } from "@/lib/gbp/use-branches";
 
 const QUICK_LINKS = [
   { id: "i-kpis", label: "KPIs", icon: BarChart3 },
@@ -24,6 +25,87 @@ const QUICK_LINKS = [
   { id: "t-config", label: "Config", icon: Settings2 },
   { id: "t-scrape-schedule", label: "Schedule", icon: Activity },
 ];
+
+/** Expandable card showing branch/competitor details when clicked. */
+function ExpandableMetricCard({
+  icon: Icon,
+  label,
+  count,
+  unit,
+  items,
+  accent,
+}: {
+  icon: React.ElementType;
+  label: string;
+  count: number;
+  unit: string;
+  items: { name: string; detail?: string }[];
+  accent: "primary" | "teal";
+}) {
+  const [expanded, setExpanded] = React.useState(false);
+
+  const accentClasses = accent === "primary"
+    ? "from-primary/15 to-primary/5 text-primary"
+    : "from-teal-500/15 to-teal-500/5 text-teal-600 dark:text-teal-400";
+
+  return (
+    <Card className="gbp-card-hover relative overflow-hidden py-0">
+      <CardContent className="p-0">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex w-full items-start justify-between gap-3 p-5 text-left transition-colors hover:bg-muted/30"
+          aria-expanded={expanded}
+        >
+          <div className="flex flex-col gap-1 min-w-0">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </span>
+            <span className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
+              {count}
+            </span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+              {count === 1 ? unit : unit + "s"} — click to {expanded ? "hide" : "see details"}
+            </span>
+          </div>
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accentClasses}`}
+            aria-hidden="true"
+          >
+            <Icon className="size-5" />
+          </span>
+        </button>
+
+        {expanded && items.length > 0 && (
+          <div className="border-t border-border/60 px-5 pb-4 pt-3 space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                {accent === "primary" ? (
+                  <MapPin className="size-3.5 shrink-0 text-primary" />
+                ) : (
+                  <Store className="size-3.5 shrink-0 text-teal-600" />
+                )}
+                <span className="font-medium text-foreground">{item.name}</span>
+                {item.detail && (
+                  <span className="text-xs text-muted-foreground">— {item.detail}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {expanded && items.length === 0 && (
+          <div className="border-t border-border/60 px-5 pb-4 pt-3">
+            <p className="text-xs text-muted-foreground italic">
+              No {label.toLowerCase()} configured yet. Add them in Config.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /**
  * First-run / startup banner: shown on the Today screen when no scrape data
@@ -173,11 +255,24 @@ function LastScrapeSummary({
 
 export default function TodayFeature() {
   const { data, loading } = useOverview();
+  const { data: branches } = useBranches();
   const { openFeature, back } = useAppState();
 
   const hasData = (data?.totalReviews ?? 0) > 0;
   const googleCount = data?.competitorStats[0]?.google_review_count;
   const harvestStatus = data?.competitorStats[0]?.harvest_status;
+
+  // Build branch/competitor items for expandable cards
+  const branchItems = (branches?.branches ?? []).map((b) => ({
+    name: b.branch_name,
+    detail: `${b.competitors.length} competitor${b.competitors.length === 1 ? "" : "s"}`,
+  }));
+  const competitorItems = (branches?.branches ?? []).flatMap((b) =>
+    b.competitors.map((c) => ({
+      name: c.name,
+      detail: b.branch_name,
+    }))
+  );
 
   return (
     <div className="space-y-6">
@@ -207,6 +302,28 @@ export default function TodayFeature() {
         </div>
       </div>
 
+        {/* Quick navigation — moved from footer to header */}
+        {hasData && (
+          <div className="flex flex-wrap gap-2">
+            {QUICK_LINKS.map((link) => {
+              const Icon = link.icon;
+              const feature = FEATURES.find((f) => f.id === link.id);
+              if (!feature) return null;
+              return (
+                <button
+                  key={link.id}
+                  type="button"
+                  onClick={() => openFeature(link.id)}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  <Icon className="size-3.5 text-primary" />
+                  {link.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* First-run / startup indicator: show when no data exists yet */}
         {!loading && !hasData && <StartupBanner />}
 
@@ -223,6 +340,26 @@ export default function TodayFeature() {
           />
         ) : (
         <>
+          {/* Expandable Branches + Competitors cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <ExpandableMetricCard
+              icon={Building2}
+              label="Branches"
+              count={data?.totalBranches ?? 0}
+              unit="location"
+              items={branchItems}
+              accent="primary"
+            />
+            <ExpandableMetricCard
+              icon={Store}
+              label="Competitors"
+              count={data?.totalCompetitors ?? 0}
+              unit="competitor"
+              items={competitorItems}
+              accent="teal"
+            />
+          </div>
+
           <KpiRow />
 
           {/* P3-U5: Last scrape summary */}
@@ -274,33 +411,6 @@ export default function TodayFeature() {
           </div>
 
           <SnapshotGlance />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick navigation</CardTitle>
-              <CardDescription>Jump to a feature</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {QUICK_LINKS.map((link) => {
-                  const Icon = link.icon;
-                  const feature = FEATURES.find((f) => f.id === link.id);
-                  if (!feature) return null;
-                  return (
-                    <button
-                      key={link.id}
-                      type="button"
-                      onClick={() => openFeature(link.id)}
-                      className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
-                    >
-                      <Icon className="size-4 text-primary" />
-                      {link.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
         </>
       )}
     </div>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { LogOut, Search, UserCircle2, LayoutGrid, RefreshCw, Square } from "lucide-react";
+import { LogOut, Search, UserCircle2, LayoutGrid, RefreshCw, Square, Loader2 } from "lucide-react";
 
 import { useAppState } from "@/lib/app-state";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
@@ -16,83 +16,146 @@ import { SectionView } from "./section-view";
 import { CommandPalette } from "./command-palette";
 import TodayFeature from "@/features/today";
 
+/** P3-UI: Persistent scrape status — polled at the TopBar level so every
+ *  screen (hubs, sections, today) sees the same "scraping in progress"
+ *  indicator regardless of where the user navigates after triggering. */
+interface ScrapeState {
+  active: boolean;
+  runId: string | null;
+  completed: number;
+  total: number;
+  currentCompetitor: string | null;
+}
+
+function useScrapeStatus(): {
+  state: ScrapeState;
+  start: (body: Record<string, unknown>) => Promise<string | null>;
+  stop: () => Promise<void>;
+} {
+  const [state, setState] = React.useState<ScrapeState>({
+    active: false, runId: null, completed: 0, total: 0, currentCompetitor: null,
+  });
+
+  const poll = React.useCallback(async () => {
+    try {
+      const r = await fetch("/api/scrape/status?active=1");
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d.active) {
+        setState((s) => (s.active ? { active: false, runId: null, completed: 0, total: 0, currentCompetitor: null } : s));
+        return;
+      }
+    } catch {
+      return;
+    }
+    if (!state.runId) {
+      // Need the active runId to poll detail; fetch list of runs.
+      try {
+        const r = await fetch("/api/scrape/status");
+        if (r.ok) {
+          const d = await r.json();
+          if (d.runId && d.status === "running") {
+            setState((s) => ({ ...s, runId: d.runId, active: true }));
+          }
+        }
+      } catch {}
+      return;
+    }
+    try {
+      const r = await fetch(`/api/scrape/status?runId=${state.runId}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      const logTail: string[] = d.logTail ?? [];
+      let currentCompetitor: string | null = null;
+      let completed = 0;
+      let total = 0;
+      for (let i = logTail.length - 1; i >= 0; i--) {
+        const line = logTail[i];
+        const idx = line.indexOf("JSONLOG: ");
+        if (idx === -1) continue;
+        try {
+          const parsed = JSON.parse(line.slice(idx + "JSONLOG: ".length));
+          if ((parsed.stage === "listing_result" || parsed.stage === "collection_progress") && typeof parsed.progress === "string") {
+            const parts = parsed.progress.split("/");
+            if (parts.length === 2) {
+              completed = parseInt(parts[0], 10) || 0;
+              total = parseInt(parts[1], 10) || 0;
+            }
+          }
+          if (parsed.stage === "listing_start" && typeof parsed.competitor === "string") {
+            currentCompetitor = parsed.competitor;
+          }
+        } catch {}
+      }
+      if (d.progress?.total > 0) {
+        completed = d.progress.completed;
+        total = d.progress.total;
+      }
+      if (d.status === "completed" || d.status === "failed") {
+        setState({ active: false, runId: null, completed: 0, total: 0, currentCompetitor: null });
+      } else {
+        setState((s) => ({ ...s, active: true, completed, total, currentCompetitor }));
+      }
+    } catch {}
+  }, [state.runId]);
+
+  // Poll every 3s while there's an active run.
+  React.useEffect(() => {
+    void poll();
+    const id = setInterval(poll, 3000);
+    return () => clearInterval(id);
+  }, [poll]);
+
+  const start = React.useCallback(async (body: Record<string, unknown>): Promise<string | null> => {
+    try {
+      const res = await fetch("/api/scrape/trigger", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        toast.error("Failed to start scrape");
+        return null;
+      }
+      const data = await res.json();
+      if (data.runId) {
+        setState((s) => ({ ...s, active: true, runId: data.runId, completed: 0, total: 0, currentCompetitor: null }));
+      }
+      return data.runId ?? null;
+    } catch {
+      toast.error("Network error");
+      return null;
+    }
+  }, []);
+
+  const stop = React.useCallback(async () => {
+    if (!state.runId) return;
+    try {
+      await fetch(`/api/scrape/stop?runId=${state.runId}`, { method: "DELETE" });
+    } catch {}
+    setState({ active: false, runId: null, completed: 0, total: 0, currentCompetitor: null });
+    toast.info("Scrape stopped");
+  }, [state.runId]);
+
+  return { state, start, stop };
+}
+
 function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
   const { user, business, mode, logout, setPaletteOpen } = useAppState();
-  const [scanning, setScanning] = React.useState(false);
-  const [runId, setRunId] = React.useState<string | null>(null);
+  const scrape = useScrapeStatus();
   const targetLabel =
     mode === "fixed" ? "Competitor list" : business?.name ?? user?.email ?? "";
 
   const runScrape = async () => {
-    if (scanning) return;
-    setScanning(true);
-    toast.info("Starting scrape…");
-    try {
-      const res = await fetch("/api/scrape/trigger", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: mode === "fixed" ? JSON.stringify({}) : JSON.stringify({
-          name: business?.name,
-          location: business?.location,
-          category: business?.category,
-          categoryId: business?.categoryId,
-        }),
-      });
-      if (!res.ok) {
-        toast.error("Failed to start scrape");
-        setScanning(false);
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (data.runId) {
-        setRunId(data.runId);
-        const poll = async () => {
-          try {
-            const sr = await fetch(`/api/scrape/status?runId=${data.runId}`);
-            if (!sr.ok) return;
-            const sd = await sr.json();
-            if (sd.status === "completed") {
-              setScanning(false);
-              setRunId(null);
-              const newReviews = sd.summary?.new_reviews ?? 0;
-              toast.success("Scrape completed", {
-                description: newReviews > 0 ? `Found ${newReviews} new reviews` : "No new reviews found",
-              });
-              return;
-            }
-            if (sd.status === "failed") {
-              setScanning(false);
-              setRunId(null);
-              toast.error("Scrape failed", { description: sd.error ?? "Unknown error" });
-              return;
-            }
-            setTimeout(poll, 3000);
-          } catch {
-            // ignore poll errors
-          }
-        };
-        setTimeout(poll, 3000);
-      } else {
-        setScanning(false);
-        toast.success("Scrape triggered");
-      }
-    } catch {
-      toast.error("Network error");
-      setScanning(false);
-    }
+    if (scrape.state.active) return;
+    const body = mode === "fixed" ? {} : {
+      name: business?.name,
+      location: business?.location,
+      category: business?.category,
+      categoryId: business?.categoryId,
+    };
+    await scrape.start(body);
   };
 
-  const stopScrape = async () => {
-    if (!runId) return;
-    try {
-      await fetch(`/api/scrape/stop?runId=${runId}`, { method: "DELETE" });
-    } catch {
-      // ignore
-    }
-    setScanning(false);
-    setRunId(null);
-    toast.info("Scrape stopped");
-  };
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -131,18 +194,33 @@ function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
           <span className="hidden sm:inline">Hubs</span>
         </Button>
 
-        {scanning ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            onClick={stopScrape}
-            aria-label="Stop scrape"
+        {/* P3-UI: Persistent scraping indicator — visible at all times when active */}
+        {scrape.state.active && (
+          <button
+            type="button"
+            onClick={scrape.stop}
+            className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+            aria-label="Scrape in progress — click to stop"
+            title={scrape.state.currentCompetitor
+              ? `Scraping ${scrape.state.currentCompetitor} (${scrape.state.completed}/${scrape.state.total}) — click to stop`
+              : `Scraping in progress (${scrape.state.completed}/${scrape.state.total}) — click to stop`}
           >
-            <Square className="size-3.5" />
-            <span className="hidden sm:inline">Stop</span>
-          </Button>
-        ) : (
+            <Loader2 className="size-3 animate-spin" />
+            <span className="hidden sm:inline">
+              {scrape.state.currentCompetitor
+                ? `Scraping ${scrape.state.currentCompetitor}`
+                : "Scraping…"}
+            </span>
+            {scrape.state.total > 0 && (
+              <span className="tabular-nums text-primary/70">
+                {scrape.state.completed}/{scrape.state.total}
+              </span>
+            )}
+            <Square className="size-2.5 fill-current" />
+          </button>
+        )}
+
+        {!scrape.state.active && (
           <Button
             variant="default"
             size="sm"

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, ArrowLeft, Bell, BarChart3, Loader2, MessageSquare, Settings2, Star, Trophy, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, Bell, BarChart3, Clock, Loader2, MessageSquare, Settings2, Star, Trophy, TrendingUp } from "lucide-react";
 
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
@@ -106,6 +106,71 @@ function StartupBanner() {
   );
 }
 
+/**
+ * P3-U5: Last scrape summary card — shows when the last scrape happened,
+ * how many competitors succeeded, total reviews, and new alerts.
+ */
+function LastScrapeSummary({
+  summary,
+  onOpenHistory,
+}: {
+  summary: { started_at?: string; success?: number; failed?: number; skipped?: number; new_reviews?: number; total_reviews?: number };
+  onOpenHistory: () => void;
+}) {
+  const [relative, setRelative] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (!summary.started_at) return;
+    const update = () => {
+      const diff = Date.now() - new Date(summary.started_at!).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) setRelative("just now");
+      else if (mins < 60) setRelative(`${mins}m ago`);
+      else if (mins < 1440) setRelative(`${Math.floor(mins / 60)}h ago`);
+      else setRelative(`${Math.floor(mins / 1440)}d ago`);
+    };
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [summary.started_at]);
+
+  if (!summary.started_at) return null;
+
+  const hasErrors = (summary.failed ?? 0) > 0;
+
+  return (
+    <Card
+      className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-primary/5"
+      onClick={onOpenHistory}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenHistory(); } }}
+    >
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${hasErrors ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"}`}>
+          <Clock className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Last scrape</span>
+            <span className="text-xs text-muted-foreground">{relative}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {(summary.success ?? 0)} competitor{(summary.success ?? 0) === 1 ? "" : "s"} scraped
+            {(summary.new_reviews ?? 0) > 0 && (
+              <span className="font-medium text-amber-600"> · {summary.new_reviews} new alert{(summary.new_reviews ?? 0) === 1 ? "" : "s"}</span>
+            )}
+            {hasErrors && (
+              <span className="font-medium text-amber-600"> · {summary.failed} failed</span>
+            )}
+          </p>
+        </div>
+        <TrendingUp className="size-4 shrink-0 text-muted-foreground" />
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TodayFeature() {
   const { data, loading } = useOverview();
   const { openFeature, back } = useAppState();
@@ -159,6 +224,11 @@ export default function TodayFeature() {
         ) : (
         <>
           <KpiRow />
+
+          {/* P3-U5: Last scrape summary */}
+          {data?.runSummary && (
+            <LastScrapeSummary summary={data.runSummary} onOpenHistory={() => openFeature("r-run-history")} />
+          )}
 
           {googleCount && (
             <p className="text-xs text-muted-foreground">

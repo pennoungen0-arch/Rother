@@ -12,8 +12,9 @@ export type ConfigSource = "tenant" | "seed-demo";
  * competitor-only branches POST silently disabled self-monitoring.
  *
  * Honesty rules:
- *  - No resolvable Google place id (`place_id`/`gmaps_place_id`) → no entry.
- *    We never fabricate an unscrapeable target.
+ *  - No resolvable Google place id (`place_id`/`gmaps_place_id`) → an
+ *    unscrapeable entry is created with `unscrapeable: true` so the dashboard
+ *    can show WHY the business isn't being monitored.
  *  - A stored entry with `competitor_id === active.id` anywhere wins; the
  *    user's own config is never duplicated or overridden.
  *  - The synthetic entry is flagged `self: true` and is NEVER persisted to
@@ -38,7 +39,37 @@ export function withSelfEntry(
   if (alreadyListed) return branches;
 
   const placeId = active.gmaps_place_id ?? active.place_id ?? null;
-  if (!placeId) return branches;
+
+  // P1-F1: When no valid place_id exists, create an unscrapeable entry so
+  // the dashboard shows WHY the business isn't being monitored instead of
+  // silently skipping it.
+  if (!placeId) {
+    const unscrapeableEntry: CompetitorConfig = {
+      competitor_id: active.id,
+      name: active.name || "Your business",
+      gmaps_url: "",
+      place_id: null,
+      verified: false,
+      self: true,
+      unscrapeable: true,
+    };
+
+    if (branches.length === 0) {
+      return [
+        {
+          branch_id: active.id,
+          branch_name: active.name || "Your business",
+          competitors: [unscrapeableEntry],
+        },
+      ];
+    }
+
+    return branches.map((branch, i) =>
+      i === 0
+        ? { ...branch, competitors: [unscrapeableEntry, ...(branch.competitors ?? [])] }
+        : branch,
+    );
+  }
 
   const selfEntry: CompetitorConfig = {
     competitor_id: active.id,

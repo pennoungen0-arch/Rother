@@ -125,8 +125,10 @@ export async function GET() {
           trend_indicator: trend,
           verified: comp.verified,
           self: comp.self,
+          unscrapeable: comp.unscrapeable,
           harvest_status: hi?.harvest_status,
           google_review_count: hi?.google_review_count,
+          sort_applied: hi?.sort_applied,
         });
       }
 

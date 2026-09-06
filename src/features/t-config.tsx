@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, RefreshCw, Store, Plus, Trash2, Link2, Square } from "lucide-react";
+import { Loader2, RefreshCw, Store, Plus, Trash2, Link2, Square, Check, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,22 @@ export default function ConfigFeature() {
   const [branches, setBranches] = React.useState<BranchConfig[]>([]);
   const [competitorInput, setCompetitorInput] = React.useState("");
   const [addingCompetitor, setAddingCompetitor] = React.useState(false);
+
+  // P3-U6: Inline URL validation
+  const urlValidation = React.useMemo(() => {
+    const url = competitorInput.trim();
+    if (!url) return null;
+    if (/^https?:\/\/(maps\.app\.goo\.gl|maps\.google\.com|google\.com\/maps|www\.google\.com\/maps)/i.test(url)) {
+      return { ok: true, message: "Valid Google Maps link — will be verified before scraping" };
+    }
+    if (/^https?:\/\/.+google/i.test(url)) {
+      return { ok: true, message: "Google link — will be verified before scraping" };
+    }
+    if (/^https?:\/\//i.test(url)) {
+      return { ok: "warn" as const, message: "This doesn't look like a Google Maps link — may not resolve" };
+    }
+    return { ok: false, message: "Enter a valid URL starting with https://" };
+  }, [competitorInput]);
 
   const category = getCategory(business?.categoryId);
 
@@ -372,6 +388,24 @@ export default function ConfigFeature() {
               )}
             </Button>
           </div>
+
+          {/* P3-U6: Inline URL validation indicator */}
+          {urlValidation && (
+            <div className={`flex items-center gap-1.5 text-[11px] ${
+              urlValidation.ok === true
+                ? "text-emerald-600 dark:text-emerald-400"
+                : urlValidation.ok === "warn"
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-red-600 dark:text-red-400"
+            }`}>
+              {urlValidation.ok === true ? (
+                <Check className="size-3" />
+              ) : (
+                <AlertTriangle className="size-3" />
+              )}
+              {urlValidation.message}
+            </div>
+          )}
 
           {branches.flatMap((b) => b.competitors ?? []).length > 0 && (
             <ul className="space-y-2">

@@ -20,6 +20,7 @@ to save a Playwright launch.
 from __future__ import annotations
 
 import logging
+import re
 
 import requests
 
@@ -34,6 +35,20 @@ _USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
+# P2-F2: Patterns that indicate a real Google Maps place page (not a search
+# redirect, CAPTCHA, or error page). These are checked in the first 8KB of
+# the response body when the GET succeeds.
+_MAPS_INDICATORS = re.compile(
+    rb"(maps\.google\.com|"
+    rb"place/|"
+    rb"ChIJ|"
+    rb"data-review-id|"
+    rb"review-dialog|"
+    rb"/maps/place|"
+    rb"google\.com/maps)",
+    re.IGNORECASE,
+)
+
 
 def validate_listing(url: str) -> bool:
     """Return True if `url` appears reachable, False otherwise.
@@ -46,6 +61,12 @@ def validate_listing(url: str) -> bool:
          `stream=True` means the body is not downloaded until we read it;
          we close the response immediately, so this is still cheap.
       3. Any non-2xx final status or network error → False.
+
+    P2-F2 enhancement: when the GET succeeds, read the first 8KB of the
+    body and check for Google Maps indicators (place patterns, review
+    elements). A 200 response that lacks these patterns is likely a search
+    redirect, CAPTCHA, or error page — return False to skip the listing
+    rather than wasting a Playwright capture that will produce 0 reviews.
 
     This function MUST NOT raise — it is a best-effort pre-check. Callers
     (the orchestration layer) treat a `False` return as a skip-with-warn,
@@ -85,7 +106,7 @@ def validate_listing(url: str) -> bool:
             e,
         )
 
-    # Step 2 — GET (streaming, headers only).
+    # Step 2 — GET (streaming, read first 8KB for content check).
     try:
         with requests.get(
             url,
@@ -95,12 +116,41 @@ def validate_listing(url: str) -> bool:
             stream=True,
         ) as resp:
             resp.raise_for_status()
-            logger.debug(
-                "validate_listing[%s]: GET %s → reachable",
-                url,
-                resp.status_code,
-            )
-            return True
+            # P2-F2: Read first 8KB to check for Maps indicators.
+            # `stream=True` + `iter_content` keeps this cheap.
+            try:
+                chunk = next(resp.iter_content(chunk_size=8192))
+                if chunk and _MAPS_INDICATORS.search(chunk):
+                    logger.debug(
+                        "validate_listing[%s]: GET %s → reachable (Maps indicators found)",
+                        url,
+                        resp.status_code,
+                    )
+                    return True
+                elif chunk:
+                    logger.warning(
+                        "validate_listing[%s]: GET %s → reachable but no Maps indicators "
+                        "in first 8KB — likely search redirect, CAPTCHA, or error page",
+                        url,
+                        resp.status_code,
+                    )
+                    return False
+                else:
+                    # Empty body — still reachable (some redirects).
+                    logger.debug(
+                        "validate_listing[%s]: GET %s → reachable (empty body)",
+                        url,
+                        resp.status_code,
+                    )
+                    return True
+            except StopIteration:
+                # No body at all — still reachable.
+                logger.debug(
+                    "validate_listing[%s]: GET %s → reachable (no body)",
+                    url,
+                    resp.status_code,
+                )
+                return True
     except requests.RequestException as e:
         logger.warning(
             "validate_listing[%s]: not reachable — %s",

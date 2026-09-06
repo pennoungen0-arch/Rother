@@ -813,7 +813,20 @@ def _resolve_url(comp: dict) -> str:
 
 
 def _first_probe_url(listings: dict) -> str | None:
-    """Return the first competitor URL (used by the stale-NID probe)."""
+    """Return the best URL for the stale-NID probe.
+
+    Prefers the user's own business URL (self entry) because it is most
+    likely to have a valid place_id. Falls back to the first competitor URL
+    if no self entry exists.
+    """
+    # P1-F3: prefer the self entry (user's own business) for the probe.
+    for branch in listings.get("branches", []):
+        for comp in branch.get("competitors", []):
+            if comp.get("self"):
+                url = _resolve_url(comp)
+                if url:
+                    return url
+    # Fallback: first competitor with a resolvable URL.
     for branch in listings.get("branches", []):
         for comp in branch.get("competitors", []):
             url = _resolve_url(comp)
@@ -1318,25 +1331,40 @@ def _process_one_listing(
         # Step 4 — persist.
         failed_stage = "save"
         t0 = time.time()
-        if delta:
-            _append_new_reviews(comp_id, delta, run_id=run_id)
-            summary["new_reviews"] += len(delta)
-            _structured_log(run_id, "delta", competitor=comp_id, new_reviews=len(delta))
-        if backfill:
-            summary["backfill_discovered"] = (
-                summary.get("backfill_discovered", 0) + len(backfill)
-            )
-            logger.info(
-                "BACKFILL[%s]: %d never-seen old review(s) merged silently",
-                comp_id, len(backfill),
-            )
 
-        # Merge the current render into the ever-seen union AFTER
-        # classification, then persist.
-        seen = merge_seen(seen, parsed_dicts)
-        save_seen(comp_id, seen)
+        # P2-F3: When the first harvest produces 0 reviews (REDUCED variant,
+        # broken selector, panel collapse), skip saving an empty snapshot and
+        # empty seen-store. This preserves the first-harvest state so the
+        # next run is still treated as baseline (no phantom "new" alerts).
+        if first_run and len(parsed_dicts) == 0:
+            logger.warning(
+                "FIRST_HARVEST_SKIP[%s]: 0 reviews on first harvest — "
+                "not saving snapshot/seen-store to preserve baseline state "
+                "for next run",
+                comp_id,
+            )
+            _structured_log(run_id, "first_harvest_skip",
+                            competitor=comp_id, reason="0_reviews")
+        else:
+            if delta:
+                _append_new_reviews(comp_id, delta, run_id=run_id)
+                summary["new_reviews"] += len(delta)
+                _structured_log(run_id, "delta", competitor=comp_id, new_reviews=len(delta))
+            if backfill:
+                summary["backfill_discovered"] = (
+                    summary.get("backfill_discovered", 0) + len(backfill)
+                )
+                logger.info(
+                    "BACKFILL[%s]: %d never-seen old review(s) merged silently",
+                    comp_id, len(backfill),
+                )
 
-        save_snapshot(comp_id, parsed_dicts, metadata=instrument.business_metadata)
+            # Merge the current render into the ever-seen union AFTER
+            # classification, then persist.
+            seen = merge_seen(seen, parsed_dicts)
+            save_seen(comp_id, seen)
+
+            save_snapshot(comp_id, parsed_dicts, metadata=instrument.business_metadata)
         stages["save_s"] = round(time.time() - t0, 2)
         failed_stage = None
 
@@ -1354,7 +1382,7 @@ def _process_one_listing(
         elif first_run:
             logger.info("  ↳ First harvest — all %d reviews seeded as baseline (no alerts)", len(parsed_dicts))
 
-        _structured_log(rid, "listing_done", competitor=comp_id,
+        _structured_log(run_id, "listing_done", competitor=comp_id,
                         reviews=len(parsed_dicts), delta=len(delta), **stages)
 
     except Exception as e:

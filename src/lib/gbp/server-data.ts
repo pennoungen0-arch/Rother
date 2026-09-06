@@ -161,7 +161,7 @@ async function readLatestSnapshot(
   const latestPtr = path.join(compDir, "latest.json");
   const latestFilename = await readJsonFile<string | null>(latestPtr, null);
   if (latestFilename) {
-    const snapshotPath = path.join(compDir, latestFilename);
+    const snapshotPath = path.join(/*turbopackIgnore: true*/ compDir, latestFilename);
     return cleanReviewNames(await readJsonFile<Review[]>(snapshotPath, []));
   }
   // Fallback: legacy flat file (pre-migration)
@@ -253,6 +253,8 @@ export interface HarvestInfo {
   harvest_status?: string;
   harvest_detail?: string;
   google_review_count?: string;
+  /** P1-F2: whether the Reviews panel was sorted by newest before scrolling. */
+  sort_applied?: boolean;
 }
 
 /**

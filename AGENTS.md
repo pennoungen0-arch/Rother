@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-08-29T14:54:13+07:00 (v0.4.0 + post-release bug fixes continued).**
+**Last updated: 2026-09-06T12:00:00+07:00 (v0.4.1 + Phase 1-3 complete).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -19,7 +19,9 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `SOLIDIFICATION_PLAN_2026-08-27.md` (✅ Phase 1-4 + Phase 7-8 bug fixes complete),
 `TAURI_SCRAPING_ANALYSIS_2026-09-05.md` (Tauri scraping system audit + copy-logs + enhanced logging),
 `GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md` (GMB Everywhere feature analysis → Rother comparison table + startup banner),
-`GMB_INSPIRED_IMPROVEMENT_PLAN.md` (✅ all 5 phases complete).
+`GMB_INSPIRED_IMPROVEMENT_PLAN.md` (✅ all 5 phases complete),
+`CORE_SYSTEMS_AUDIT_2026-09-05.md` (full pipeline audit: 3 RED + 7 YELLOW + 6 GREEN failure modes),
+`CORE_SYSTEMS_FIX_PLAN.md` (✅ Phase 1-3 complete: RED fixes → YELLOW fixes → UI/UX fluidity).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.

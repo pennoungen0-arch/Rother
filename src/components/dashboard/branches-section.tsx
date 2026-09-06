@@ -123,6 +123,17 @@ function CompetitorRow({
                 Your business
               </Badge>
             )}
+            {/* P1-F1: unscrapeable self entry — no valid place_id */}
+            {comp.self && comp.unscrapeable && (
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 border-red-500/50 bg-red-500/15 px-1.5 py-0 text-[10px] font-semibold text-red-700 dark:text-red-300"
+                title="This business has no valid Google place_id — add a Google Maps link in Config to enable monitoring"
+              >
+                <AlertTriangle className="size-2.5" aria-hidden="true" />
+                Not monitored — no place_id
+              </Badge>
+            )}
             {/* Harvest honesty (HARVEST_FIX_PLAN Phase 3): say when the
                 capture window is a partial slice of Google's true total. */}
             {comp.harvest_status === "reduced" && comp.google_review_count && (
@@ -133,6 +144,25 @@ function CompetitorRow({
               >
                 <AlertTriangle className="size-2.5" aria-hidden="true" />
                 Partial window
+              </Badge>
+            )}
+            {/* P1-F2: sort status indicator */}
+            {comp.sort_applied === true && (
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 border-emerald-500/50 bg-emerald-500/15 px-1.5 py-0 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300"
+                title="Reviews were sorted by newest before scraping — best monitoring accuracy"
+              >
+                Sorted newest
+              </Badge>
+            )}
+            {comp.sort_applied === false && comp.total_reviews > 0 && (
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 border-amber-500/50 bg-amber-500/15 px-1.5 py-0 text-[10px] font-semibold text-amber-700 dark:text-amber-300"
+                title="Reviews were in default (most relevant) order — newest reviews may be outside the captured window"
+              >
+                Default order
               </Badge>
             )}
             {comp.verified === false && (
@@ -179,8 +209,8 @@ function CompetitorRow({
             variant="ghost"
             size="icon"
             onClick={handleRefresh}
-            disabled={refreshing}
-            aria-label={`Refresh ${comp.name}`}
+            disabled={refreshing || !!comp.unscrapeable}
+            aria-label={comp.unscrapeable ? "Cannot refresh — no place_id" : `Refresh ${comp.name}`}
             className="h-7 w-7 text-muted-foreground hover:text-primary"
           >
             {refreshing ? (
@@ -191,6 +221,39 @@ function CompetitorRow({
           </Button>
         </div>
       </div>
+
+      {/* P3-U4: Harvest completeness bar */}
+      {comp.harvest_status && comp.google_review_count && comp.total_reviews > 0 && (() => {
+        const googleCount = parseInt(comp.google_review_count.replace(/[.,]/g, ""), 10);
+        if (isNaN(googleCount) || googleCount <= 0) return null;
+        const pct = Math.min(100, Math.round((comp.total_reviews / googleCount) * 100));
+        const isFull = comp.harvest_status === "full";
+        const isReduced = comp.harvest_status === "reduced";
+        return (
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-muted-foreground">
+                {isFull ? "Full harvest" : isReduced ? "Newest window" : "Harvest"}
+              </span>
+              <span className="tabular-nums text-muted-foreground">
+                {comp.total_reviews.toLocaleString()}/{googleCount.toLocaleString()} ({pct}%)
+              </span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isFull
+                    ? "bg-emerald-500"
+                    : isReduced
+                      ? "bg-sky-500"
+                      : "bg-muted-foreground/30"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
         <div className="inline-flex items-center gap-1.5">
@@ -234,10 +297,15 @@ function CompetitorRow({
         </p>
       )}
 
-      {!hasReviews && (
+      {!hasReviews && !comp.unscrapeable && (
         <p className="mt-2 text-[11px] italic text-muted-foreground">
           No snapshot yet — this competitor has no fixture in fixtures mode and
           hasn&apos;t been scraped live.
+        </p>
+      )}
+      {comp.unscrapeable && (
+        <p className="mt-2 text-[11px] text-red-600 dark:text-red-400">
+          No valid Google place_id — add a Google Maps link in Config to enable monitoring.
         </p>
       )}
     </div>
@@ -360,6 +428,23 @@ function CompetitorReviewList({
               >
                 <AlertTriangle className="size-3" aria-hidden="true" />
                 Harvested {comp.total_reviews} of ~{comp.google_review_count} on Google (newest window)
+              </span>
+            )}
+            {/* P1-F2: sort status in sheet view */}
+            {comp.sort_applied === true && (
+              <span
+                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
+                title="Reviews were sorted by newest before scraping — best monitoring accuracy"
+              >
+                Sorted newest
+              </span>
+            )}
+            {comp.sort_applied === false && comp.total_reviews > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                title="Reviews were in default order — newest reviews may be outside the captured window"
+              >
+                Default order
               </span>
             )}
           </SheetDescription>

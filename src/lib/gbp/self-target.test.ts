@@ -48,7 +48,7 @@ describe("withSelfEntry", () => {
     expect(out[0].competitors[0].self).toBe(true);
   });
 
-  it("injects nothing when the business has no resolvable place id", () => {
+  it("creates an unscrapeable entry when the business has no resolvable place id", () => {
     const storedBranch = { branch_id: "b", branch_name: "B", competitors: [] };
     const active = makeActive({
       place_id: undefined,
@@ -57,9 +57,15 @@ describe("withSelfEntry", () => {
     });
     const out = withSelfEntry(active);
     expect(out).toHaveLength(1);
-    expect(out[0].competitors).toHaveLength(0);
-    // honesty: never fabricate a target — original branch returned untouched
-    expect(out[0]).toEqual(storedBranch);
+    // P1-F1: unscrapeable entry is prepended to the first branch
+    expect(out[0].competitors).toHaveLength(1);
+    const self = out[0].competitors[0];
+    expect(self.competitor_id).toBe("crate-cafe");
+    expect(self.self).toBe(true);
+    expect(self.unscrapeable).toBe(true);
+    expect(self.place_id).toBeNull();
+    expect(self.gmaps_url).toBe("");
+    expect(self.verified).toBe(false);
   });
 
   it("prepends the self entry to the first branch", () => {
@@ -161,6 +167,20 @@ describe("withSelfEntry", () => {
   it("falls back to place_id when gmaps_place_id is absent", () => {
     const active = makeActive({ gmaps_place_id: null });
     const out = withSelfEntry(active);
+    expect(out[0].competitors[0].self).toBe(true);
+  });
+
+  it("creates unscrapeable entry with synthetic branch when no branches and no place_id", () => {
+    const active = makeActive({
+      place_id: undefined,
+      gmaps_place_id: null,
+      branches: [],
+    });
+    const out = withSelfEntry(active);
+    expect(out).toHaveLength(1);
+    expect(out[0].branch_id).toBe("crate-cafe");
+    expect(out[0].competitors).toHaveLength(1);
+    expect(out[0].competitors[0].unscrapeable).toBe(true);
     expect(out[0].competitors[0].self).toBe(true);
   });
 });

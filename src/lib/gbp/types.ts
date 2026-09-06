@@ -111,6 +111,10 @@ export interface CompetitorConfig {
    *  geographic-statistics consumers (competitive-health, geo-grid) must
    *  filter them out to keep distance/density math honest. */
   self?: boolean;
+  /** P1-F1: true when the self entry could not be created because no valid
+   *  Google place_id exists. The dashboard shows a "Not monitored" badge.
+   *  Only set on synthetic self entries — never on user-added competitors. */
+  unscrapeable?: boolean;
 }
 
 /**
@@ -272,10 +276,15 @@ export interface CompetitorStats {
     *  business itself (synthesized by `withSelfEntry`). UI shows a
     *  "Your business" badge. */
    self?: boolean;
+   /** P1-F1: true when the self entry could not be scraped because no valid
+    *  Google place_id exists. UI shows a "Not monitored" badge. */
+   unscrapeable?: boolean;
    /** Harvest honesty (HARVEST_FIX_PLAN Phase 3): full | reduced | unknown. */
    harvest_status?: string;
    /** Google's own aggregate count, e.g. "5.281" — absent when unknown. */
    google_review_count?: string;
+   /** P1-F2: whether the Reviews panel was sorted by newest before scrolling. */
+   sort_applied?: boolean;
  }
 
 /** Health of the underlying data layer for the current request (D4 / TD-H06). */
@@ -328,9 +337,13 @@ export interface OverviewResponse {
     verified?: boolean;
     /** v0.3.2 self-monitoring: row belongs to the active business itself. */
     self?: boolean;
+    /** P1-F1: true when the self entry could not be scraped (no place_id). */
+    unscrapeable?: boolean;
     /** Harvest honesty (HARVEST_FIX_PLAN Phase 3). */
     harvest_status?: string;
     google_review_count?: string;
+    /** P1-F2: whether the Reviews panel was sorted by newest. */
+    sort_applied?: boolean;
   }[];
   /** S6 provenance (Phase D): where the monitored config came from. */
   configSource?: "tenant" | "seed-demo";

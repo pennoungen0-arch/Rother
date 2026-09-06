@@ -860,8 +860,9 @@ def capture_listing_html(
         # ordering so the rendered window reliably starts with the newest
         # reviews. Best-effort — on failure we proceed with Google's default
         # ordering exactly as before (Rule 7).
+        sort_applied = False
         if tab_opened:
-            click_newest_sort(page, comp_id, instrument)
+            sort_applied = click_newest_sort(page, comp_id, instrument)
 
         if instrument:
             instrument.start_phase("scroll")
@@ -933,6 +934,10 @@ def capture_listing_html(
         if instrument:
             instrument.start_phase("business_metadata")
         _capture_business_metadata(page, instrument, seed=business_meta_seed)
+        # P1-F2: Write sort status into business_metadata so the dashboard
+        # can show whether reviews are sorted by newest.
+        if instrument and instrument.business_metadata is not None:
+            instrument.business_metadata["sort_applied"] = sort_applied
         if instrument:
             instrument.end_phase()
 

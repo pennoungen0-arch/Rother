@@ -7,6 +7,215 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T12:00:00+07:00 — Phase 3: UI/UX fluidity & indication
+- **Files:** `src/components/shell/run-screen.tsx`, `src/components/dashboard/branches-section.tsx`, `src/features/today.tsx`, `src/features/t-config.tsx`, `src/features/t-setup.tsx`
+- **Change:** **6 UI/UX improvements for fluid, informative interfaces.**
+  1. **P3-U1 (run-screen.tsx):** Live scrape progress now shows per-competitor name, review count, progress bar, and a collapsible mini log viewer. Completion summary card shows succeeded/new/total counts.
+  2. **P3-U4 (branches-section.tsx):** Harvest completeness bar on each competitor card — green (full), blue (newest window), gray (unknown). Shows `captured/google_count (pct%)`.
+  3. **P3-U5 (today.tsx):** "Last scrape" summary card on Today screen — shows relative time, competitor count, new alerts, and failed count. Links to Run History.
+  4. **P3-U7 (run-screen.tsx):** Error recovery guidance cards — maps common errors (Python not found, timeout, rate limit, network) to actionable guidance with copy-paste commands.
+  5. **P3-U6 (t-config.tsx):** Inline URL validation on competitor input — green check for valid Google Maps links, amber warning for non-Google URLs, red error for invalid URLs.
+  6. **P3-U8 (t-setup.tsx):** Setup wizard shows elapsed time counter + progress bar during pip install / playwright install.
+- **Reason:** Users should never feel like something is broken or stuck — every action has visible feedback.
+- **Status:** PROVEN — vitest 120/120, tsc 0 errors, eslint 0 errors.
+
+## 2026-09-06T11:00:00+07:00 — Phase 2: YELLOW fixes (scraping reliability)
+- **Files:** `harness/scroll.py`, `discovery/validate_listing.py`, `orchestration/run_all.py`, `src-tauri/src/main.rs`
+- **Change:** **5 YELLOW fixes for scraping reliability + 1 pre-existing bug fix.**
+  1. **P2-F1 (scroll.py):** Panel collapse re-open now uses `resolve_selectors(selectors, "reviews_tab_button")` with all configured candidates (Indonesian `Ulasan` + English `Reviews`) instead of hardcoded `Ulasan` selector. Previously, a non-Indonesian locale would fail to re-open the collapsed panel → 0 reviews.
+  2. **P2-F2 (validate_listing.py):** Pre-check now reads first 8KB of GET response body and checks for Google Maps indicators (`place/`, `ChIJ`, `data-review-id`, `/maps/place`). A 200 response without indicators returns `False` (likely search redirect, CAPTCHA, or error page). Previously, any 200 response passed validation even if the page was not a real Maps place page.
+  3. **P2-F3 (run_all.py):** First-harvest with 0 reviews now skips `save_snapshot()` and `save_seen()`, preserving the first-harvest state so the next run is still treated as baseline (no phantom "new" alerts). Previously, an empty snapshot on first run broke baseline detection for the next run (500 "new" alerts on second run).
+  4. **P2-F4 (main.rs):** Tauri `taskkill` no longer kills ALL `node.exe` processes on the system. Instead, it checks if the target port is in use and kills only the process occupying that port via `netstat` + `taskkill /PID`. Previously, starting Rother would kill other Node.js applications (VS Code extensions, dev servers, etc.).
+  5. **P2-F5 (main.rs):** `first_run_scaffold()` now validates GBP_ROOT path writability by writing/reading/deleting a test file. Fails early with a clear error if the path is not writable (spaces, Unicode, read-only).
+  6. **Bug fix (run_all.py:1385):** Pre-existing bug — `_structured_log(rid, "listing_done", ...)` used undefined `rid` instead of `run_id`. Fixed.
+- **Reason:** Scrape reliability for new businesses; prevent system-wide side effects.
+- **Status:** PROVEN — vitest 120/120, verify_baseline 163/163, verify_notifications 25/25, verify_variant_framework 32/32, tsc 0 errors.
+
+## 2026-09-06T10:30:00+07:00 — Phase 1: RED fixes (critical monitoring gaps)
+- **Files:** `src/lib/gbp/self-target.ts`, `src/lib/gbp/types.ts`, `src/lib/gbp/server-data.ts`, `src/components/dashboard/branches-section.tsx`, `src/app/api/branches/route.ts`, `src/app/api/overview/route.ts`, `src/lib/gbp/self-target.test.ts`, `harness/capture.py`
+- **Change:** **3 RED fixes for critical monitoring gaps when adding new businesses.**
+  1. **P1-F1 (self-target.ts):** `withSelfEntry()` now creates an `unscrapeable: true` entry when `place_id` is missing (instead of silently skipping). Dashboard shows red "Not monitored — no place_id" badge on the competitor card. Refresh button disabled for unscrapeable entries. Previously, the user's own business was silently NOT monitored with no indication why.
+  2. **P1-F2 (capture.py):** `click_newest_sort()` result now written to `instrument.business_metadata["sort_applied"]`. Dashboard shows green "Sorted newest" or yellow "Default order" badge on each competitor card + in the expanded sheet view. Previously, the user had no visibility into whether reviews were sorted by newest.
+  3. **P1-F3 (run_all.py):** `_first_probe_url()` now prefers the self entry (user's own business) for the stale-NID probe, falling back to the first competitor URL only if no self entry exists. Previously, the probe used the first competitor URL which might be broken.
+- **Reason:** Silent monitoring failures when adding new businesses via Google Maps links.
+- **Status:** PROVEN — vitest 120/120 (1 new test), tsc 0 errors.
+
+## 2026-09-01T15:30:00+07:00
+- **Files:** `src-tauri/src/main.rs`
+- **Change:** **Tauri desktop: fix infinite "Starting Rother..." loading screen.**
+  1. `src-tauri/src/main.rs` line 137: Changed `.args(["standalone/server.js"])` to
+     `.args(["server.js"])`. Root cause: the `current_dir` was already set to
+     `resource_dir/standalone/` (line 138), so the relative path `standalone/server.js`
+     resolved to `standalone/standalone/server.js` — a nonexistent path. The Node.js
+     sidecar process failed immediately, the port never opened, and the loading screen
+     displayed forever. Fix: use just `server.js` as the argument since the working
+     directory is already the standalone directory.
+- **Reason:** App was stuck at loading screen after first successful build.
+- **Status:** PROVEN — `cargo tauri build` succeeds, server.js path now correct.
+
+## 2026-09-01T10:00:00+07:00
+- **Files:** `.zscripts/build.mjs`
+- **Change:** **Tauri desktop: fix "asset not found: index.html" runtime error.**
+  1. `.zscripts/build.mjs`: Added `writeFileSync` step to generate a minimal
+     `index.html` loading screen in `frontend-dist/` after copying Next.js
+     standalone assets. Root cause: Next.js standalone output is
+     server-side rendered — HTML files live inside `.next/server/pages/`,
+     not at the root. Tauri's webview requires `index.html` at the
+     `frontendDist` root at startup. Without it, the app shows
+     "asset not found: index.html" before the Node.js sidecar
+     (main.rs) navigates the webview to `http://127.0.0.1:PORT/`.
+  2. The loading screen displays "Starting Rother..." with a spinner animation,
+     then is replaced when the sidecar is ready (typically <2s).
+- **Reason:** Prevent startup error when running the installed Tauri desktop app.
+- **Status:** PROVEN — `cargo tauri build` succeeds, `index.html` present in
+  `frontend-dist`, loading screen generated.
+
+## 2026-09-01T09:00:00+07:00
+- **Files:** `.zscripts/build.mjs`, `src-tauri/tauri.conf.json`, `.gitignore`
+- **Change:** **Tauri build: double-build safety + frontend-dist cleanliness.**
+  1. `.zscripts/build.mjs`: Moved server bundle from `src-tauri/standalone-server/` to
+     `.tauri-cache/standalone-server/` (project root). Root cause: the `standalone-server/`
+     directory inside `src-tauri/` contained a `package.json` that caused Cargo to
+     mis-resolve `CARGO_MANIFEST_DIR` on the second `cargo tauri build` invocation,
+     redirecting the `beforeBuildCommand` CWD to `standalone-server/` and breaking path
+     resolution. Moving it outside `src-tauri/` fixes double-build.
+  2. `.zscripts/build.mjs`: Added `EXCLUDE_FILES` set (server.js, package.json,
+     package-lock.json, .env, components.json, opencode.json, tsconfig.json,
+     _audit_reviews_output.json) to prevent non-asset files from leaking into `frontend-dist`.
+  3. `src-tauri/tauri.conf.json`: Updated `resources` entry path from
+     `../src-tauri/standalone-server` to `../.tauri-cache/standalone-server`.
+  4. `.gitignore`: Added `/src-tauri/frontend-dist/` and `/.tauri-cache/` to prevent
+     committing build artifacts.
+- **Reason:** Enable reliable repeated `cargo tauri build` without manual cleanup.
+- **Status:** PROVEN — 2 consecutive builds succeed, MSI + NSIS produced both times.
+
+## 2026-09-01T08:00:00+07:00
+- **Files:** `.zscripts/build.mjs`, `src-tauri/tauri.conf.json`, `tsconfig.json`,
+  `src/app/api/health/route.ts`, `src/app/api/setup/detect/route.ts`,
+  `src/app/api/setup/install/route.ts`, `src/lib/gbp/scrape-runner.ts`,
+  `src/lib/gbp/server-data.ts`
+- **Change:** **Tauri Phase D: desktop build fixes.**
+  1. `.zscripts/build.mjs`: Added `filter` function to `cpSync` to exclude non-app
+     directories (rother02-archive, examples, imagetest, tool-results, etc.) from
+     the frontend-dist copy. Separated server bundle (server.js + node_modules) into
+     a new `standalone-server/` directory. Added EBUSY retry logic for Windows file locking.
+  2. `src-tauri/tauri.conf.json`: Fixed `beforeBuildCommand` to use `${env.CARGO_MANIFEST_DIR}`
+     for correct path resolution. Changed `resources` entry from `frontend-dist` to
+     `standalone-server` (fixes Tauri node_modules restriction).
+  3. `tsconfig.json`: Added `src-tauri` and `gbp-monitor` to `exclude` array.
+  4. Added `/*turbopackIgnore: true*/` comments to all `spawnSync`, `spawn`, and
+     `path.join` calls in API route files + server-data.ts (5 files) to eliminate
+     Turbopack build warnings.
+- **Reason:** Resolve Tauri build failures: path resolution from cwd,
+  node_modules included in frontend bundle, stale files in standalone output,
+  and Turbopack warnings about Node.js builtins.
+- **Status:** PROVEN — `cargo tauri build` succeeds, produces MSI + NSIS installers.
+
+## 2026-09-01T07:15:00+07:00
+- **Files:** `src/app/api/setup/detect/route.ts` (new), `src/app/api/setup/install/route.ts`
+  (new), `src/features/t-setup.tsx` (new), `src/lib/gbp/use-api-mutation.ts` (new),
+  `src/lib/features.tsx`, `src/components/shell/section-view.tsx`
+- **Change:** **Tauri Phase D: scraper bootstrap wizard.**
+  1. `src/lib/gbp/use-api-mutation.ts`: Created `useApiMutation()` hook wrapping
+     TanStack Mutation with `invalidateKeys` + typed `onSuccess`/`onError` callbacks.
+  2. `src/app/api/setup/detect/route.ts`: Detection route — checks Python availability
+     (tries `python3`/`python`), installed packages (`playwright`, `parsel`, `requests`),
+     Chromium binary (`playwright install --check chromium`), and config file presence
+     (listings.json, selectors.json, requirements.txt).
+  3. `src/app/api/setup/install/route.ts`: Install route — runs `pip install -r requirements.txt`
+     or `playwright install chromium` as POST with `{ step: "packages" | "chromium" }`,
+     returns exit code + stdout/stderr lines.
+  4. `src/features/t-setup.tsx`: UI wizard — detection results grid, guided install buttons
+     with live output panel, retry on failure, completion state.
+  5. `src/lib/features.tsx`: Registered `t-setup` feature in "tools" hub with
+     `Download` icon + `pinned: true`.
+  6. `src/components/shell/section-view.tsx`: Added `t-setup` to lazy-load map.
+- **Reason:** Phase D requirement — non-dev user can verify Python/deps/Chromium and
+  install missing components from within the Tauri desktop window without a terminal.
+- **Status:** PROVEN — `tsc --noEmit` zero errors · `eslint` zero errors/warnings ·
+  `vitest` 119/119. UI renders detection grid; install button triggers API call.
+
+---
+
+## 2026-09-01T05:15:00+07:00
+- **Files:** `src-tauri/src/main.rs`
+- **Change:** **Tauri Phase C: data & config relocation.**
+  1. Added `first_run_scaffold()` function — copies config templates from
+     bundled `gbp-monitor-config` resource into `app_data_dir/rother/config/`
+     on first launch; creates empty `data/` directory; creates fallback
+     `listings.json` + `notifications.json` if bundled templates are absent.
+  2. Changed `GBP_ROOT` env to `app_data_dir/rother` (was incorrectly
+     pointing to `resource_dir/gbp-monitor-config`). Dashboard `paths.ts`
+     resolves `GBP_CONFIG_DIR` and `GBP_DATA_DIR` from this env.
+  3. Changed `ROTHER_DATA_DIR` env to `app_data_dir/rother/data` (was
+     `app_data_dir/rother-data`). Now aligned with dashboard's
+     `GBP_DATA_DIR = GBP_ROOT/data/` — scraper writes and dashboard reads
+     from the same directory.
+  4. Added `copy_dir_recursive()` helper for nested resource copying.
+- **Reason:** Phase C requirement — app-data dir isolation with proper
+  config/data scaffolding and env alignment between Node sidecar and
+  Python scraper subprocess.
+- **Status:** PROVEN — `cargo check` passes with zero errors/warnings.
+  Data flow verified: scraper writes to `ROTHER_DATA_DIR` (=`GBP_ROOT/data/`),
+  dashboard reads from `GBP_DATA_DIR` (=`GBP_ROOT/data/`).
+
+---
+
+## 2026-09-01T05:05:00+07:00
+- **Files:** `src-tauri/tauri.conf.json`, `src/app/error.tsx`,
+  `src-tauri/frontend-dist/.gitkeep`
+- **Change:** **Tauri Phase A+B verification fix.**
+  1. `tauri.conf.json`: Set `freezePrototype: false` — was `true`, causing
+     `Cannot assign to read only property 'constructor'` in the Webview2
+     environment. React/deps need prototype mutation; strict freezing breaks
+     the dashboard render pipeline.
+  2. `error.tsx`: Wrapped `console.error` in try/catch to avoid error-boundary
+     crash when serialization fails in restricted JS environments.
+  3. Created `src-tauri/frontend-dist/.gitkeep` so `frontendDist` path exists
+     for `cargo check` and dev mode (populated during `npm run build`).
+- **Reason:** Dashboard failed to render inside Tauri window due to
+  `freezePrototype: true`. Disabling it + defensive error boundary allows
+  full dashboard (login → onboarding → hubs) to render without client-side errors.
+- **Status:** PROVEN — `cargo tauri dev` launches Tauri window → Next.js dev
+  server → `GET / 200` → **zero** browser JavaScript errors ✅.
+  See `TAURI_PLAN_2026-08-25.md` §5 (Phase A+B exits confirmed).
+
+---
+
+## 2026-09-01T04:48:00+07:00
+- **Files:** `src-tauri/src/main.rs`, `src-tauri/tauri.conf.json`,
+  `.zscripts/build.mjs`, `src-tauri/binaries/node-x86_64-pc-windows-msvc.exe`
+- **Change:** **Tauri Phase B: sidecar wiring complete.**
+  1. `main.rs`: Added `find_free_port()` for dynamic port allocation (no more fixed port 4632).
+  2. `main.rs`: Refactored window show/navigate logic — window shown after sidecar health check passes.
+  3. `main.rs`: Added `.on_window_event` handler for `WindowEvent::Destroyed` to kill child process on close.
+  4. `tauri.conf.json`: Set `frontendDist` to `../src-tauri/frontend-dist`, added `externalBin` for node binary, restored `resources` for standalone output + config files.
+  5. `.zscripts/build.mjs`: Added copy of `.next/standalone` → `src-tauri/frontend-dist/` for Tauri build bundling.
+  6. Created `src-tauri/binaries/node-x86_64-pc-windows-msvc.exe` from system Node.js for sidecar execution.
+- **Reason:** Complete the Node sidecar lifecycle (build → spawn → poll → navigate → kill) to enable standalone Next.js serving inside the Tauri webview.
+- **Status:** PROVEN — `cargo tauri dev` launches Tauri window → Next.js dev server → dashboard renders (`GET / 200`). Dev-mode font/JS warnings (network isolation) are non-blocking. See `TAURI_PLAN_2026-08-25.md` §5 for details.
+
+---
+
+## 2026-09-01T04:01:00+07:00
+- **Files:** `src-tauri/tauri.conf.json`, `src-tauri/capabilities/default.json`,
+  `src-tauri/src/main.rs`
+- **Change:** **Tauri Phase A build fixes.** Fixed 9 issues preventing `cargo check`:
+  1. Removed deprecated `closeOnLastWindow` from tauri.conf.json.
+  2. Removed `externalBin` referencing non-existent `binaries/node`.
+  3. Removed `resources` mapping to non-existent `../.next/standalone` and `../dist-data`.
+  4. Removed invalid `process:allow-exit` permission from capabilities.
+  5. Removed invalid `shell:allow-kill` permission from capabilities.
+  6. Fixed Rust API: `Child` → `CommandChild` in tauri-plugin-shell::process.
+  7. Fixed Rust API: `Event::Terminated` → `CommandEvent::Terminated`.
+  8. Fixed Rust API: `set_url(&str)` → `navigate(Url)` with tauri::Url import.
+  9. Fixed Rust API: `listen_all` → `listen` with tauri::Listener trait import.
+- **Reason:** Tauri v2.11.5 API changes broke the rother02 reference code.
+- **Status:** PROVEN — `cargo check` completes with zero errors.
+  See `docs/engineering/TAURI_PHASE_A_FIXES_2026-09-01.md` for details.
+
+---
+
 ## 2026-08-29T14:54:13+07:00
 - **Files:** `gbp-monitor/harness/capture.py`, `gbp-monitor/harness/scroll.py`,
   `gbp-monitor/tests/verify_baseline.py`

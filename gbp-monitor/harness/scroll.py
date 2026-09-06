@@ -381,17 +381,34 @@ def scroll_review_container(
                 page, selectors, tracker=tracker, comp_id=comp_id, instrument=instrument
             )
             try:
-                tab_btn = page.query_selector("button[role='tab'][aria-label^='Ulasan']")
-                if tab_btn:
-                    tab_btn.click(timeout=4_000)
-                    page.wait_for_timeout(2_000)
-                    page.wait_for_function(
-                        """() => {
-                            return document.querySelectorAll('[data-review-id]').length > 0;
-                        }""",
-                        timeout=15_000,
+                # P2-F1: Use multi-candidate selector from selectors.json
+                # instead of hardcoded 'Ulasan' (Indonesian locale only).
+                tab_candidates = resolve_selectors(selectors, "reviews_tab_button")
+                tab_opened = False
+                for tab_sel in tab_candidates:
+                    try:
+                        tab_btn = page.query_selector(tab_sel)
+                        if tab_btn:
+                            tab_btn.click(timeout=4_000)
+                            page.wait_for_timeout(2_000)
+                            page.wait_for_function(
+                                """() => {
+                                    return document.querySelectorAll('[data-review-id]').length > 0;
+                                }""",
+                                timeout=15_000,
+                            )
+                            page.wait_for_timeout(1_000)
+                            tab_opened = True
+                            logger.info("SCROLL[%s] panel re-opened via %r", comp_id, tab_sel)
+                            break
+                    except Exception:
+                        continue
+                if not tab_opened:
+                    logger.warning(
+                        "SCROLL[%s] could not re-open collapsed panel — "
+                        "all %d tab selector(s) failed",
+                        comp_id, len(tab_candidates),
                     )
-                    page.wait_for_timeout(1_000)
             except Exception:
                 page.wait_for_timeout(2_000)
     except Exception:

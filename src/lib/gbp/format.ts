@@ -41,10 +41,14 @@ export function formatTimestamp(iso: string | null | undefined): {
  *
  * Supported formats:
  *   Indonesian: "X hari lalu", "X minggu lalu", "X bulan lalu", "X tahun lalu",
- *               "sehari lalu", "seminggu lalu", "sebulan lalu", "setahun lalu"
+ *               "sehari lalu", "seminggu lalu", "sebulan lalu", "setahun lalu",
+ *               "X jam lalu", "sejam lalu", "X menit lalu", "semenit lalu",
+ *               "baru saja"
  *   English:    "X day(s) ago", "X week(s) ago", "X month(s) ago", "X year(s) ago",
  *               "a day ago", "a week ago", "a month ago", "a year ago",
- *               "an hour ago", "X hour(s) ago"
+ *               "an hour ago", "X hour(s) ago", "X minute(s) ago", "a minute ago",
+ *               "just now", "today", "yesterday"
+ *   Prefixes:   "Diedit X tahun lalu", "Edited X years ago" (stripped before matching)
  *
  * Returns an ISO 8601 date string (YYYY-MM-DD) or null if unparseable.
  */
@@ -57,27 +61,47 @@ export function parseRelativeDate(
   const ref = new Date(scrapedAt);
   if (Number.isNaN(ref.getTime())) return null;
 
-  const text = relativeDate.trim().toLowerCase();
+  // Strip "Diedit" / "Edited" prefix (Google Maps uses this for edited reviews).
+  const text = relativeDate
+    .trim()
+    .toLowerCase()
+    .replace(/^\s*(?:diedit|edited)\s+/i, "")
+    .trim();
 
   const patterns: [RegExp, (n: number) => void][] = [
+    // Just now
+    [/^baru\s+saja$/, () => ref.setMinutes(ref.getMinutes() - 1)],
+    [/^just\s+now$/, () => ref.setMinutes(ref.getMinutes() - 1)],
+    [/^today$/, () => {}],
+    [/^yesterday$/, () => ref.setDate(ref.getDate() - 1)],
+    // Indonesian minutes/hours
+    [/(\d+)\s*menit\s+lalu/, (n) => ref.setMinutes(ref.getMinutes() - n)],
+    [/^se?menit\s+lalu$/, () => ref.setMinutes(ref.getMinutes() - 1)],
+    [/(\d+)\s*jam\s+lalu/, (n) => ref.setHours(ref.getHours() - n)],
+    [/^se?jam\s+lalu$/, () => ref.setHours(ref.getHours() - 1)],
+    // Indonesian days/weeks/months/years
     [/(\d+)\s*hari\s+lalu/, (n) => ref.setDate(ref.getDate() - n)],
-    [/sehari\s+lalu/, () => ref.setDate(ref.getDate() - 1)],
+    [/^sehari\s+lalu$/, () => ref.setDate(ref.getDate() - 1)],
     [/(\d+)\s*minggu\s+lalu/, (n) => ref.setDate(ref.getDate() - n * 7)],
-    [/seminggu\s+lalu/, () => ref.setDate(ref.getDate() - 7)],
+    [/^seminggu\s+lalu$/, () => ref.setDate(ref.getDate() - 7)],
     [/(\d+)\s*bulan\s+lalu/, (n) => ref.setMonth(ref.getMonth() - n)],
-    [/sebulan\s+lalu/, () => ref.setMonth(ref.getMonth() - 1)],
+    [/^sebulan\s+lalu$/, () => ref.setMonth(ref.getMonth() - 1)],
     [/(\d+)\s*tahun\s+lalu/, (n) => ref.setFullYear(ref.getFullYear() - n)],
-    [/setahun\s+lalu/, () => ref.setFullYear(ref.getFullYear() - 1)],
-    [/an?\s*hour\s+ago/, () => ref.setHours(ref.getHours() - 1)],
+    [/^setahun\s+lalu$/, () => ref.setFullYear(ref.getFullYear() - 1)],
+    // English minutes/hours
+    [/(\d+)\s*minutes?\s+ago/, (n) => ref.setMinutes(ref.getMinutes() - n)],
+    [/^an?\s*minute\s+ago$/, () => ref.setMinutes(ref.getMinutes() - 1)],
     [/(\d+)\s*hours?\s+ago/, (n) => ref.setHours(ref.getHours() - n)],
-    [/an?\s*day\s+ago/, () => ref.setDate(ref.getDate() - 1)],
+    [/^an?\s*hour\s+ago$/, () => ref.setHours(ref.getHours() - 1)],
+    // English days/weeks/months/years
     [/(\d+)\s*days?\s+ago/, (n) => ref.setDate(ref.getDate() - n)],
-    [/an?\s*week\s+ago/, () => ref.setDate(ref.getDate() - 7)],
+    [/^an?\s*day\s+ago$/, () => ref.setDate(ref.getDate() - 1)],
     [/(\d+)\s*weeks?\s+ago/, (n) => ref.setDate(ref.getDate() - n * 7)],
-    [/an?\s*month\s+ago/, () => ref.setMonth(ref.getMonth() - 1)],
+    [/^an?\s*week\s+ago$/, () => ref.setDate(ref.getDate() - 7)],
     [/(\d+)\s*months?\s+ago/, (n) => ref.setMonth(ref.getMonth() - n)],
-    [/an?\s*year\s+ago/, () => ref.setFullYear(ref.getFullYear() - 1)],
+    [/^an?\s*month\s+ago$/, () => ref.setMonth(ref.getMonth() - 1)],
     [/(\d+)\s*years?\s+ago/, (n) => ref.setFullYear(ref.getFullYear() - n)],
+    [/^an?\s*year\s+ago$/, () => ref.setFullYear(ref.getFullYear() - 1)],
   ];
 
   for (const [re, apply] of patterns) {

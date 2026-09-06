@@ -113,7 +113,10 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
   const [pageSize, setPageSize] = React.useState<(typeof PAGE_SIZE_OPTIONS)[number]>(25);
 
   // ── Sort state (client-side, applied to the current page) ───────────────
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  // Default: sort by "When" column descending (newest reviews first).
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "relative_date", desc: true },
+  ]);
   const [columnVisibility] = React.useState<VisibilityState>({});
 
   // ── Data ────────────────────────────────────────────────────────────────
@@ -297,10 +300,16 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
         // which made the Recent sort jump to ~10-11-month-old reviews.
         // Prefer the parser's approximated review_date (ISO), fall back to
         // a client-side resolve, then to scraped_at.
-        sortingFn: (rowA, rowB) =>
-          reviewDateValue(rowA.original).localeCompare(
-            reviewDateValue(rowB.original),
-          ),
+        // Empty dates sink to the bottom in both directions.
+        sortingFn: (rowA, rowB) => {
+          const a = reviewDateValue(rowA.original);
+          const b = reviewDateValue(rowB.original);
+          // Empty dates always sink to the bottom regardless of sort direction.
+          if (!a && !b) return 0;
+          if (!a) return 1;
+          if (!b) return -1;
+          return a.localeCompare(b);
+        },
       },
       {
         accessorKey: "competitor_name",

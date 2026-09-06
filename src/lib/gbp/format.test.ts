@@ -100,6 +100,60 @@ describe("parseRelativeDate", () => {
     expect(parseRelativeDate("5 HARI LALU", scrapedAt)).toBe("2026-07-18");
     expect(parseRelativeDate("5 Days Ago", scrapedAt)).toBe("2026-07-18");
   });
+
+  it("strips 'Diedit' prefix (Indonesian edited reviews)", () => {
+    expect(parseRelativeDate("Diedit 3 tahun lalu", scrapedAt)).toBe("2023-07-23");
+    expect(parseRelativeDate("diedit setahun lalu", scrapedAt)).toBe("2025-07-23");
+  });
+
+  it("strips 'Edited' prefix (English edited reviews)", () => {
+    expect(parseRelativeDate("Edited 2 months ago", scrapedAt)).toBe("2026-05-23");
+    expect(parseRelativeDate("edited a year ago", scrapedAt)).toBe("2025-07-23");
+  });
+
+  it("parses Indonesian: X jam lalu", () => {
+    expect(parseRelativeDate("3 jam lalu", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses Indonesian: sejam lalu", () => {
+    expect(parseRelativeDate("sejam lalu", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses Indonesian: X menit lalu", () => {
+    expect(parseRelativeDate("15 menit lalu", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses Indonesian: baru saja", () => {
+    expect(parseRelativeDate("baru saja", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: X hours ago", () => {
+    expect(parseRelativeDate("5 hours ago", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: an hour ago", () => {
+    expect(parseRelativeDate("an hour ago", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: X minutes ago", () => {
+    expect(parseRelativeDate("30 minutes ago", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: a minute ago", () => {
+    expect(parseRelativeDate("a minute ago", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: just now", () => {
+    expect(parseRelativeDate("just now", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: today", () => {
+    expect(parseRelativeDate("today", scrapedAt)).toBe("2026-07-23");
+  });
+
+  it("parses English: yesterday", () => {
+    expect(parseRelativeDate("yesterday", scrapedAt)).toBe("2026-07-22");
+  });
 });
 
 describe("cleanReviewerName", () => {

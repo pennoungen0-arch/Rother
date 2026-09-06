@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Rother",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "identifier": "com.rother.desktop",
   "build": {
-    "frontendDist": "../.next/standalone",
+    "frontendDist": "../src-tauri/frontend-dist",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "node node_modules/next/dist/bin/next dev -p 3000",
-    "beforeBuildCommand": "node .zscripts/build.mjs"
+    "beforeBuildCommand": "node ${env.CARGO_MANIFEST_DIR}/../.zscripts/build.mjs"
   },
   "app": {
     "windows": [
@@ -20,7 +20,6 @@
         "minHeight": 600,
         "resizable": true,
         "center": true,
-        "closeOnLastWindow": false,
         "decorations": true,
         "transparent": false,
         "alwaysOnTop": false
@@ -28,7 +27,7 @@
     ],
     "security": {
         "csp": "default-src 'self' customprotocol: asset:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:*; img-src 'self' asset: data: https://www.gstatic.com https://*.tile.openstreetmap.org https://*.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self'",
-        "freezePrototype": true,
+        "freezePrototype": false,
       "devCsp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000 http://127.0.0.1:3000; connect-src 'self' ipc: http://ipc.localhost ws://localhost:3000 wss://localhost:3000 http://localhost:3000 http://127.0.0.1:*; img-src 'self' data: https://www.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000; style-src 'self' 'unsafe-inline' http://localhost:3000"
     }
   },
@@ -36,9 +35,7 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/32x32.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],
@@ -46,8 +43,21 @@
       "binaries/node"
     ],
     "resources": {
-      "../.next/standalone": "standalone",
-      "../dist-data": "rother-data"
+      "../.tauri-cache/standalone-server/server.js": "standalone/server.js",
+      "../.tauri-cache/standalone-server/package.json": "standalone/package.json",
+      "../.tauri-cache/standalone-server/node_modules": "standalone/node_modules",
+      "../.tauri-cache/standalone-server/.next": "standalone/.next",
+      "../.tauri-cache/standalone-server/public": "standalone/public",
+      "../gbp-monitor/config": "gbp-monitor/config",
+      "../gbp-monitor/requirements.txt": "gbp-monitor/requirements.txt",
+      "../gbp-monitor/orchestration": "gbp-monitor/orchestration",
+      "../gbp-monitor/harness": "gbp-monitor/harness",
+      "../gbp-monitor/parser": "gbp-monitor/parser",
+      "../gbp-monitor/storage": "gbp-monitor/storage",
+      "../gbp-monitor/notifications": "gbp-monitor/notifications",
+      "../gbp-monitor/discovery": "gbp-monitor/discovery",
+      "../gbp-monitor/tests": "gbp-monitor/tests",
+      "../gbp-monitor/docs": "gbp-monitor/docs"
     },
     "category": "Business",
     "shortDescription": "Rother business intelligence desktop app",

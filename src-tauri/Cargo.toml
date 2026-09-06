@@ -1,6 +1,6 @@
 [package]
 name = "rother-desktop"
-version = "0.4.1"
+version = "0.4.2"
 description = "Rother desktop app (Tauri v2 shell around the Next.js + Python scraper)"
 authors = ["Rother"]
 edition = "2021"

@@ -237,7 +237,7 @@ fn main() {
             // process occupying it.
             if _IS_WIN_GLOBAL {
                 if port_ready(port) {
-                    log_msg(&log_path, &format!("Port {} already in use — killing occupant", port));
+                    eprintln!("[rother-tauri] Port {} already in use — killing occupant", port);
                     let _ = kill_process_on_port(port);
                     std::thread::sleep(Duration::from_millis(500));
                 }

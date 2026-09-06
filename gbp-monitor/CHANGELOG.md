@@ -7,6 +7,12 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T17:30:00+07:00 — Feature card refresh button visual feedback
+- **Files:** `src/components/dashboard/reviews-over-time-card.tsx`, `competitor-correlation.tsx`, `competitor-rating-dist-comparison.tsx`, `review-lengths-card.tsx`, `review-recency-heatmap.tsx`, `run-comparison-card.tsx`, `review-language-distribution.tsx`, `review-word-cloud.tsx`, `run-history-timeline.tsx`, `top-reviewers.tsx`
+- **Change:** **All feature card refresh buttons now show loading spinner + disabled state.** The round refresh buttons on feature cards (Reviews over Time, Heatmap, Word Cloud, etc.) were working correctly (they re-fetch that specific card's data from the API), but had no visual feedback — users clicked and saw nothing happen. Now all 10 components show a spinning `RefreshCw` icon while loading and are disabled during fetch.
+- **Reason:** Users thought the refresh button was broken because there was no visual feedback after clicking.
+- **Status:** PROVEN — vitest 133/133, tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T17:10:00+07:00 — Descriptive KPI labels + clickable info tooltips
 - **Files:** `src/components/dashboard/kpi-row.tsx`
 - **Change:** **KPI labels expanded + Branches/Competitors info tooltips.**

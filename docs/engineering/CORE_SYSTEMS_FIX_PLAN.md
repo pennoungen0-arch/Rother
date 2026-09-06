@@ -1,7 +1,7 @@
 # Core Systems Fix Plan — Scraping Reliability + UI/UX Fluidity (2026-09-05)
 
-**Status:** Phase 1 ✅ COMPLETE (2026-09-06) — Phase 2 ✅ COMPLETE (2026-09-06) — Phase 3 PENDING
-**Priority order:** Phase 1 (RED fixes) → Phase 2 (YELLOW fixes) → Phase 3 (UI/UX fluidity)
+**Status:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · Persistent scrape indicator ✅ (v0.4.2, 2026-09-06)
+**Priority order:** Phase 1 (RED fixes) → Phase 2 (YELLOW fixes) → Phase 3 (UI/UX fluidity) → Persistent scrape indicator
 **Rule 1 applies:** every change tested before and after.
 
 ---
@@ -201,8 +201,9 @@
 14. **P3-U6** (config URL validation) — 20 min ✅
 15. **P3-U7** (error recovery cards) — 30 min ✅
 16. **P3-U8** (setup wizard progress) — 30 min ✅
+17. **Persistent scrape indicator** (TopBar global status) — 30 min ✅
 
-**All phases complete: ~5.5 hours total**
+**All phases complete: ~6 hours total | v0.4.2 installers built**
 
 ---
 

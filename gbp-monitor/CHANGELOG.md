@@ -7,6 +7,18 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T15:45:00+07:00 — Persistent scraping status indicator
+- **Files:** `src/components/shell/app-shell.tsx`
+- **Change:** **Persistent scraping status indicator in TopBar.** Replaced local `scanning` state with a global `useScrapeStatus()` hook that polls `/api/scrape/status` every 3s and parses JSONLOG lines for per-competitor progress. When a scrape is in progress, the TopBar shows a persistent badge with:
+  - Animated spinner + current competitor name (e.g., "Scraping Crate Cafe")
+  - Progress count (e.g., "2/5")
+  - Click to stop (badge is clickable)
+  - Visible across ALL screens (hubs, sections, today) — not just RunScreen
+  - Replaces the Refresh button while active
+  - The indicator persists when navigating between hubs/features, solving the problem of users not knowing whether the scrape is still running after leaving the RunScreen.
+- **Reason:** Users couldn't tell if scraping was still running after navigating away from the RunScreen. The old TopBar had a local `scanning` state that was invisible to the rest of the UI.
+- **Status:** PROVEN — vitest 120/120, tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T12:00:00+07:00 — Phase 3: UI/UX fluidity & indication
 - **Files:** `src/components/shell/run-screen.tsx`, `src/components/dashboard/branches-section.tsx`, `src/features/today.tsx`, `src/features/t-config.tsx`, `src/features/t-setup.tsx`
 - **Change:** **6 UI/UX improvements for fluid, informative interfaces.**

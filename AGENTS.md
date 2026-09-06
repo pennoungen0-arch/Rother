@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-06T12:00:00+07:00 (v0.4.1 + Phase 1-3 complete).**
+**Last updated: 2026-09-06T15:45:00+07:00 (v0.4.2 + persistent scrape indicator).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and

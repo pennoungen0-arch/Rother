@@ -7,6 +7,15 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-06T16:40:00+07:00 — When column sort fix + parseRelativeDate edge cases
+- **Files:** `src/lib/gbp/format.ts`, `src/lib/gbp/format.test.ts`, `src/components/dashboard/reviews-section.tsx`
+- **Change:** **Fix "When" column sort in All Reviews + expand `parseRelativeDate` coverage.**
+  1. **`parseRelativeDate` (format.ts):** Now handles the `"Diedit"` / `"edited"` prefix that Google Maps uses for edited reviews (strips before matching). Added Indonesian hour/minute patterns: `jam lalu`, `sejam lalu`, `menit lalu`, `semenit lalu`, `baru saja`. Added English patterns: `just now`, `today`, `yesterday`, `X minutes ago`, `a minute ago`, `an hour ago`.
+  2. **"When" column default sort (reviews-section.tsx):** Now defaults to descending (newest reviews first) instead of unsorted. Empty/missing dates always sink to the bottom regardless of sort direction.
+  3. **13 new tests** in `format.test.ts` (56 total): Diedit prefix, jam/menit/baru saja, today/yesterday/just now.
+- **Reason:** Reviews with `"Diedit 3 tahun lalu"` or `"jam lalu"` patterns fell back to `scraped_at` (today's date) instead of the actual review date, causing them to appear as "newest" when they're actually old. The "When" column also defaulted to ascending (oldest first) which was counterintuitive.
+- **Status:** PROVEN — vitest 133/133, tsc 0 errors, both Tauri installers rebuilt (v0.4.2).
+
 ## 2026-09-06T15:45:00+07:00 — Persistent scraping status indicator
 - **Files:** `src/components/shell/app-shell.tsx`
 - **Change:** **Persistent scraping status indicator in TopBar.** Replaced local `scanning` state with a global `useScrapeStatus()` hook that polls `/api/scrape/status` every 3s and parses JSONLOG lines for per-competitor progress. When a scrape is in progress, the TopBar shows a persistent badge with:

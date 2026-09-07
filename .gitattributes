@@ -1,0 +1,9 @@
+# Rother — Git attributes
+
+# Shell scripts should always be executable
+*.sh    text eol=lf
+*.command text eol=lf
+
+# Windows batch files use CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf

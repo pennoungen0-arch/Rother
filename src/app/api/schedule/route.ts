@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { GBP_CONFIG_DIR } from "@/lib/gbp/paths";
 
-const SCHEDULE_PATH = path.join(process.cwd(), "gbp-monitor", "config", "schedule.json");
+const SCHEDULE_PATH = `${GBP_CONFIG_DIR}/schedule.json`;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

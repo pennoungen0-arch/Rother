@@ -33,6 +33,8 @@ Thumbs.db
 /src-tauri/binaries/
 /src-tauri/target/
 /src-tauri/gen/
+/src-tauri/frontend-dist/
+/.tauri-cache/
 *.pem
 
 # debug

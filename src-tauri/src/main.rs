@@ -151,13 +151,23 @@ fn copy_dir_recursive(src: &std::path::Path, dst: &std::path::Path) -> std::io::
 
 /// Kill a process and all its children by PID.
 /// On Windows: uses `taskkill /T /F /PID <pid>` (kills entire process tree).
-/// On POSIX: sends SIGTERM, waits briefly, then SIGKILL.
+/// On macOS: uses `pkill -P <pid>` + `kill <pid>` (BSD kill has no -p flag).
+/// On Linux: uses `kill -TERM -p <pid>` + `kill -KILL -p <pid>` (process group).
 fn killProcessTreeByPid(pid: u32) {
     if pid == 0 { return; }
     if _IS_WIN_GLOBAL {
         // taskkill /T kills the process tree, /F is force-kill
         let cmd = format!("taskkill /T /F /PID {}", pid);
         let _ = exec_command(&cmd);
+    } else if cfg!(target_os = "macos") {
+        // macOS BSD kill doesn't support -p flag; use pkill -P for children
+        let _ = exec_command(&format!("pkill -TERM -P {}", pid));
+        std::thread::sleep(Duration::from_secs(2));
+        let _ = exec_command(&format!("pkill -KILL -P {}", pid));
+        // Then signal the parent process itself
+        let _ = exec_command(&format!("kill -TERM {}", pid));
+        std::thread::sleep(Duration::from_secs(1));
+        let _ = exec_command(&format!("kill -KILL {}", pid));
     } else {
         // POSIX: SIGTERM first for graceful shutdown, then SIGKILL
         let _ = (|| {
@@ -300,7 +310,7 @@ fn main() {
             // Node.js applications (VS Code extensions, dev servers, etc.).
             // Instead, check if the target port is in use and kill only the
             // process occupying it.
-            if _IS_WIN_GLOBAL {
+            if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
                 if port_ready(port) {
                     eprintln!("[rother-tauri] Port {} already in use — killing occupant", port);
                     let _ = kill_process_on_port(port);

@@ -265,6 +265,16 @@ export const FEATURES: FeatureDef[] = [
 
   // ── Tools ────────────────────────────────────────────────────────────────
   {
+    id: "t-setup",
+    label: "Scraper Setup",
+    hub: "tools",
+    description: "Verify Python, install dependencies, and check Chromium",
+    keywords: ["setup", "python", "install", "chromium", "pip", "playwright"],
+    icon: Download,
+    pinned: true,
+    load: () => import("@/features/t-setup"),
+  },
+  {
     id: "t-config",
     label: "Configuration",
     hub: "tools",

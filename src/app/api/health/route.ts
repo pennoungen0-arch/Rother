@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 function findPython(): string | null {
   for (const cmd of ["python3", "python"]) {
     try {
-      const result = spawnSync(cmd, ["--version"], {
+      const result = spawnSync(/*turbopackIgnore: true*/ cmd, ["--version"], {
         encoding: "utf-8",
         timeout: 5_000,
         stdio: ["ignore", "pipe", "pipe"],
@@ -44,7 +44,7 @@ function browserAvailable(): boolean {
   }
   try {
     const result = spawnSync(
-      python,
+      /*turbopackIgnore: true*/ python,
       ["-m", "harness.browser_capability"],
       {
         cwd: GBP_ROOT,

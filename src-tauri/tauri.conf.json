@@ -42,6 +42,10 @@
     "externalBin": [
       "binaries/node"
     ],
+    "macOS": {
+      "entitlements": "entitlements.plist",
+      "minimumSystemVersion": "13.0"
+    },
     "resources": {
       "../.tauri-cache/standalone-server/server.js": "standalone/server.js",
       "../.tauri-cache/standalone-server/package.json": "standalone/package.json",

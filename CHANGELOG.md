@@ -1,5 +1,35 @@
 # Changelog — Rother
 
+## 2026-09-07T10:30:00+07:00 — macOS Compatibility Phase 1
+
+- **Files:** `src-tauri/src/main.rs`, `src/app/api/setup/detect/route.ts`,
+  `src-tauri/tauri.conf.json`, `src-tauri/entitlements.plist` (new),
+  `src-tauri/binaries/node-x64-apple-darwin` (new),
+  `src-tauri/binaries/node-arm64-apple-darwin` (new),
+  `.github/workflows/macos.yml` (new), `MACOS_COMPATIBILITY_PLAN.md` (new)
+- **Reason:** Port the Tauri desktop app to macOS. Single-codebase approach
+  with platform-conditional gates (no separate folder).
+- **Changes:**
+  1. `killProcessTreeByPid` in `main.rs`: Added macOS branch using `pkill -P`/`kill`
+     (BSD `kill` has no `-p` flag; Linux `-p` syntax crashes on macOS).
+  2. Port cleanup guard in `main.rs` (line 313): Extended from Windows-only
+     to `windows || macos` so orphaned sidecar processes are cleaned on macOS.
+  3. `detect/route.ts`: Fixed Chromium browser path detection. Was hardcoded
+     to `%LOCALAPPDATA%\ms-playwright` (Windows). Now platform-specific:
+     macOS → `~/Library/Caches/ms-playwright`, Linux → `~/.cache/ms-playwright`.
+  4. `tauri.conf.json`: Added `"macOS"` bundle section with entitlements.plist
+     path + `minimumSystemVersion: "13.0"`.
+  5. `entitlements.plist`: New hardened runtime entitlements with
+     `allow-unsigned-executable-memory` (required for Playwright Chromium).
+  6. `binaries/`: Added Node.js v22.11.0 standalone binaries for `x64-apple-darwin`
+     (Intel) and `arm64-apple-darwin` (Apple Silicon).
+  7. `.github/workflows/macos.yml`: New CI workflow with build matrix for both
+     architectures, code signing + notarization via Apple secrets.
+- **Status:** PROVEN — `cargo check` passes, `tsc` 0 errors, `eslint` 0 errors,
+  `vitest` 134/134, `verify_baseline` 168/168, `next build` succeeds.
+  Phase 2 (actual macOS `.app` build) blocked: requires macOS build host.
+  Phase 3 (notarization) blocked: requires Apple Developer account ($99/yr).
+
 ## Phase 2 (2026-08-19) — Feature port data-gap fixes
 
 ### Added

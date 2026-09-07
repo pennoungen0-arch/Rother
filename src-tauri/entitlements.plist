@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    Rother macOS entitlements.
+    These are MINIMAL for a non-sandboxed app (App Sandbox is not enabled for v0.4.2).
+    The hardened runtime is enabled by default during notarization signing.
+    -->
+
+    <!-- Required: allow the app to run without App Sandbox restrictions.
+         When App Sandbox is NOT enabled (our case), these entitlements are
+         still declared for the hardened runtime. -->
+
+    <!-- Allow unsigned executable memory — needed by Playwright's Chromium
+         which uses JIT and dynamic code loading. -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+
+    <!-- Allow dynamic linker (needed for bundled shared libraries) -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+
+    <!--
+    NOTE: If App Sandbox is enabled in a future version, uncomment and
+    configure the following entitlements:
+
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+    -->
+</dict>
+</plist>

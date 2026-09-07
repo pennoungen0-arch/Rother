@@ -12,7 +12,11 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Dashboard render error:", error);
+    try {
+      console.error("Dashboard render error:", error);
+    } catch (_) {
+      // Error object may be non-serializable in restricted environments
+    }
   }, [error]);
 
   return (

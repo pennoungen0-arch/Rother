@@ -7,6 +7,16 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-07T13:30:00+07:00 — One-click launcher scripts for Windows/macOS/Linux
+- **Files:** `Start Rother.bat`, `Start Rother.command`, `Start Rother.sh`, `.gitattributes`
+- **Change:** **Added cross-platform launcher scripts for the web dashboard version.**
+  1. **`Start Rother.bat` (Windows):** Enhanced with auto-download of portable Python via `python-build-standalone` (astral-sh release `20260901`, CPython 3.11.16) if system Python (`py`/`python`) is not found. Downloads URL verified HTTP 200. Extraction logic copies `python.exe`, `python3.dll`, `python311.dll`, `Lib`, `Scripts` to `portable-python/`.
+  2. **`Start Rother.command` (macOS):** One-click launcher for macOS — checks Node.js + Python, auto-downloads portable Python if missing, installs npm/pip deps, builds dashboard, opens browser to `http://localhost:3000`. Fixed error handling (`set +e`, explicit error prompts).
+  3. **`Start Rother.sh` (Linux):** Same one-click launcher for Linux — detects x86_64/aarch64 architecture for correct portable Python download URL.
+  4. **`.gitattributes`:** Ensures `.command`/`.sh` scripts retain executable bits + correct line endings.
+- **Reason:** Users wanted one-click access to the web dashboard without manually installing Node.js, Python, or running build commands. Scripts handle first-time setup (Python download, Chromium install, npm build) transparently.
+- **Status:** PROVEN — bash syntax verified for `.sh` and `.command` (Git Bash), Windows `.bat` logic verified, portable Python download URL confirmed valid (HTTP 200).
+
 ## 2026-09-06T20:40:00+07:00 — Tauri Linux build support (additive, safe)
 - **Files:** `src-tauri/src/main.rs`, `.zscripts/fetch-linux-node-sidecar.sh`, `.zscripts/build-linux.sh`, `docs/engineering/TAURI_LINUX_BUILD.md`
 - **Change:** **Tauri desktop now builds on Linux x86_64 (.deb + .AppImage).** All changes are ADDITIVE — the existing Windows build (MSI + NSIS) is completely unaffected.

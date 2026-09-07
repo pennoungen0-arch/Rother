@@ -45,6 +45,7 @@ const LAZY: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   "c-discover": React.lazy(() => import("@/features/c-discover")),
   "c-geo-grid": React.lazy(() => import("@/features/c-geo-grid")),
   "t-config": React.lazy(() => import("@/features/t-config")),
+  "t-setup": React.lazy(() => import("@/features/t-setup")),
   "t-export": React.lazy(() => import("@/features/t-export")),
   "t-scrape-schedule": React.lazy(() => import("@/features/t-scrape-schedule")),
   "t-today": React.lazy(() => import("@/features/today")),

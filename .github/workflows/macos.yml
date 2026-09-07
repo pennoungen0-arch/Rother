@@ -1,0 +1,77 @@
+# Rother Desktop — macOS Build Workflow
+#
+# Builds, signs, notarizes, and staples .app + .dmg for macOS.
+# Runs on tag pushes (v0.4.2-mac+) and on-demand via workflow_dispatch.
+#
+# Prerequisites:
+#   - Apple Developer Program membership ($99/yr)
+#   - Secrets in GitHub repo settings:
+#       APPLE_CERTIFICATE       — base64-encoded .p12 certificate
+#       APPLE_CERTIFICATE_PASS  — certificate password
+#       APPLE_TEAM_ID           — 10-char Apple Developer Team ID
+#       APPLE_ID                — Apple ID for notarytool
+#       APPLE_PASSWORD          — app-specific password for notarytool
+#
+# Usage:
+#   git tag v0.4.2-mac && git push --tags
+#   → Produces signed + notarized .app + .dmg artifacts
+
+name: Rother Desktop — macOS
+
+on:
+  push:
+    tags:
+      - "v*-mac*"
+  workflow_dispatch:
+
+concurrency:
+  group: rother-mac-build
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    name: Build macOS (${{ matrix.target }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets + Tauri bundle
+        uses: tauri-apps/tauri-action@$2
+        with:
+          packageName: ${{ matrix.target }}
+          glob: 'src-tauri/target/release/bundle/**/*.app'
+          onTag: false
+          onPushBranches: develop,main
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASS: ${{ secrets.APPLE_CERTIFICATE_PASS }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rother-macos-${{ matrix.target }}
+          path: |
+            src-tauri/target/release/bundle/macos/*.app
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/macos/*.zip

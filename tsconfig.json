@@ -39,6 +39,8 @@
   "exclude": [
     "examples",
     "node_modules",
-    "rother02-archive"
+    "rother02-archive",
+    "src-tauri",
+    "gbp-monitor"
   ]
 }

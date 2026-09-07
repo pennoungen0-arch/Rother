@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-06T21:00:00+07:00 (v0.4.2 + Tauri audit + Linux build).**
+**Last updated: 2026-09-07T13:30:00+07:00 (v0.4.2 + macOS compatibility Phase 1 complete + web launcher scripts).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -21,7 +21,9 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md` (GMB Everywhere feature analysis → Rother comparison table + startup banner),
 `GMB_INSPIRED_IMPROVEMENT_PLAN.md` (✅ all 5 phases complete),
 `CORE_SYSTEMS_AUDIT_2026-09-05.md` (full pipeline audit: 3 RED + 7 YELLOW + 6 GREEN failure modes),
-`CORE_SYSTEMS_FIX_PLAN.md` (✅ Phase 1-3 complete: RED fixes → YELLOW fixes → UI/UX fluidity).
+ `CORE_SYSTEMS_FIX_PLAN.md` (✅ Phase 1-3 complete: RED fixes → YELLOW fixes → UI/UX fluidity).
+ `MACOS_COMPATIBILITY_PLAN.md` (✅ Phase 1 complete: macOS kill syntax, Chromium path, bundle config, Node binaries, CI workflow; Phase 2/3 blocked on macOS build host + Apple Developer account).
+`docs/engineering/MACOS_BUILD_GUIDE.md` (macOS build prerequisites, step-by-step build instructions, error diagnostics + solutions).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.
@@ -193,14 +195,14 @@ Run from `gbp-monitor/`:
 
 | Command | Count | Notes |
 |---|---|---|
-| `python -m tests.verify_baseline` | 163/163 | **WIPES `data/`** — back it up first, restore after. Includes Phase 7 harvest-classification + Phase 8 seen-store suites || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
+| `python -m tests.verify_baseline` | 168/168 | **WIPES `data/`** — back it up first, restore after. Includes Phase 7 harvest-classification + Phase 8 seen-store suites. Updated from 163 for macOS compatibility work. || `python -m tests.verify_notifications` | 25/25 | local HTTP server + stubbed SMTP |
 | `python -m tests.verify_variant_framework` | 32/32 | offline variant classifier |
 
 From repo root:
 
 | Command | Count | Notes |
 |---|---|---|
-| `npx vitest run` | 119/119 | 9 files (src/lib/gbp + lib, incl. self-target); archive + e2e excluded |
+| `npx vitest run` | 134/134 | 9 files (src/lib/gbp + lib, incl. self-target); archive + e2e excluded. Updated from 119 for macOS compatibility work. |
 | `npx tsc --noEmit` | 0 errors | `rother02-archive/` excluded via tsconfig |
 | `npx eslint src` | exit 0 | 0 errors, 0 warnings |
 | `npx playwright test` | 20/20 | Smoke (10) + Scheduler (2) + Discovery-persistence (4, incl. self-monitoring invariants ×2) + Config-persistence (4). Needs `npm run dev` running. `features.spec.ts` (28 stale tests) removed 2026-08-22 — superseded by smoke coverage |

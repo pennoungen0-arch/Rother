@@ -198,17 +198,36 @@ Run: `python/bin/python3.11 -m playwright install-deps chromium`
 
 ---
 
+## Known Issues & Solutions (Linux)
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| Script closes immediately when executed | Missing executable permission | Run `chmod +x "Start Rother.sh"` then execute again |
+| `py: command not found` | Python not installed and download failed | Install Python via package manager or run the script again (network issue) |
+| `node: command not found` | Node.js not installed | Install Node.js 18+ from [nodejs.org](https://nodejs.org) or via package manager |
+| Port 3000 already in use | Another process or previous Rother instance is running | Run `lsof -i :3000` and kill the process, or restart your machine |
+| Dashboard loads but shows "Cannot connect to scraper" | Python dependencies not installed | Re-run the launcher; it will install missing dependencies |
+| Chromium not found | Playwright browsers not installed | Run `python/bin/python3.11 -m playwright install chromium` + system dependencies |
+| Architecture download URL returns 404 | Wrong architecture detected | Check `uname -m` — use `x86_64` or `aarch64` URL manually |
+| `portable-python/` created but script says "Python not found" | Extraction failed or wrong architecture | Delete `portable-python/` and re-run the launcher |
+
+---
+
 ## AI Agent Instructions
 
 If assisting a Linux user:
 
 1. **Verify the script exists** at `/path/to/Rother/Start Rother.sh`.
 2. **Check executable bit**: Run `ls -la Start\ Rother.sh` — the output should start with `-rwxr-xr-x`. If not, run `chmod +x "Start Rother.sh"`.
-3. **Check architecture**: Run `uname -m` to confirm `x86_64` or `aarch64`. The script should pick the right download URL.
+3. **Check architecture**: Run `uname -m` to confirm `x86_64` or `aarch64`. The script auto-detects and picks the correct download URL.
 4. **Check if `portable-python/` exists** — if so, Python was already downloaded.
 5. **Check if `node_modules/` exists** — if so, npm packages were installed.
 6. **Check if `.next/standalone/server.js` exists** — if so, the dashboard was built.
-7. **Run the script directly**: `./Start Rother.sh` from Terminal for real-time output.
+7. **Run the script directly**: `./Start Rother.sh` from Terminal for real-time output — the script uses `set +e` so it continues past errors and shows helpful messages.
+8. **If portable Python download fails**: Verify the URL matches your architecture:
+   - x86_64: `https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16+20260901-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz`
+   - aarch64: `https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16+20260901-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz`
+9. **If Chromium fails to install**: Check system dependencies with `ldd python/lib/python3.11/site-packages/playwright/helper/../../chrome-linux/chrome-linux/chrome 2>/dev/null | grep "not found"`.
 
 **Key directories to mention to users:**
 

@@ -162,6 +162,34 @@ A previous instance may still be running:
 3. Right-click and select **End task**.
 4. Re-run `Start Rother.bat`.
 
+### Script closes immediately on double-click (before showing any output)
+
+This was a known issue in earlier versions caused by **non-ASCII characters** (em-dashes `—`) in the batch file. The fix is included in v0.4.3+. If you're still experiencing this:
+
+- **Run from Command Prompt** instead: Open `cmd`, navigate to the Rother folder, and run `Start Rother.bat` directly. This keeps the window open.
+- **Use `cmd /k`**: Run `cmd /k "Start Rother.bat"` to prevent the window from closing.
+- **Check file encoding**: Open the batch file in Notepad++ — it should be UTF-8-BOM or ASCII. If it shows "UCS-2 LE" or corrupted characters, the file was likely corrupted during download.
+
+### "ERROR: Node.js is not installed" after installing Node.js
+
+- You must **restart your computer** after installing Node.js — Windows needs a reboot to update the system PATH.
+- After restarting, verify: Open a new Command Prompt and run `node --version`. You should see something like `v20.x.x`.
+
+---
+
+## Known Issues & Solutions (Windows)
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| Script closes immediately on double-click | Corrupted batch file (non-ASCII chars) or path issues | Run from `cmd` instead: `cd "C:\path\to\Rother" && Start Rother.bat` |
+| `Documents (D)` in path causes "unexpected at this time" | Parentheses in Windows paths break batch `if`/`set` commands | v0.4.3+ uses `pushd` + relative paths to avoid this |
+| `ERROR: Failed to download Python` | Network/firewall blocking GitHub | Check connectivity or install Python manually from [python.org](https://python.org) |
+| `ERROR: pip install failed` | Portable Python missing pip | Re-run the launcher — it auto-initializes pip with `python -m ensurepip` |
+| `WARNING: Chromium installation failed` | Corporate firewall or missing DLLs | Run `portable-python\python.exe -m playwright install chromium` manually |
+| Port 3000 in use | Previous instance still running | Kill `node.exe` in Task Manager, then re-run |
+| `npm run build` takes too long | First-time build downloads all dependencies | This is expected — leave the window open until it completes |
+| `node` works in CMD but not in the launcher | PATH not refreshed | Restart Windows to apply PATH changes |
+
 ---
 
 ## AI Agent Instructions
@@ -169,7 +197,7 @@ A previous instance may still be running:
 If assisting a Windows user:
 
 1. **Verify the file exists** at `C:\path\to\Rother\Start Rother.bat`.
-2. **Check Node.js**: Ask the user to open `cmd` and run `node --version`. If it says "'node' is not recognized", they need to install Node.js from nodejs.org and restart.
+2. **Check Node.js**: Ask the user to open `cmd` and run `node --version`. If it says "'node' is not recognized", they need to install Node.js from nodejs.org and **restart**.
 3. **Check if `portable-python\python.exe` exists** — if so, Python was already downloaded.
 4. **Check if `node_modules` folder exists** — if so, npm packages were installed.
 5. **Check if `.next\standalone\server.js` exists** — if so, the dashboard was built.

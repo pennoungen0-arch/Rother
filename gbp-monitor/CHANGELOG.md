@@ -7,6 +7,22 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-07T16:45:00+07:00 — Launcher scripts: fix double-click crash + cross-platform robustness
+- **Files:** `Start Rother.bat`, `Start Rother.command`, `Start Rother.sh`, `docs/engineering/STARTING_ROTHER_{MACOS,WINDOWS,LINUX}.md`
+- **Change:** **Fixed `Start Rother.bat` crash on double-click and improved cross-platform robustness.**
+  1. **Windows `.bat` crash fix (4 root causes):**
+     - Removed non-ASCII em-dash characters (`—`) that corrupted batch parsing in non-UTF-8 locales
+     - Replaced `set "SCRIPT_DIR=%~dp0"` + `cd /d` with `pushd "%~dp0"` + relative paths to avoid storing paths with spaces/parentheses in variables
+     - Removed parentheses from echo statements inside `if` blocks that were parsed as command delimiters
+     - Replaced deeply nested `if/else` blocks with `goto` labels to avoid "else was unexpected" errors
+  2. **macOS `.command` + Linux `.sh` consistency fixes:**
+     - Removed non-ASCII em-dash characters from comments and echo statements
+     - Quoted all `$PYTHON_CMD` references to handle paths with spaces
+     - Fixed unquoted `$EXIT_CODE` in `if [ ]` test conditions to `if [ "$EXIT_CODE" -ne 0 ]`
+  3. **Documentation:** Enhanced all 3 user guides with "Known Issues & Solutions" tables and expanded AI Agent Instructions (path handling, encoding checks, architecture verification, exit-code capture patterns).
+- **Reason:** Users reported the Windows launcher closing immediately on double-click. Root cause was non-ASCII characters + unquoted paths with parentheses `(D)` in `Documents (D)`. macOS/Linux scripts had similar robustness gaps that were proactively fixed.
+- **Status:** PROVEN — `bash -n` syntax validation passes for `.command` and `.sh`; `cmd /c` execution verified for `.bat` (runs 60+ seconds without crash, server starts on localhost:3000); all scripts are ASCII-only; all variable expansions are quoted.
+
 ## 2026-09-07T13:30:00+07:00 — One-click launcher scripts for Windows/macOS/Linux
 - **Files:** `Start Rother.bat`, `Start Rother.command`, `Start Rother.sh`, `.gitattributes`
 - **Change:** **Added cross-platform launcher scripts for the web dashboard version.**

@@ -155,6 +155,42 @@ Run `chmod +x "Start Rother.command"` again in Terminal.
 - Run manually: `python/bin/python3.11 -m playwright install chromium`
 - Or check `https://playwright.dev` for system dependencies.
 
+### "command not found" errors or unexpected script termination
+
+The launcher script uses bash features. Ensure you're using **bash** (not zsh or sh):
+
+- macOS ships with zsh as the default shell, but the `.command` script is explicitly bash.
+- If you see `command not found` for basic commands like `echo` or `if`, the script may be running under a non-bash shell.
+- Fix: Right-click the script → "Open With" → Terminal, or run `bash Start\ Rother.command` manually.
+
+### Non-ASCII characters or garbled output
+
+The launcher script is ASCII-only. If you see garbled characters:
+
+- Ensure your Terminal is using **UTF-8** encoding: Terminal → Preferences → General → "Shell open behavior" → ensure "UTF-8" is selected.
+- Or run the script from Terminal directly: `bash "Start Rother.command"`.
+
+### Python version mismatch
+
+- The portable Python is **3.11.6** (CPython from `python-build-standalone`).
+- If your system Python is too old (< 3.8), the script auto-downloads the portable version.
+- If you see `ModuleNotFoundError: No module named 'playwright'`, run: `"$PYTHON_CMD" -m pip install -r gbp-monitor/requirements.txt`.
+
+---
+
+## Known Issues & Solutions (macOS)
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| Script closes immediately when double-clicking | Missing executable permission | Run `chmod +x "Start Rother.command"` then double-click again |
+| `py: command not found` | Python not installed and download failed | Install Python from [python.org](https://python.org) or run the script again (network issue) |
+| `node: command not found` | Node.js not installed | Download from [nodejs.org](https://nodejs.org), install, then re-run the launcher |
+| Port 3000 already in use | Another process or previous Rother instance is running | Run `lsof -i :3000` and kill the process, or restart your Mac |
+| Dashboard loads but shows "Cannot connect to scraper" | Python dependencies not installed | Re-run the launcher; it will install missing dependencies |
+| Chromium not found | Playwright browsers not installed | Run `python/bin/python3.11 -m playwright install chromium` |
+| `portable-python/` directory created but script still says "Python not found" | Extraction failed or wrong architecture | Delete `portable-python/` and re-run the launcher. Ensure you have the correct macOS version (Intel vs Apple Silicon) |
+| Script says "Dependencies already installed" but Next.js fails to start | Stale `node_modules` or corrupted build | Run `rm -rf node_modules .next` then re-run the launcher |
+
 ---
 
 ## AI Agent Instructions
@@ -166,7 +202,13 @@ If assisting a macOS user:
 3. **Check if `portable-python/` exists** — if so, Python was already downloaded.
 4. **Check if `node_modules/` exists** — if so, npm packages were installed.
 5. **Check if `.next/standalone/server.js` exists** — if so, the dashboard was built.
-6. **Run the script in verbose mode**: `./Start Rother.command` from Terminal to see real-time output.
+6. **Run the script in verbose mode**: `./Start Rother.command` from Terminal to see real-time output — the script uses `set +e` so it continues past errors and shows helpful messages instead of crashing.
+7. **If the script closes immediately**, check that:
+   - The file has execute permissions (`chmod +x`)
+   - The file uses LF line endings (not CRLF) — run `file Start\ Rother.command`
+   - The file is ASCII-only (no em-dashes or non-UTF-8 characters)
+8. **Path with spaces/parentheses**: The script handles spaces and special characters in the path to the Rother folder. No special action needed.
+9. **If portable Python download fails**: Verify the URL is reachable: `curl -I https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16+20260901-x86_64-apple-darwin-install_only_stripped.tar.gz`
 
 **Key directories to mention to users:**
 

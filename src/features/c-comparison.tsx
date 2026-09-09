@@ -110,6 +110,8 @@ function ComparisonTable({ data }: { data: CompetitorStats[] }) {
             <th className="px-3 py-2 font-medium text-center">Rating</th>
             <th className="px-3 py-2 font-medium text-right">New</th>
             <th className="px-3 py-2 font-medium text-center">Trend</th>
+            <th className="px-3 py-2 font-medium text-center">Hours</th>
+            <th className="px-3 py-2 font-medium text-left">Category</th>
             <th className="px-3 py-2 font-medium text-left">Branch</th>
           </tr>
         </thead>
@@ -148,6 +150,16 @@ function ComparisonTable({ data }: { data: CompetitorStats[] }) {
               </td>
               <td className="px-3 py-2 text-center">
                 <TrendIcon dir={comp.trend_indicator ?? null} />
+              </td>
+              <td className="px-3 py-2 text-center text-xs">
+                {comp.hours_status ? (
+                  <span className="font-medium text-foreground">{comp.hours_status}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">
+                {comp.category ?? "—"}
               </td>
               <td className="px-3 py-2 text-muted-foreground text-xs">{comp.branch_name}</td>
             </tr>

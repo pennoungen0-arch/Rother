@@ -7,6 +7,19 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-09T05:00:00+07:00 — GMB Everywhere-inspired presentation improvements
+- **Files:** `src/components/dashboard/reviews-section.tsx`, `src/components/dashboard/branches-section.tsx`, `src/features/c-comparison.tsx`, `src/lib/gbp/types.ts`, `src/app/api/overview/route.ts`, `src/app/api/branches/route.ts`
+- **Change:** **Closed presentation-layer gaps with GMB Everywhere based on discussion_history analysis.**
+  1. **Keyword highlight in reviews table** — matching text is now highlighted in yellow with `<mark>` tags; search term passed from debounced search input to `ReviewTextCell`
+  2. **Match count indicator** — filter badge now shows "N matches on this page"
+  3. **"Showing X of Y" header** — reviews page header shows full Google count alongside captured count when partial window exists
+  4. **Hours status on competitor cards** — `hours_status` from snapshot metadata displayed in competitor row footer and sheet view
+  5. **Business metadata in sheet view** — category, phone (tel: link), website (external link) displayed in SheetDescription
+  6. **Comparison table enhancement** — added Hours and Category columns to side-by-side competitor comparison
+  7. **Type expansion** — added `OpeningHour` interface + business metadata fields to `CompetitorStats` and `OverviewResponse.competitorStats`; added `branch_id` to overview stats
+- **Reason:** Surface data Rother already captures but wasn't displaying; match GMB Everywhere's presentation quality while preserving Rother's monitoring moat.
+- **Status:** PROVEN — vitest 134/134, tsc 0 errors, eslint 0 errors.
+
 ## 2026-09-09T04:30:00+07:00 — Docker deployment + Chromium memory optimization (Fly.io free tier)
 - **Files:** `Dockerfile`, `fly.toml`, `docker-compose.yml`, `gbp-monitor/harness/browser.py`, `docs/engineering/DEPLOYMENT_OPTIONS.md`
 - **Change:** **Added Docker deployment support + Chromium memory optimization for Fly.io free tier.**

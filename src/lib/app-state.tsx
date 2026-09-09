@@ -43,6 +43,9 @@ interface AppState {
   showHubs: boolean;
   showToday: boolean;
   paletteOpen: boolean;
+  /** GMBE-inspired: keyword search term that can be set by the word cloud
+   *  and consumed by the reviews filter bar (cross-feature communication). */
+  searchTerm: string | null;
   login: (u: User) => void;
   logout: () => void;
   setMode: (m: MonitoringMode) => void;
@@ -55,6 +58,7 @@ interface AppState {
   setFeature: (id: string | null) => void;
   setShowHubs: (v: boolean) => void;
   setShowToday: (v: boolean) => void;
+  setSearchTerm: (term: string | null) => void;
   back: () => void;
   setPaletteOpen: (v: boolean) => void;
 }
@@ -79,6 +83,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [showHubs, setShowHubsState] = React.useState(false);
   const [showToday, setShowTodayState] = React.useState(false);
   const [paletteOpen, setPaletteOpen] = React.useState(false);
+  const [searchTerm, setSearchTermState] = React.useState<string | null>(null);
 
   const login = React.useCallback((u: User) => {
     setUser(u);
@@ -145,6 +150,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShowTodayState(v);
   }, []);
 
+  const setSearchTerm = React.useCallback((term: string | null) => {
+    setSearchTermState(term);
+  }, []);
+
   const back = React.useCallback(() => {
     setFeatureState((f) => {
       if (f) return null;
@@ -163,24 +172,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       hub,
       feature,
       showHubs,
-      showToday,
-      paletteOpen,
-      login,
-      logout,
-      setMode,
-      setBusiness,
-      setActiveBusiness,
-      startRun,
-      openHub,
-      openFeature,
-      setHub: setHubCallback,
-      setFeature: setFeatureCallback,
-      setShowHubs: setShowHubsCallback,
-      setShowToday: setShowTodayCallback,
-      back,
-      setPaletteOpen,
-    }),
-    [user, business, mode, runStarted, hub, feature, showHubs, showToday, paletteOpen, login, logout, setMode, setBusiness, setActiveBusiness, startRun, openHub, openFeature, setHubCallback, setFeatureCallback, setShowHubsCallback, setShowTodayCallback, back],
+    showToday,
+    paletteOpen,
+    searchTerm,
+    login,
+    logout,
+    setMode,
+    setBusiness,
+    setActiveBusiness,
+    startRun,
+    openHub,
+    openFeature,
+    setHub: setHubCallback,
+    setFeature: setFeatureCallback,
+    setShowHubs: setShowHubsCallback,
+    setShowToday: setShowTodayCallback,
+    setSearchTerm,
+    back,
+    setPaletteOpen,
+  }),
+  [user, business, mode, runStarted, hub, feature, showHubs, showToday, paletteOpen, searchTerm, login, logout, setMode, setBusiness, setActiveBusiness, startRun, openHub, openFeature, setHubCallback, setFeatureCallback, setShowHubsCallback, setShowTodayCallback, setSearchTerm, back],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

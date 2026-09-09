@@ -67,6 +67,7 @@ import type {
 } from "@/lib/gbp/types";
 import { useBranches } from "@/lib/gbp/use-branches";
 import { useOverview } from "@/lib/gbp/use-overview";
+import { useAppState } from "@/lib/app-state";
 
 interface ReviewsSectionProps {
   /** Bump to force a refetch (e.g. after a manual scrape). */
@@ -123,6 +124,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: branches } = useBranches();
   const { data: overviewData } = useOverview();
+  const { searchTerm } = useAppState();
   const [rows, setRows] = React.useState<ReviewRow[]>([]);
   const [total, setTotal] = React.useState(0);
   const [googleTotal, setGoogleTotal] = React.useState<number | null>(null);
@@ -139,6 +141,13 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  // GMBE-inspired: sync search from word cloud click (cross-feature).
+  React.useEffect(() => {
+    if (searchTerm) {
+      setSearch(searchTerm);
+    }
+  }, [searchTerm]);
 
   // Build a lookup map for competitor_id → {competitor_name, branch_name}.
   const nameLookup = React.useMemo(() => {

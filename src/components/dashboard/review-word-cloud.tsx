@@ -23,6 +23,7 @@ import {
 
 import { EmptyState } from "./empty-state";
 import type { Review, WordEntry } from "@/lib/gbp/types";
+import { useAppState } from "@/lib/app-state";
 
 interface ReviewWordCloudProps {
   /** Bump to force a refetch. */
@@ -127,6 +128,7 @@ export function ReviewWordCloud({ refreshKey }: ReviewWordCloudProps) {
   const [reviews, setReviews] = React.useState<Review[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const { setSearchTerm } = useAppState();
 
   const fetchReviews = React.useCallback(async () => {
     try {
@@ -220,28 +222,28 @@ export function ReviewWordCloud({ refreshKey }: ReviewWordCloudProps) {
             {words.map((entry, idx) => {
               const style = getWordStyle(entry.count, maxCount);
               return (
-                <TooltipProvider key={entry.word} delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{
-                          duration: 0.2,
-                          delay: Math.min(idx * 0.01, 0.5),
-                        }}
-                        role="listitem"
-                        className={
-                          "cursor-default leading-relaxed transition-colors hover:underline " +
-                          style.colorClass +
-                          " " +
-                          style.weight
-                        }
-                        style={{ fontSize: `${style.fontSize}px` }}
-                      >
-                        {entry.word}
-                      </motion.span>
-                    </TooltipTrigger>
+              <TooltipProvider key={entry.word} delayDuration={150}>
+                   <Tooltip>
+                     <TooltipTrigger asChild>
+                       <motion.span
+                         initial={{ opacity: 0, scale: 0.8 }}
+                         animate={{ opacity: 1, scale: 1 }}
+                         transition={{
+                           duration: 0.2,
+                           delay: Math.min(idx * 0.01, 0.5),
+                         }}
+                         role="listitem"
+                         onClick={() => { setSearchTerm(entry.word); }}
+                         className={
+                           "cursor-pointer leading-relaxed transition-colors hover:underline " +
+                           style.colorClass +
+                           " " +
+                           style.weight
+                         }
+                         style={{ fontSize: `${style.fontSize}px` }}>
+                         {entry.word}
+                       </motion.span>
+                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <p className="font-semibold font-mono">{entry.word}</p>
                       <p className="text-xs opacity-90">

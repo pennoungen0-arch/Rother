@@ -232,6 +232,9 @@ From repo root:
 - **Post-convergence hardening plan:** `docs/engineering/POST_CONVERGENCE_PLAN.md`
   covers per-feature e2e (25 features), type consolidation, and UNPROVEN items
   (webhook/SMTP, GitHub Actions, hours_status).
+- **Improvement plan:** `docs/engineering/IMPROVEMENT_PLAN_2026-09.md` covers
+  GMB Everywhere-derived presentations (showing X of Y reviews, harvest bars,
+  comparison table enhancements, Tauri startup feedback).
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

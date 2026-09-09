@@ -1,5 +1,24 @@
 # Changelog — Rother
 
+## 2026-09-09T06:00:00+07:00 — GMB Everywhere-inspired presentation improvements (Phase 1)
+
+- **Files:** `src/components/dashboard/reviews-section.tsx`, `src/components/dashboard/review-word-cloud.tsx`,
+  `src/app/api/reviews/route.ts`, `src/lib/gbp/types.ts`, `src/lib/gbp/server-data.ts`,
+  `src/lib/app-state.tsx`, `docs/engineering/IMPROVEMENT_PLAN_2026-09.md` (new),
+  `GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md` (new)
+- **Reason:** Close the presentation-layer gap identified in the discussion_history
+  analysis of GMB Everywhere's feature set.
+- **Changes:**
+  1. **Keyword highlight** in reviews table — matching search terms highlighted in yellow
+  2. **Match count indicator** — "N matches on this page" badge
+  3. **"Showing X of Y" header** — displays total Google review count alongside captured count
+  4. **Word cloud click integration** — clicking a word sets the review search filter
+  5. **New review badges** in review table — "New" badge on reviews from latest delta
+  6. **Hours + Category columns** in comparison table
+  7. **Business metadata** (phone, website, category) in sheet view
+  8. **Hours status** on competitor cards
+- **Status:** PROVEN — vitest 134/134, tsc 0 errors, eslint only pre-existing warnings.
+
 ## 2026-09-07T10:30:00+07:00 — macOS Compatibility Phase 1
 
 - **Files:** `src-tauri/src/main.rs`, `src/app/api/setup/detect/route.ts`,

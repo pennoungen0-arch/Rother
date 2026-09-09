@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/gbp/sanitize";
 import type { Review, ReviewsResponse } from "@/lib/gbp/types";
-import { readAllSnapshots, resolveMonitoredConfig } from "@/lib/gbp/server-data";
+import { readAllSnapshots, resolveMonitoredConfig, readLatestDelta } from "@/lib/gbp/server-data";
 import { parseRelativeDate } from "@/lib/gbp/format";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +18,12 @@ export const revalidate = 0;
  * - date_from: optional, ISO date string, filters scraped_at >= date_from
  * - date_to: optional, ISO date string, filters scraped_at <= date_to
  * - q: optional, case-insensitive substring match on reviewer_name + text
- * - page: 1-indexed, default 1
- * - pageSize: default 25, capped at 100
- *
- * Returns { data: Review[], total, page, pageSize }.
+   * - page: 1-indexed, default 1
+   * - pageSize: default 25, capped at 100
+   * - include_new: optional, "true" to annotate each review with `is_new` based
+   *   on whether it appears in the most-recent delta file for its competitor.
+   *
+   * Returns { data: Review[], total, page, pageSize }.
  *
  * We hydrate each review with its branch_name + competitor_name client-side
  * via the listings map (kept in localStorage or fetched from /api/branches).
@@ -40,6 +42,7 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const pageSizeRaw = parseInt(searchParams.get("pageSize") || "25", 10) || 25;
     const pageSize = Math.min(100, Math.max(1, pageSizeRaw));
+    const includeNew = searchParams.get("include_new") === "true";
 
     const ratingFilter = ratingParam
       ? new Set(
@@ -131,7 +134,27 @@ export async function GET(request: Request) {
 
     const total = filtered.length;
     const start = (page - 1) * pageSize;
-    const data = filtered.slice(start, start + pageSize);
+    let data = filtered.slice(start, start + pageSize);
+
+    // GMBE-inspired: annotate reviews with is_new flag when requested.
+    // We look up the latest delta file per competitor and mark reviews whose
+    // IDs appear in the delta as "new" (captured in the most recent run).
+    if (includeNew && data.length > 0) {
+      const newIdsByComp = new Map<string, Set<string>>();
+      for (const compId of new Set(data.map((r) => r.competitor_id))) {
+        const delta = await readLatestDelta(compId);
+        if (delta.length > 0) {
+          newIdsByComp.set(
+            compId,
+            new Set(delta.map((r) => r.review_id)),
+          );
+        }
+      }
+      data = data.map((r) => ({
+        ...r,
+        is_new: newIdsByComp.get(r.competitor_id)?.has(r.review_id) ?? false,
+      }));
+    }
 
     const body: ReviewsResponse = { data, total, page, pageSize };
     return NextResponse.json(body, {

@@ -46,6 +46,9 @@ export interface Review {
   review_date?: string | null;
   review_date_epoch?: number | null;
   review_like_count?: number | null;
+  /** GMBE-inspired: true when this review was captured in the most recent
+   *  delta run (i.e., newly detected since the last snapshot). */
+  is_new?: boolean;
 }
 
 export interface RunSummaryError {

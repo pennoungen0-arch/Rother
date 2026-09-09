@@ -12,6 +12,7 @@ import {
   Inbox,
   MessageSquare,
   Search,
+  Sparkles,
   Star,
   X,
 } from "lucide-react";
@@ -203,7 +204,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
 
-    fetch(`/api/reviews?${params.toString()}`, { signal: controller.signal })
+     fetch(`/api/reviews?${params.toString()}&include_new=true`, { signal: controller.signal })
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const json = (await r.json()) as ReviewsResponse;
@@ -299,6 +300,16 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
             <span className="font-medium text-foreground">
               {row.original.reviewer_display}
             </span>
+            {row.original.is_new && (
+              <Badge
+                variant="outline"
+                className="gap-1 border-amber-500/50 bg-amber-500/15 px-1.5 py-0 text-[9px] font-semibold text-amber-700 dark:text-amber-300"
+                title="New review (captured in the most recent scrape)"
+              >
+                <Sparkles className="size-2.5" aria-hidden="true" />
+                New
+              </Badge>
+            )}
             <CopyButton
               value={row.original.review_id}
               label={`Copy review ID: ${row.original.review_id}`}

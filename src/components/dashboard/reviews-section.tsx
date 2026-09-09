@@ -353,8 +353,8 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
         ),
         sortingFn: "alphanumeric",
       },
-    ],
-    [],
+     ],
+    [debouncedSearch],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library

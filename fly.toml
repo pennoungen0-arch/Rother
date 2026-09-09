@@ -19,6 +19,8 @@ kill_timeout = 5
 [env]
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_ENV = "production"
+  GBP_MONITOR_NO_SANDBOX = "true"
+  GBP_MONITOR_TIGHT_MEMORY = "true"
 
 [experimental]
   allowed_public_ports = []

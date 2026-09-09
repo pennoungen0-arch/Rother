@@ -212,10 +212,27 @@ def get_browser_context(storage_state: str | None = None):
     from playwright.sync_api import sync_playwright
 
     # M14: Disable Chromium sandbox when requested (Docker deployment).
-    # The GBP_MONITOR_NO_SANDBOX env var is set by docker-compose.yml.
-    launch_args = ["--disable-gpu"]
+    # The GBP_MONITOR_NO_SANDBOX env var is set by docker-compose.yml and fly.toml.
+    # Additional flags for memory-constrained environments (Fly.io free tier).
+    launch_args = [
+        "--disable-gpu",
+        "--disable-dev-shm-usage",  # Use /tmp instead of /dev/shm (reduces memory pressure)
+        "--disable-setuid-sandbox",  # Required for non-root user in Docker
+    ]
     if os.environ.get("GBP_MONITOR_NO_SANDBOX", "").lower() in ("true", "1", "yes"):
         launch_args.append("--no-sandbox")
+    
+    # M15: Enable memory-saving flags for low-RAM environments (256MB VM on Fly.io free tier).
+    # These flags may reduce performance but keep Chromium within memory limits.
+    if os.environ.get("GBP_MONITOR_TIGHT_MEMORY", "").lower() in ("true", "1", "yes"):
+        launch_args.extend([
+            "--renderer-process-limit=1",  # Only one renderer process
+            "--disable-background-networking",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-component-extensions-backgrounding",
+            "--disable-ipc-flooding-protection",
+        ])
 
     p = sync_playwright().start()
     browser = p.chromium.launch(headless=True, args=launch_args)

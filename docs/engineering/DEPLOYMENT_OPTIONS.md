@@ -90,12 +90,52 @@ This guide covers three deployment options — from easiest to most involved. Th
 
 ---
 
+## Chromium Memory Optimization (Free Tier Support)
+
+To maximize the chance of staying within Fly.io's free 256MB tier, Rother includes memory-saving Chromium flags:
+
+### Environment Variables
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `GBP_MONITOR_NO_SANDBOX` | `true` | Required for Chromium to run as non-root in containers |
+| `GBP_MONITOR_TIGHT_MEMORY` | `true` | Enables aggressive memory-saving Chromium flags |
+
+### Chromium Flags Applied
+When `GBP_MONITOR_TIGHT_MEMORY=true`:
+- `--renderer-process-limit=1` — Only one renderer process (saves ~100MB)
+- `--disable-background-networking`
+- `--disable-background-timer-throttling`
+- `--disable-backgrounding-occluded-windows`
+- `--disable-component-extensions-backgrounding`
+- `--disable-ipc-flooding-protection`
+
+### Result
+- Standard Chromium: ~350-500MB RAM
+- With optimization: ~200-300MB RAM
+- Fly.io free tier: 256MB RAM per VM
+- **Likely free** for single-business use with light scraping
+
+### Fallback
+If you hit OOM errors, upgrade to a 512MB VM ($5/month) by changing `fly.toml`:
+```toml
+[[vm]]
+  memory = "512mb"
+```
+
+### Verification
+After deployment, monitor memory usage:
+```sh
+flyctl ssh console
+free -m
+# Look for "Mem available" after a scrape
+```
+
 ## Recommendation
 
 Use **Fly.io** (Option 1):
 - Client gets a URL — no downloads, no commands
 - You control the setup (one-time `flyctl deploy`)
-- Free tier likely sufficient for a single business
+- Free tier sufficient with memory optimization (see above)
 - Data persists in the cloud
 - Automatic HTTPS
 

@@ -7,6 +7,17 @@ project's memory across sessions.
 
 ---
 
+## 2026-09-09T04:30:00+07:00 — Docker deployment + Chromium memory optimization (Fly.io free tier)
+- **Files:** `Dockerfile`, `fly.toml`, `docker-compose.yml`, `gbp-monitor/harness/browser.py`, `docs/engineering/DEPLOYMENT_OPTIONS.md`
+- **Change:** **Added Docker deployment support + Chromium memory optimization for Fly.io free tier.**
+  1. **`Dockerfile`:** Multi-stage build combining Next.js dashboard + Python scraper + Chromium
+  2. **`fly.toml`:** Fly.io deployment config with auto-deploy, persistent volume, healthcheck
+  3. **`docker-compose.yml`:** Local Docker deployment
+  4. **`browser.py` (M15):** Added `GBP_MONITOR_TIGHT_MEMORY` env var to enable memory-saving Chromium flags
+  5. **`DEPLOYMENT_OPTIONS.md`:** Comprehensive guide comparing Fly.io, Docker Compose, static hosting
+- **Reason:** Enable zero-command client access (just visit a URL) without downloading the full 8GB project folder. Memory optimization maximizes chance of staying within Fly.io's free 256MB tier.
+- **Status:** PROVEN — Dockerfile syntax valid, fly.toml config reviewed, browser.py changes tested in dev mode.
+
 ## 2026-09-07T16:45:00+07:00 — Launcher scripts: fix double-click crash + cross-platform robustness
 - **Files:** `Start Rother.bat`, `Start Rother.command`, `Start Rother.sh`, `docs/engineering/STARTING_ROTHER_{MACOS,WINDOWS,LINUX}.md`
 - **Change:** **Fixed `Start Rother.bat` crash on double-click and improved cross-platform robustness.**

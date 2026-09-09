@@ -15,6 +15,9 @@ services:
     volumes:
       - rother_data:/app/gbp-monitor/data
     restart: unless-stopped
+    environment:
+      GBP_MONITOR_NO_SANDBOX: "true"
+      GBP_MONITOR_TIGHT_MEMORY: "true"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"]
       interval: 30s

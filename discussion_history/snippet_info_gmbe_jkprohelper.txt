@@ -1,0 +1,472 @@
+/PITFALLS /KILLCRITIC i want to ask, can the jkpro extractor extension be used to extract a google maps businesses info page? like from the business profile and the reviews data?
+
+Yes. Technically, the JKPRO Extractor extension can be used as the capture layer for a Google Maps business profile, including information visible on the business profile and reviews. But I would treat this as a new extraction mode, not simply changing the current property-listing extractor.
+
+From the project files, the current extension workflow is specifically designed around Google Groups listing exports, producing source.txt plus images and feeding that into Phase 1. The earlier testing also confirms that the extension currently captures the visible listing into a text export rather than being a general-purpose webpage scraper.
+
+What we could extract from a Google Maps business profile
+
+Potentially two distinct datasets:
+
+Business profile
+
+Business name
+Category
+Address
+Phone
+Website
+Google Maps URL
+Place/business identifier where available
+Rating
+Review count
+Opening hours
+Description/about information
+Services/products where exposed
+Attributes
+Photos or photo URLs, depending on what the page exposes
+
+Reviews
+
+Reviewer display name
+Rating
+Review text
+Review date
+Owner response, if visible
+Review-related metadata that is actually exposed
+Pagination/load state information
+
+But there is an important distinction:
+
+The extension can capture what the Google Maps page actually exposes to the browser. It should not assume that every business/review field is available in the initial DOM or that all reviews are loaded at once.
+
+Google Maps is a much more dynamic application than the Google Groups pages your current extractor was designed for.
+
+The architecture I would recommend
+
+I would not modify the existing property extractor to understand Maps.
+
+Instead:
+
+                    JKPRO Extractor
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+       Property Listing          Google Maps
+          Capture                   Capture
+              │                       │
+         source.txt             business.json
+         images/                 reviews.json
+              │                       │
+          Phase 1               Maps Processor
+              │                       │
+       draft-listing.json       business dataset
+
+That keeps the existing property workflow safe.
+
+And eventually:
+
+Google Maps
+     ↓
+JKPRO Maps Extractor
+     ↓
+Raw Capture
+     ↓
+Parser / Normalizer
+     ↓
+Business Record
+     ↓
+Review Records
+     ↓
+Monitoring / Comparison
+
+This could become extremely useful for the GBP monitoring project we've previously discussed.
+
+And this is where it gets interesting
+
+If your actual goal is something like:
+
+"Give me a business's Google Maps profile and all its reviews so JKPRO can analyze/monitor them"
+
+then Place ID alone isn't enough.
+
+You'd want a durable business record something like:
+
+Business
+├── identity
+│   ├── place_id
+│   ├── maps_url
+│   ├── name
+│   └── category
+│
+├── profile
+│   ├── address
+│   ├── phone
+│   ├── website
+│   ├── rating
+│   ├── review_count
+│   ├── hours
+│   └── attributes
+│
+├── reviews
+│   ├── reviewer
+│   ├── rating
+│   ├── text
+│   ├── date
+│   └── owner_response
+│
+└── capture_metadata
+    ├── captured_at
+    ├── source_url
+    ├── extraction_version
+    └── completeness
+
+The capture_metadata part is particularly important for monitoring because you need to distinguish:
+
+"Google says there are 438 reviews"
+
+from
+
+"Our extractor actually captured 100 reviews."
+
+Those are not the same thing.
+
+/KILLCRITIC: don't start coding it yet
+
+Before modifying the extension, I'd first determine exactly what the current extension can capture from a Maps page.
+
+A very safe experiment would be:
+
+Open one Google Maps business profile
+        ↓
+Run current JKPRO Extractor
+        ↓
+See exactly what it captures
+        ↓
+Inspect downloaded output
+        ↓
+Determine missing fields
+        ↓
+Design Maps-specific capture schema
+
+Do not change the existing extractor yet.
+
+If the current extractor crashes, captures almost nothing, or produces an unusable source.txt, that's actually useful information. We then know that Maps needs its own capture adapter rather than trying to force the Google Groups extractor to handle it.
+
+Also, because Google Maps is dynamic, we should specifically test whether scrolling the reviews panel causes additional reviews to load and whether the extension can reliably capture those loaded records.
+
+My recommendation
+
+Yes, pursue this, but as Google Maps Business Extractor / Maps Capture Mode, separate from the existing property-listing capture mode. I can next inspect the existing JKPRO extractor architecture from your project files and design exactly how the Maps capture mode should fit into it before we give the coding agent a prompt.
+
+/PITFALLS /KILLCRITIC how does jkpro helper data extractor compare to gmb everywhere software?
+
+Yes, and this comparison is actually important because it shows that JKPRO Helper Data Extractor is currently much narrower than GMB Everywhere, but its architecture could evolve into something substantially different rather than simply becoming a clone.
+
+I checked the current GMB Everywhere feature set because it has changed over time.
+
+The short version
+
+Today I'd describe them like this:
+
+Capability	JKPRO Helper / Extractor	GMB Everywhere
+Primary purpose	Data intake + processing workflow	GBP SEO/audit/optimization tool
+Google Maps business extraction	Not yet a dedicated capability	✅
+Business profile audit	Not currently	✅
+Review audit	Not currently	✅
+Competitor comparison	Not currently	✅ Local Scan
+Category analysis	Not currently	✅
+Service analysis	Not currently	✅
+Location/proximity analysis	Not currently	✅
+Rank checking	Not currently	✅
+Website audit	Not currently	✅
+GBP post generation	Not currently	✅
+Review response generation	Not currently	✅
+GBP description generation	Not currently	✅
+Q&A generation	Not currently	✅
+Image generation	Not currently	✅
+Automated property-data workflow	✅ Strong	❌ Not its purpose
+Local staged processing	✅ Strong	Different model
+Draft → review → edit → image → export	✅ Core architecture	❌
+Website publishing pipeline	✅ JKPRO-specific	Not its primary workflow
+
+GMB Everywhere currently advertises Basic Audit, Teleport Audit, Review Audit, Category Finder, Local Scan, Website Audit, Post Audit and several AI generation tools.
+
+Its newer Local Scan is particularly relevant to what you were asking about earlier: it compares businesses directly inside Google Maps across categories, services, reviews, location, opening times and attributes.
+
+The biggest difference
+
+Your current JKPRO system is fundamentally:
+
+SOURCE
+  ↓
+EXTRACT
+  ↓
+STAGE
+  ↓
+REVIEW
+  ↓
+EDIT
+  ↓
+IMAGES
+  ↓
+PREVIEW
+  ↓
+EXPORT
+  ↓
+UPLOAD PACKAGE
+
+That's an operations pipeline.
+
+GMB Everywhere is more like:
+
+GOOGLE BUSINESS PROFILE
+        ↓
+      AUDIT
+        ↓
+ ┌──────┼────────┐
+ ↓      ↓        ↓
+Reviews Categories Website
+ ↓      ↓        ↓
+Analysis / Recommendations
+        ↓
+       AI
+        ↓
+Optimization
+
+That's an SEO/GBP intelligence and optimization platform.
+
+Those are fundamentally different products.
+
+But there is a very interesting overlap
+
+The Google Maps extractor idea we just discussed could become the bridge.
+
+Imagine JKPRO eventually doing:
+
+Google Maps
+     ↓
+JKPRO Extractor
+     ↓
+Business Profile
+     +
+Reviews
+     +
+Categories
+     +
+Services
+     +
+Photos
+     +
+Attributes
+     ↓
+Normalized Business Dataset
+     ↓
+JKPRO Analyzer
+
+Then:
+
+Business A
+Business B
+Business C
+Business D
+
+could be compared.
+
+That's where you start approaching GMB Everywhere Local Scan territory. GMB Everywhere specifically describes Local Scan as providing side-by-side competitor insights inside Google Maps, including category, service, review, location, opening-time and attribute comparisons.
+
+Where JKPRO could actually become better
+
+This is the part I'd pay attention to.
+
+Don't try to beat GMB Everywhere by copying every feature.
+
+Instead:
+
+GMB Everywhere
+
+is optimized around:
+
+"How do I improve this Google Business Profile?"
+
+JKPRO could become:
+
+"How do I collect, track, compare, analyze, and operationalize local business data over time?"
+
+That's much broader.
+
+For example:
+
+              JKPRO
+                │
+       ┌────────┴────────┐
+       │                 │
+ Property            Businesses
+ Extraction          Extraction
+       │                 │
+       └────────┬────────┘
+                ↓
+          Data Repository
+                ↓
+        ┌───────┼────────┐
+        ↓       ↓        ↓
+      Audit   Monitor  Compare
+        ↓       ↓        ↓
+        └───────┼────────┘
+                ↓
+             Reports
+
+That's potentially a much more interesting product for agencies and companies.
+
+Reviews are where it gets particularly powerful
+
+Suppose you capture:
+
+Business: Restaurant X
+
+2026-08-01
+Reviews: 438
+Rating: 4.4
+
+2026-08-15
+Reviews: 451
+Rating: 4.3
+
+2026-09-01
+Reviews: 467
+Rating: 4.2
+
+Now JKPRO can calculate:
+
+Review growth
+Rating movement
+New negative reviews
+New positive reviews
+Unanswered reviews
+Recurring complaints
+Recurring praise
+
+And eventually:
+
+"Customers repeatedly mention parking."
+
+"27% of negative reviews mention service."
+
+"Review velocity increased 18% this month."
+
+That becomes monitoring intelligence, not just scraping.
+
+This also connects directly to our previous Rother discussion
+
+This is why I would keep the two concepts separate:
+
+Extractor
+
+Collect evidence.
+
+Parser
+
+Understand evidence.
+
+Database
+
+Store observations.
+
+Monitor
+
+Detect change.
+
+Analyzer
+
+Interpret change.
+
+Dashboard
+
+Present it.
+
+Something like:
+
+Google Maps
+     │
+     ▼
+┌─────────────┐
+│ JKPRO       │
+│ Extractor   │
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ Raw Capture │
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ Parser      │
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ Normalized  │
+│ Dataset     │
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ Snapshot DB │
+└──────┬──────┘
+       ▼
+┌───────────────┐
+│ Change Engine │
+└───────┬───────┘
+        ▼
+┌────────────────┐
+│ JKPRO Dashboard│
+└────────────────┘
+
+That is much closer to the architecture I'd want for a serious client/company product.
+
+One important warning
+
+Don't interpret:
+
+"We can extract Google Maps"
+
+as:
+
+"We now have GMB Everywhere."
+
+That's the trap.
+
+Extraction is only one layer.
+
+GMB Everywhere has already built substantial product logic around the extracted information, including audits, competitor analysis, rank checking, category/service analysis, website audit, and AI tools.
+
+And its public roadmap shows it is continuing to expand things like prospecting/client-finder functionality, rank checking and website auditing.
+
+My /KILLCRITIC conclusion
+
+I would not say:
+
+"Let's make JKPRO Helper Data Extractor compete with GMB Everywhere."
+
+I'd say:
+
+"Let's make the extractor the acquisition layer of a larger JKPRO Business Intelligence system."
+
+Then GMB Everywhere becomes a useful benchmark rather than the architectural blueprint.
+
+The strategic hierarchy I'd use
+                 JKPRO
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+ Property Automation    Business Intelligence
+        │                     │
+        │              ┌──────┼──────┐
+        │              │      │      │
+     Listings       Extract Monitor Analyze
+        │              │      │      │
+        └──────────────┴──────┴──────┘
+                         │
+                     Dashboard
+
+And Google Maps Business/Reviews extraction should be treated as a capability of the Business Intelligence side, not bolted into the property extractor.
+
+That would give us a much cleaner path to eventually covering the useful parts of GMB Everywhere while retaining the things that make JKPRO unique.
+
+I can next map JKPRO vs GMB Everywhere feature-by-feature and identify exactly what should be copied, adapted, ignored, or improved, then turn that into a realistic product roadmap.

@@ -62,6 +62,12 @@ USER rother
 
 WORKDIR /app
 
+# Environment variables for Docker/Cloud deployment
+# GBP_MONITOR_NO_SANDBOX: Required for non-root Chromium in containers
+# GBP_MONITOR_TIGHT_MEMORY: Enables memory-saving Chromium flags for low-RAM VMs
+ENV GBP_MONITOR_NO_SANDBOX=true
+ENV GBP_MONITOR_TIGHT_MEMORY=true
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \

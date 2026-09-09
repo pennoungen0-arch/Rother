@@ -126,10 +126,16 @@ export async function GET() {
           verified: comp.verified,
           self: comp.self,
           unscrapeable: comp.unscrapeable,
-          harvest_status: hi?.harvest_status,
-          google_review_count: hi?.google_review_count,
-          sort_applied: hi?.sort_applied,
-        });
+         harvest_status: hi?.harvest_status,
+         google_review_count: hi?.google_review_count,
+         sort_applied: hi?.sort_applied,
+         category: hi?.category,
+         hours_status: hi?.hours_status,
+         opening_hours: hi?.opening_hours,
+         phone: hi?.phone,
+         website: hi?.website,
+         address: hi?.address,
+       });
       }
 
       const velocity =

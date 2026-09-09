@@ -102,6 +102,7 @@ export async function GET() {
         competitorStats.push({
           competitor_id: comp.competitor_id,
           name: comp.name,
+          branch_id: branch.branch_id,
           branch_name: branch.branch_name,
           total_reviews: reviews.length,
           average_rating: avg,
@@ -113,6 +114,12 @@ export async function GET() {
           harvest_status: hi?.harvest_status,
           google_review_count: hi?.google_review_count,
           sort_applied: hi?.sort_applied,
+          category: hi?.category,
+          hours_status: hi?.hours_status,
+          opening_hours: hi?.opening_hours,
+          phone: hi?.phone,
+          website: hi?.website,
+          address: hi?.address,
         });
       }
       newReviewsLastRun += branchCount;

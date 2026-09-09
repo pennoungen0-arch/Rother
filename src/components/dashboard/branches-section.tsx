@@ -9,8 +9,10 @@ import {
   CalendarClock,
   ChevronRight,
   ExternalLink,
+  Globe,
   MapPin,
   MessageSquare,
+  Phone,
   Sparkles,
   Store,
   RefreshCw,
@@ -288,6 +290,14 @@ function CompetitorRow({
             </span>
           </>
         )}
+        {comp.hours_status && (
+          <>
+            <Separator orientation="vertical" className="h-4" />
+            <span className="text-muted-foreground">
+              {comp.hours_status}
+            </span>
+          </>
+        )}
       </div>
 
       {comp.latest_review?.text && (
@@ -446,6 +456,32 @@ function CompetitorReviewList({
               >
                 Default order
               </span>
+            )}
+            {comp.category && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-muted-foreground">Category:</span>
+                <span className="text-foreground">{comp.category}</span>
+              </span>
+            )}
+            {comp.phone && (
+              <a
+                href={`tel:${comp.phone}`}
+                className="inline-flex items-center gap-1.5 text-primary hover:underline"
+              >
+                <Phone className="size-3" aria-hidden="true" />
+                {comp.phone}
+              </a>
+            )}
+            {comp.website && (
+              <a
+                href={comp.website.startsWith("http") ? comp.website : `https://${comp.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-primary hover:underline"
+              >
+                <Globe className="size-3" aria-hidden="true" />
+                Website
+              </a>
             )}
           </SheetDescription>
           <div className="mt-2 grid grid-cols-3 gap-2">

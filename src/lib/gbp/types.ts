@@ -255,6 +255,12 @@ export interface SelectorsConfig {
   [key: string]: unknown;
 }
 
+export interface OpeningHour {
+  day: string;
+  hours: string;
+  today?: boolean;
+}
+
 /** Per-competitor aggregated stats, computed by the API layer. */
 export interface CompetitorStats {
   competitor_id: string;
@@ -279,13 +285,20 @@ export interface CompetitorStats {
    /** P1-F1: true when the self entry could not be scraped because no valid
     *  Google place_id exists. UI shows a "Not monitored" badge. */
    unscrapeable?: boolean;
-   /** Harvest honesty (HARVEST_FIX_PLAN Phase 3): full | reduced | unknown. */
-   harvest_status?: string;
-   /** Google's own aggregate count, e.g. "5.281" — absent when unknown. */
-   google_review_count?: string;
-   /** P1-F2: whether the Reviews panel was sorted by newest before scrolling. */
-   sort_applied?: boolean;
- }
+    /** Harvest honesty (HARVEST_FIX_PLAN Phase 3): full | reduced | unknown. */
+    harvest_status?: string;
+    /** Google's own aggregate count, e.g. "5.281" — absent when unknown. */
+    google_review_count?: string;
+    /** P1-F2: whether the Reviews panel was sorted by newest. */
+    sort_applied?: boolean;
+    // Business metadata (GMBE-inspired enhancement)
+    category?: string;
+    hours_status?: string | null;
+    opening_hours?: OpeningHour[];
+    phone?: string;
+    website?: string;
+    address?: string;
+  }
 
 /** Health of the underlying data layer for the current request (D4 / TD-H06). */
 export type DataStatus = "ok" | "missing" | "corrupt";
@@ -329,6 +342,7 @@ export interface OverviewResponse {
   competitorStats: {
     competitor_id: string;
     name: string;
+    branch_id: string;
     branch_name: string;
     total_reviews: number;
     average_rating: number | null;
@@ -344,6 +358,13 @@ export interface OverviewResponse {
     google_review_count?: string;
     /** P1-F2: whether the Reviews panel was sorted by newest. */
     sort_applied?: boolean;
+    // Business metadata (GMBE-inspired enhancement)
+    category?: string;
+    hours_status?: string | null;
+    opening_hours?: OpeningHour[];
+    phone?: string;
+    website?: string;
+    address?: string;
   }[];
   /** S6 provenance (Phase D): where the monitored config came from. */
   configSource?: "tenant" | "seed-demo";

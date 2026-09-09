@@ -6,108 +6,106 @@
 
 ---
 
-## 1. Current State Snapshot
+## 1. Current State Snapshot (Codebase Audit — 2026-09-09)
 
-### Rother is Ahead On:
-- **Persistent monitoring** (scheduled scrapes → snapshots → delta detection)
-- **Historical data** (versioned snapshots with metadata sidecars)
-- **New-review detection** (ever-seen ID union with 30-day recency gate)
-- **Self-hosting** (zero recurring cost, full data export)
-- **Anti-bot hardening** (Fix A: client-hints spoofing, NID jar warming)
+### Already Implemented (from CORE_SYSTEMS_FIX_PLAN.md + branches-section.tsx)
+- ✅ Sort status badge on competitor cards (green "Sorted newest" / yellow "Default order")
+- ✅ Harvest completeness bar on competitor cards (mini-progress bar with %)
+- ✅ "Showing X of Y" pattern in sheet view (CompetitorReviewList shows "Harvested {total_reviews} of ~{google_review_count}")
+- ✅ Partial window badge on competitor cards
+- ✅ New review badges (+N new) on competitor cards
+- ✅ Self-monitoring status indicator (unscrapeable badge)
+- ✅ Verified/unverified badges
 
-### Rother Lags On (Presentation Layer):
-- **No "Showing X of Y" indicator** on reviews page (GMB Everywhere shows total count prominently)
-- **No keyword badges** on reviews (GMB Everywhere does keyword discovery)
-- **Limited comparison** (radar chart only — no categories, services, hours comparison table)
-- **No startup feedback** in Tauri (extension is instant; Tauri launches Python silently)
-- **No harvest completeness bar** on competitor cards (metadata exists but isn't surfaced)
+### Still Missing (GMB Everywhere-inspired gaps)
+- ❌ **Keyword highlight in reviews table** — search matches are found but not highlighted in the text
+- ❌ **Keyword match count indicator** (e.g., "3 matches for 'staff'")
+- ❌ **New review markers in review table** — new reviews (from delta) aren't visually marked in the table
+- ❌ **Categories comparison column** — snapshot metadata has `category` field but not surfaced in comparison table
+- ❌ **Hours comparison column** — `opening_hours` + `hours_status` in metadata not surfaced in comparison
+- ❌ **Hours status in competitor cards** — metadata has `hours_status` but not shown on card
+- ❌ **Business metadata (phone, website, address) in sheet view** — available in snapshots but not displayed
+
+### Rother's Moat (What We Do Better Than GMB Everywhere)
+- ✅ Automated monitoring (scheduled scrapes, not manual session)
+- ✅ New-review detection + alerts (GMB Everywhere is session-scoped)
+- ✅ Full data export (GMB Everywhere explicitly does NOT allow export)
+- ✅ Self-hosted (zero recurring cost)
 
 ---
 
 ## 2. Prioritized Improvement Roadmap
 
-### Phase 1: Data Presentation Fixes (High Priority)
-**Goal:** Surface data that Rother already collects but doesn't display.
+### Phase 1: Reviews Table UX (High Priority)
+**Goal:** Make the ~500 captured reviews more useful through better presentation.
 
 | # | Improvement | Where | Effort | Data Available? |
 |---|---|---|---|---|
-| 1.1 | "Showing {captured} of {google_count} reviews" header on Reviews page | `reviews-section.tsx`, `server-data.ts` | Small | Yes — `readHarvestInfo` returns `google_review_count` |
-| 1.2 | Harvest completeness mini-bar on competitor cards | `branches-section.tsx` | Small | Yes — `harvest_status` + `google_review_count` in `CompetitorStats` |
-| 1.3 | Sort status badge on competitor cards | `branches-section.tsx` | Small | Yes — `sort_applied` in `CompetitorStats` |
-| 1.4 | Keyword search badge count (matches in current window) | `reviews-section.tsx` | Medium | Partial — `q` param exists; add keyword match highlighting |
-| 1.5 | "New review" badges in review table | `reviews-section.tsx` | Medium | Yes — delta data exists via `/api/new-reviews` |
+| 1.1 | Keyword match highlighting in review text | `reviews-section.tsx` | Small | ✅ Search param exists, just highlight matches |
+| 1.2 | Match count indicator ("3 matches for 'staff'") | `reviews-section.tsx` | Small | ✅ Same, count matches per row |
+| 1.3 | New review markers in table (from delta) | `reviews-section.tsx` | Medium | Partial — need API to return which reviews are "new" |
+| 1.4 | "Showing X of Y" in reviews header | `reviews-section.tsx` | Small | ✅ `google_review_count` in harvest info |
 
-**Verification:** vitest (new test cases) + Playwright e2e assertions on Reviews page.
+**Verification:** vitest (new test cases) + Playwright e2e assertions.
 
 ### Phase 2: Comparison Table Enhancement (Medium Priority)
-**Goal:** Build GMB Everywhere's Local Scan comparison table for our competitors.
+**Goal:** Enrich the competitor comparison table with business metadata.
 
 | # | Improvement | Where | Effort | Data Available? |
 |---|---|---|---|---|
-| 2.1 | Categories comparison column in comparison table | `c-comparison.tsx` | Medium | Requires scraper extraction of categories from GPB page |
-| 2.2 | Hours comparison column in comparison table | `c-comparison.tsx` | Medium | Yes — `hours_status` in snapshot metadata |
-| 2.3 | Services comparison (if extractable) | Requires new scraper | Large | Partial — categories exist, services may need new selectors |
-| 2.4 | Distance/proximity column (geo-grid data) | `c-comparison.tsx` | Medium | Yes — `lat`/`lng` on competitor configs |
+| 2.1 | Hours comparison column | `c-comparison.tsx` | Medium | ✅ `hours_status` in snapshot metadata |
+| 2.2 | Category comparison column | `c-comparison.tsx` | Medium | ✅ `category` in snapshot metadata |
+| 2.3 | Phone/website comparison | `c-comparison.tsx` | Medium | ✅ In snapshot metadata |
+| 2.4 | Distance/proximity column (already have geo-grid) | `c-comparison.tsx` | Medium | ✅ `lat`/`lng` on configs |
 
 **Verification:** vitest + Playwright on comparison feature.
 
-### Phase 3: Tauri Experience (Medium Priority)
+### Phase 3: Business Metadata Exposure (Medium Priority)
+**Goal:** Show business metadata (phone, website, hours, category) in sheet view.
+
+| # | Improvement | Where | Effort | Data Available? |
+|---|---|---|---|---|
+| 3.1 | Show hours_status on competitor cards | `branches-section.tsx` | Small | ✅ In `CompetitorStats` metadata |
+| 3.2 | Show business metadata in review sheet header | `branches-section.tsx` | Medium | ✅ In snapshot metadata, need to join |
+| 3.3 | Show phone/website links in sheet view | `branches-section.tsx` | Medium | ✅ In snapshot metadata |
+
+### Phase 4: Tauri Experience (Medium Priority)
 **Goal:** Close the "extension is instant" gap for desktop users.
 
 | # | Improvement | Where | Effort | Data Available? |
 |---|---|---|---|---|
-| 3.1 | Startup progress indicator (Python warm-up, NID check) | `run-screen.tsx`, `setup/detect` API | Medium | Partial — `/api/scrape/status` exposes progress |
-| 3.2 | Copy logs button in RunScreen | Already exists, verify in Tauri webview | Small | Done |
-| 3.3 | Error recovery cards with copy-paste commands | `run-screen.tsx` | Medium | Partial — error info available from API responses |
-| 3.4 | GBP_ROOT path writability validation | `main.rs` first_run_scaffold | Small | Already added in v0.4.2 |
+| 4.1 | Startup progress indicator (Python warm-up, NID check) | `run-screen.tsx` | Medium | Partial — `/api/scrape/status` exposes progress |
+| 4.2 | Error recovery cards with copy-paste commands | `run-screen.tsx` | Medium | Partial — error info from API responses |
 
-**Verification:** Manual Tauri build + test.
+### Phase 5: Web Deployment (Already Complete)
+All Docker/Fly.io work done (v0.4.4).
 
-### Phase 4: Web Deployment (High Priority — Already in Progress)
-**Goal:** Zero-command client access via Fly.io/Docker.
-
-| # | Improvement | Where | Effort |
-|---|---|---|---|
-| 4.1 | Docker deployment (multi-stage Dockerfile) | `Dockerfile` | Done ✅ |
-| 4.2 | Fly.io config (fly.toml) | `fly.toml` | Done ✅ |
-| 4.3 | Chromium memory optimization (M15) | `browser.py`, env vars | Done ✅ |
-| 4.4 | Deployment guide | `DEPLOYMENT_OPTIONS.md` | Done ✅ |
-| 4.5 | Add `GBP_MONITOR_TIGHT_MEMORY` to fly.io secrets | fly.toml | Done ✅ |
-
-### Phase 5: Monitoring Data Enrichment (Low Priority — Future)
-**Goal:** Expand beyond reviews to match GMB Everywhere's "Basic Audit."
-
-| # | Feature | Where | Effort |
-|---|---|---|---|
-| 5.1 | Categories extraction in scraper | `capture.py`, `schema.py` | Large |
-| 5.2 | Services extraction in scraper | `capture.py`, `schema.py` | Large |
-| 5.3 | Post Audit (GBP posts) | New scraper module + parser | Large |
-| 5.4 | Website Audit (external site fetch + analysis) | New pipeline | Large |
-| 5.5 | Local Scan (geo-rank heatmap) | `c-geo-grid.tsx` | Medium |
-
-**All explicitly deferred** per AGENTS.md and the GMB Everywhere analysis: "the architecture is a reasonable foundation" for these phases.
+### Phase 6: Data Enrichment (Future — Low Priority)
+Categories/services extraction, Posts monitoring, Website Audit — explicitly deferred.
 
 ---
 
 ## 3. Implementation Order
 
-**Week 1:**
-1. Phase 1.1 — "Showing X of Y" header in reviews page
-2. Phase 1.2 — Harvest completeness bar on competitor cards  
-3. Phase 1.3 — Sort status badge on competitor cards (ensure already implemented)
+**Week 1 — Reviews Table UX (High Priority):**
+1. Phase 1.1 — Keyword match highlighting in review text
+2. Phase 1.2 — Match count indicator
+3. Phase 1.4 — "Showing X of Y" in reviews header
 
-**Week 2:**
-4. Phase 1.4 — Keyword search highlights + match count
-5. Phase 1.5 — New review badges in review table
+**Week 2 — Business Metadata Exposure:**
+4. Phase 3.1 — Show hours_status on competitor cards
+5. Phase 3.2 — Show business metadata in sheet view (category, phone, website)
 
-**Week 3:**
-6. Phase 2.2 — Hours comparison column
-7. Phase 2.4 — Distance/proximity column
-8. Phase 2.1 — Categories comparison (if data available from snapshots)
+**Week 3 — Comparison Table:**
+6. Phase 2.1 — Hours comparison column
+7. Phase 2.2 — Category comparison column
 
-**Week 4:**
-9. Phase 3.1 — Tauri startup progress indicator
-10. Phase 3.3 — Error recovery cards
+**Week 4 — Tauri Experience:**
+8. Phase 4.1 — Startup progress indicator
+9. Phase 4.2 — Error recovery cards
+
+**Ongoing:**
+- Full test suite after each change: `npx vitest run && npx tsc --noEmit && npx eslint src`
 
 ---
 

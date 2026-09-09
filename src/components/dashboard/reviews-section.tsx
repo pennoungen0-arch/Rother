@@ -66,6 +66,7 @@ import type {
   ReviewsResponse,
 } from "@/lib/gbp/types";
 import { useBranches } from "@/lib/gbp/use-branches";
+import { useOverview } from "@/lib/gbp/use-overview";
 
 interface ReviewsSectionProps {
   /** Bump to force a refetch (e.g. after a manual scrape). */
@@ -121,8 +122,10 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
 
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: branches } = useBranches();
+  const { data: overviewData } = useOverview();
   const [rows, setRows] = React.useState<ReviewRow[]>([]);
   const [total, setTotal] = React.useState(0);
+  const [googleTotal, setGoogleTotal] = React.useState<number | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -242,6 +245,30 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
     setCompetitorId("all");
   }, [branchId]);
 
+  // Compute aggregate Google review count for the current filter scope (for
+  // the "Showing X of Y" header). We sum the google_review_count values for
+  // competitors that match the current branch/competitor filters.
+  React.useEffect(() => {
+    if (!overviewData?.competitorStats) {
+      setGoogleTotal(null);
+      return;
+    }
+    let total = 0;
+    let found = false;
+    for (const stat of overviewData.competitorStats) {
+      if (branchId !== "all" && stat.branch_id !== branchId) continue;
+      if (competitorId !== "all" && stat.competitor_id !== competitorId) continue;
+      if (stat.google_review_count) {
+        const n = parseInt(stat.google_review_count.replace(/[.,]/g, ""), 10);
+        if (!isNaN(n) && n > 0) {
+          total += n;
+          found = true;
+        }
+      }
+    }
+    setGoogleTotal(found ? total : null);
+  }, [overviewData?.competitorStats, branchId, competitorId]);
+
   // Toggle a rating in the multi-select.
   const toggleRating = (r: number) => {
     setSelectedRatings((prev) => {
@@ -284,7 +311,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
         accessorKey: "text_short",
         header: "Review",
         enableSorting: false,
-        cell: ({ row }) => <ReviewTextCell text={row.original.text} />,
+        cell: ({ row }) => <ReviewTextCell text={row.original.text} searchTerm={debouncedSearch} />,
       },
       {
         accessorKey: "relative_date",
@@ -358,6 +385,17 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
     dateTo.length > 0 ||
     debouncedSearch.trim().length > 0;
 
+  // Count keyword matches on the current page (for the filter badge).
+  const matchesOnPage = React.useMemo(() => {
+    if (!debouncedSearch.trim() || rows.length === 0) return 0;
+    const term = debouncedSearch.toLowerCase();
+    return rows.filter(
+      (r) =>
+        (r.text ?? "").toLowerCase().includes(term) ||
+        (r.reviewer_name ?? "").toLowerCase().includes(term),
+    ).length;
+  }, [rows, debouncedSearch]);
+
   const clearFilters = () => {
     setBranchId("all");
     setCompetitorId("all");
@@ -389,6 +427,16 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
                   {total.toLocaleString()}
                 </span>{" "}
                 review{total === 1 ? "" : "s"} match the current filters.
+                {googleTotal !== null && googleTotal > total && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    (Showing matching reviews from a window of{" "}
+                    <span className="font-semibold text-foreground">
+                      {googleTotal.toLocaleString()}
+                    </span>{" "}
+                    on Google)
+                  </span>
+                )}
               </CardDescription>
             </div>
             <ExportButtons
@@ -568,7 +616,7 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
                 )}
                 {debouncedSearch.trim() && (
                   <Badge variant="secondary" className="gap-1 text-[11px]">
-                    “{debouncedSearch.trim()}”
+                    “{debouncedSearch.trim()}” — {matchesOnPage} matches on this page
                   </Badge>
                 )}
               </div>
@@ -768,27 +816,49 @@ export function ReviewsSection({ refreshKey }: ReviewsSectionProps) {
   );
 }
 
-/** Review text cell with click-to-expand for long text. */
-function ReviewTextCell({ text }: { text: string | null }) {
+/** Highlight search term matches in text. */
+function highlightText(text: string, searchTerm: string): React.ReactNode {
+  if (!searchTerm) return text;
+  const lowerText = text.toLowerCase();
+  const lowerSearch = searchTerm.toLowerCase();
+  const idx = lowerText.indexOf(lowerSearch);
+  if (idx === -1) return text;
+
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + searchTerm.length);
+  const after = text.slice(idx + searchTerm.length);
+  return (
+    <>
+      {before}
+      <mark className="rounded bg-yellow-200 px-0.5 py-0.5 font-medium text-foreground dark:bg-yellow-900/40">
+        {match}
+      </mark>
+      {after}
+    </>
+  );
+}
+
+/** Review text cell with click-to-expand + keyword highlighting. */
+function ReviewTextCell({ text, searchTerm }: { text: string | null; searchTerm: string }) {
   const [expanded, setExpanded] = React.useState(false);
   if (!text) {
     return <span className="text-xs italic text-muted-foreground">(no text)</span>;
   }
   const MAX = 120;
-  if (text.length <= MAX) {
-    return <span className="text-sm leading-relaxed text-foreground/90">{text}</span>;
-  }
+  const displayText = expanded ? text : `${text.slice(0, MAX).trimEnd()}${text.length > MAX ? "…" : ""}`;
+
   return (
     <div className="text-sm leading-relaxed text-foreground/90">
-      {expanded ? text : `${text.slice(0, MAX).trimEnd()}…`}
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="ml-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-        aria-expanded={expanded}
-      >
-        {expanded ? "show less" : "expand"}
-      </button>
+      {searchTerm ? highlightText(displayText, searchTerm) : displayText}
+      {text.length > MAX && !expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="ml-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+        >
+          expand
+        </button>
+      )}
     </div>
   );
 }

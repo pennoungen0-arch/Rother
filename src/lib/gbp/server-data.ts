@@ -247,14 +247,28 @@ export interface SnapshotEntry {
   review_count: number;
 }
 
-/** Harvest honesty info (HARVEST_FIX_PLAN Phase 3) — from the latest
- *  snapshot's metadata sidecar, written by the scraper. */
+/** Harvest honesty info + business metadata (HARVEST_FIX_PLAN Phase 3) —
+ *  from the latest snapshot's metadata sidecar, written by the scraper. */
 export interface HarvestInfo {
   harvest_status?: string;
   harvest_detail?: string;
   google_review_count?: string;
   /** P1-F2: whether the Reviews panel was sorted by newest before scrolling. */
   sort_applied?: boolean;
+  // Business metadata (GMBE-inspired enhancement — Phase 2)
+  business_name?: string;
+  category?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  opening_hours?: OpeningHour[];
+  hours_status?: string | null;
+}
+
+export interface OpeningHour {
+  day: string;
+  hours: string;
+  today?: boolean;
 }
 
 /**

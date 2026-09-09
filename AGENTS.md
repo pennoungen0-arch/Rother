@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-07T13:30:00+07:00 (v0.4.2 + macOS compatibility Phase 1 complete + web launcher scripts).**
+**Last updated: 2026-09-09T05:00:00+07:00 (v0.4.2 + macOS Phase 1 + web launcher scripts + Docker deployment + GMB Everywhere-inspired presentation improvements).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -234,7 +234,9 @@ From repo root:
   (webhook/SMTP, GitHub Actions, hours_status).
 - **Improvement plan:** `docs/engineering/IMPROVEMENT_PLAN_2026-09.md` covers
   GMB Everywhere-derived presentations (showing X of Y reviews, harvest bars,
-  comparison table enhancements, Tauri startup feedback).
+  comparison table enhancements, Tauri startup feedback). Also see
+  `GMB_EVERYWHERE_ROTHER_ANALYSIS_2026-09-05.md` for the full feature comparison
+  matrix and `discussion_history/` for the original client discussions.
 - **Python paths are cwd-relative** (`config/listings.json`, `data/...`). Always
   run Python from `gbp-monitor/`. Never `cd` via shell; use the tool's `workdir`.
 - **Don't re-attempt DOM-impossible features** (Rule 3 evidence): owner replies

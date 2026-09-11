@@ -9,7 +9,7 @@ import type {
 import { GBP_ROOT, GBP_RUN_SUMMARY_PATH } from "@/lib/gbp/paths";
 import { promises as fs } from "node:fs";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const revalidate = 0;
 export const maxDuration = 60;
 

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { Review, ReviewsResponse } from "@/lib/gbp/types";
 import { readAllSnapshots, readListings } from "@/lib/gbp/server-data";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const revalidate = 0;
 
 /**

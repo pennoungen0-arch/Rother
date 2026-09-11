@@ -150,6 +150,14 @@ def capture_listing_html(
     phase_timings = {}
     page = context.new_page()
     setup_page_handlers(page, comp_id=comp_id)
+    # Block heavy assets (images, media, fonts, stylesheets) to save memory + bandwidth.
+    def _block_heavy_assets(route):
+        if route.request.resource_type in ("image", "media", "font", "stylesheet"):
+            route.abort()
+        else:
+            route.continue_()
+    page.route("**/*", _block_heavy_assets)
+
     start = time.time()
     deadline = start + total_timeout_s
     try:
@@ -162,7 +170,7 @@ def capture_listing_html(
 
         t0 = time.time()
         try:
-            page.goto(url, timeout=30000)
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
         except Exception as e:
             raise _classify_navigation_error(url, e)
         phase_timings["goto"] = round(time.time() - t0, 2)

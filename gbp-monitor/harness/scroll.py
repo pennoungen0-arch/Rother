@@ -7,9 +7,9 @@ from harness.selectors import resolve_selectors
 
 logger = logging.getLogger("gbp-monitor.scroll")
 
-MAX_SCROLLS = 40
-STABLE_THRESHOLD = 3
-SCROLL_WAIT_MS = 2500
+MAX_SCROLLS = 20
+STABLE_THRESHOLD = 2
+SCROLL_WAIT_MS = 1000
 
 
 class SelectorNotFoundError(Exception):

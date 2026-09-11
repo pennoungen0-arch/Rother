@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { readAllSnapshots } from "@/lib/gbp/server-data";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const revalidate = 0;
 
 /**

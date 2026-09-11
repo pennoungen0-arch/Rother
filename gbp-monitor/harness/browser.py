@@ -204,7 +204,17 @@ def get_browser_context():
     from playwright.sync_api import sync_playwright
 
     p = sync_playwright().start()
-    browser = p.chromium.launch(headless=True)
+    browser = p.chromium.launch(
+        headless=True,
+        args=[
+            "--single-process",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-audio-output",
+            "--no-first-run",
+        ],
+    )
     context = browser.new_context(
         user_agent=_REALISTIC_USER_AGENT,
         viewport=_REALISTIC_VIEWPORT,

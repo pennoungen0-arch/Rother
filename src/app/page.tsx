@@ -31,6 +31,7 @@ import { ConfigSection } from "@/components/dashboard/config-section";
 import { ShortcutsHelpDialog } from "@/components/dashboard/shortcuts-help-dialog";
 import { ExportDashboardDialog } from "@/components/dashboard/export-dashboard-dialog";
 import { useAppMode } from "@/hooks/use-app-mode";
+import { fetchAPI } from "@/hooks/use-static-data";
 import type { TextMap } from "@/lib/app-mode";
 
 import type {
@@ -141,7 +142,7 @@ export default function Home() {
     setOverviewLoading(true);
     setOverviewError(null);
     try {
-      const r = await fetch("/api/overview", { cache: "no-store" });
+      const r = await fetchAPI("/api/overview");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const json = (await r.json()) as OverviewResponse;
       setOverview(json);
@@ -162,7 +163,7 @@ export default function Home() {
     setBranchesLoading(true);
     setBranchesError(null);
     try {
-      const r = await fetch("/api/branches", { cache: "no-store" });
+       const r = await fetchAPI("/api/branches");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const json = (await r.json()) as BranchesResponse;
       setBranches(json);
@@ -176,7 +177,7 @@ export default function Home() {
 
   // Fetch selectors on mount (for the footer badge even before overview loads).
   React.useEffect(() => {
-    fetch("/api/config/selectors", { cache: "no-store" })
+     fetchAPI("/api/config/selectors")
       .then(async (r) => {
         if (!r.ok) return null;
         return r.json() as Promise<SelectorsConfig>;

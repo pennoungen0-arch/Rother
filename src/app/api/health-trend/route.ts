@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 
 import { GBP_RUN_LOG_PATH } from "@/lib/gbp/paths";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const revalidate = 0;
 
 /**

@@ -1,0 +1,65 @@
+name: pages-deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'EASY_START.md'
+      - 'scripts/export-static-data.mjs'
+      - 'scripts/generate-static-api.mjs'
+      - '.github/workflows/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - 'eslint.config.mjs'
+      - 'tsconfig.json'
+      - 'src/**'
+      - 'public/**'
+      - 'gbp-monitor/data/**'
+      - 'gbp-monitor/config/**'
+
+concurrency:
+  group: pages-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate static API data
+        run: node scripts/generate-static-api.mjs
+
+      - name: Generate static data files
+        run: node scripts/export-static-data.mjs
+
+      - name: Build Next.js (static export)
+        run: npx next build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { readSelectors } from "@/lib/gbp/server-data";
 import type { SelectorsConfig } from "@/lib/gbp/types";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const revalidate = 0;
 
 /** GET /api/config/selectors — selectors.json with metadata and health.

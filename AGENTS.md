@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-09T05:00:00+07:00 (v0.4.2 + macOS Phase 1 + web launcher scripts + Docker deployment + GMB Everywhere-inspired presentation improvements).**
+**Last updated: 2026-09-12T23:05:17+07:00 (v0.4.6 — Vercel web deployment complete + all v0.4.x fixes).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -24,6 +24,11 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
  `CORE_SYSTEMS_FIX_PLAN.md` (✅ Phase 1-3 complete: RED fixes → YELLOW fixes → UI/UX fluidity).
  `MACOS_COMPATIBILITY_PLAN.md` (✅ Phase 1 complete: macOS kill syntax, Chromium path, bundle config, Node binaries, CI workflow; Phase 2/3 blocked on macOS build host + Apple Developer account).
 `docs/engineering/MACOS_BUILD_GUIDE.md` (macOS build prerequisites, step-by-step build instructions, error diagnostics + solutions).
+**Deployment docs:** `docs/engineering/VERCEL_DEPLOYMENT_PLAN_2026-09-11.md`,
+`docs/engineering/WEB_DEPLOYMENT_ANALYSIS_2026-09-11.md`,
+`docs/engineering/PLAYWRIGHT_OPTIMIZATION_2026-09-11.md`,
+`docs/engineering/STATIC_EXPORT_ISSUE_2026-09-11.md`,
+`docs/engineering/TAURI_AUDIT_2026-09-06.md`.
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.
@@ -32,10 +37,121 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
 
 ## Project identity
 
-- **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.2.0`).
+- **Name:** Rother — Competitor Review Monitor (package name `rother`, version `0.4.6`).
 - **What it is:** a self-hosted, zero-cost monitor for competitor Google
-  Business Profile reviews. Live Python scraper + Next.js dashboard.
-- **Branch:** `test/m15-1-validation`. **Latest commit:** `639aeb6` (feat: new review badges + GMB Everywhere presentation improvements). **Tag: `v0.3.3`** (latest). **Tag: `v0.4.4`** — Docker deployment + Chromium memory optimization for Fly.io free tier. All 8 productization milestones + Phases A–D discovery-first + v0.3.2 self-monitoring fix + systems hardening + harvest honesty + macOS Phase 1 + web launcher scripts complete.
+  Business Profile reviews. Live Python scraper + Next.js dashboard (now on Vercel).
+- **Branch:** `test/m15-1-validation`. **Latest commit:** `49a0c09` (chore: trigger Vercel deployment for rotherweb). **Tag: `v0.4.5`** (latest pushed tag). **Tag: `v0.4.6`** — Vercel web deployment complete. All 8 productization milestones + Phases A–D discovery-first + v0.3.2 self-monitoring fix + systems hardening + harvest honesty + macOS Phase 1 + web launcher scripts + **Vercel Phase 1 (dashboard live)** complete.
+- **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
+  product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
+  self-monitoring fix (2026-08-24)**: the active business itself is always a
+  scrape target via read-time `withSelfEntry()` synthesis (never persisted;
+  geo-stats consumers keep raw branches) — adding competitors no longer
+   silently disables main-cafe monitoring. Live-proven: crate-cafe 380 reviews
+   scraped alongside revolver-seminyak, `success=2/2`. Discovery-first flow:
+   paste Google Maps link → validate (short links, place URLs,
+  `query_place_id=``,
+  hex-CID→ChIJ conversion) → onboarding prefill → manual competitor add →
+  Start Monitoring; scheduler UI (`/api/schedule` ↔ `schedule.json` ↔
+  `run_all.py --schedule`) and per-competitor Refresh buttons (trigger route →
+  `--competitors` passthrough, sanitized). Live scraping fix (2026-08-20):
+  real place_ids for 3 Indonesian businesses (Crate Cafe Canggu, Revolver
+  Seminyak, Seniman Coffee Studio); certified selectors work. **Tenant-scoped
+  data writes (2026-08-22):** dashboard-spawned Python runs honor
+  `ROTHER_DATA_DIR=data/users/{businessId}` — snapshots/deltas/run_summary/
+  run.log isolated per business; lock file + NID jar stay global at root.
+  **v0.3.1 seam fixes (2026-08-22):** competitors persist even when onboarding
+  Step 2 is skipped; discovery scrapes derive targets from tenant config via
+  `effective_listings.json` + `ROTHER_LISTINGS_PATH` env (root listings.json
+  untouched in discovery mode); honest 422 on zero competitors; concurrent-run
+  detection in RunScreen. **Systems hardening (2026-08-24):** middleware rate
+  limit raised 20→120 req/min/path (old cap starved dashboard polling and
+  429s parsed as "no data"); ALL read routes join via
+  `resolveMonitoredConfig()` (11 routes swept off direct `readListings()` —
+  /api/reviews branch filter, alerts, new-reviews, correlation, history×3,
+  exports×3); `configSource` field + "Demo dataset" TopBar badge in fixed
+  mode; e2e offline-deterministic with `expect.poll` server assertions.
+  **Harvest honesty + variance-proof deltas (2026-08-25):** aggregate
+  rating/count extracted PRE-tab (post-tab probe ran after the overview text
+  left the DOM); `classify_harvest()` emits `harvest_status`
+  (full/reduced/unknown) + Google's aggregate into run_summary + snapshot
+  metadata; deltas diffed against a per-competitor **ever-seen ID union**
+  (`storage/seen_store.py`) with a 30-day recency gate — render-depth jitter
+  can no longer manufacture phantom "new" alerts (was 240/run; now 0 across
+  consecutive live runs); backfill discoveries merge silently; dashboard
+  shows "Partial window" badge + "of ~N on Google". The ~500-review ceiling
+  is Google's virtualized panel, NOT a Rother cap (MAX_SCROLLS=400). See
+  `HARVEST_AUDIT_2026-08-24.md` + `HARVEST_FIX_PLAN.md`.
+- **Convergence status — Phase 3 hardening DONE (2026-08-19):** `src/` is
+  the **v2 shell** (AppShell, 4 hubs, 25 features, Cmd+K palette, geo-grid,
+  Bali oklch design system) on v1's certified pipeline, with a **monitoring mode
+  selector** (`fixed` = v1 competitor-list model, default; `discovery` =
+  v2 single-business + onboarding). Fixed mode skips Onboarding, POSTs
+  `/api/scrape/trigger` with an empty body (no `user-business.json`), and the
+  single-business invariant in `readListings()` was removed. Phase 2 closed the
+  fixed-mode data gaps: `/api/overview` derives the v2 runSummary contract
+  (`status`/`reviewCount`/`targetCount`) from v1 run_summary; `/api/competitive-health`
+  no longer 409s (tenant-scoped, config-list fallback); c-competitive-health and
+  c-discover gate their discovery UI by mode. Phase 3 hardening: vitest
+  **34 → 134 tests** (new `run-summary`/`sanitize`/`validate`/`geocode`/`format`/
+  `categories`/`app-mode` suites), **Playwright e2e** smoke spec (login → run →
+  hubs → feature data) passing against dev server, `prefers-reduced-motion`
+  in `globals.css`, and a **`dashboard` CI job** (tsc/vitest/eslint/build).
+  Post-convergence hardening DONE: types consolidated into `src/lib/gbp/types.ts`
+  (zero duplicates outside it) and a full **per-feature Playwright e2e**
+  (`e2e/features.spec.ts`, 28 features across all 4 hubs + smoke) proves every
+  feature renders real data (`npm run test:e2e` 30/30). `gbp-monitor/` untouched.
+  `rother02/` archived → `rother02-archive/` (untracked, excluded from
+  build/test). Reference: `docs/engineering/CONVERGENCE_PLAN.md` +
+  `ROTHER02_ANALYSIS.md`.
+- **UX consolidation (v0.4.0, 2026-08-27)**: 28 → 25 features via three merges:
+  Run Health + Run History + Run Comparison + Run Logs → **Runs** (tabbed);
+  Reviews over Time + Recency Heatmap → **Reviews over Time** (timeline/heatmap
+  toggle); Today composite added as default landing screen. Hubs now show
+  **Pinned** features first, then **More analytics**. See
+  `UX_AUDIT_2026-08-26.md` + `SOLIDIFICATION_PLAN_2026-08-27.md`.
+- **Post-v0.4.0 bug fixes (2026-08-27):** Today back button fixed (`back()` now
+  sets `showToday: false` instead of unused `showHubs: true`); rating filter
+  buttons wrap within card instead of overflowing; FeaturePage header gets
+  `bg-background` + `shrink-0` to prevent content bleed-through during scroll.
+  **Harvest fix (2026-08-27):** initial viewport now harvested BEFORE the first
+  scroll in `scroll_review_container()` — newest reviews no longer missed after
+  a "Terbaru" sort (the old loop scrolled to bottom first, virtualizing the top
+  cards before capture). **Trigger UI fix (2026-08-27):** Config "Run scan again"
+  and Scheduler "Run now" now poll `/api/scrape/status` and show live progress +
+  completion toast (the API always worked; the UI gave zero feedback, making it
+  appear broken). **Trigger stuck-state fix (2026-08-27):** `hasActiveRun()` now
+  verifies the process is actually alive via `process.kill(pid, 0)` — dead/orphaned
+  processes are auto-marked "failed" so they don't block future triggers. Added
+  `DELETE /api/scrape/stop` endpoint + red "Stop" button in Config and Scheduler
+  UIs. **Reviews sort fix (2026-08-27):** `/api/reviews` now sorts by resolved
+  review DATE (not `scraped_at`), so recently posted reviews appear at the top
+  regardless of when they were scraped. **Header Refresh button (2026-08-27):**
+  TopBar now has a "Refresh" button (with refresh icon) between "Hubs" and
+  user info — one-click access to trigger scraping without navigating menus.
+  Button toggles to red "Stop" while scraping, polls status every 3s, shows
+  completion toast. **Duplicate place_id detection (2026-08-27):** `addCompetitor`
+  now detects when a competitor points to the same Google Maps place as an
+  existing competitor or the active business — shows warning instead of silently
+  adding duplicate. **Stale branches fix (2026-08-27):** `persistUserBusinessLight`
+  now detects business name change and regenerates ID + clears old branches,
+  preventing stale branches from persisting across business changes. **Panel
+  expand fix (2026-08-27):** `click_newest_sort` now waits for the reviews panel
+  to fully expand (scrollHeight > 1000px) after sorting — previously the scroll
+  phase started against a collapsed panel (height=584px, 0 cards), harvesting
+  0 reviews. `scroll_review_container` also detects collapsed panel and re-opens
+  the reviews tab if needed. **Panel expand fix Part 2 (2026-08-29):** Changed
+  from waiting for the panel to expand on its own to actively clicking the
+  reviews tab again if the panel is collapsed after sorting — waiting alone
+  didn't work because the panel never expands without user interaction. Test
+  counts: vitest 134/134, Playwright 20/20, verify_baseline 168/168.
+- **Vercel Deployment Phase 1 (2026-09-12):** Next.js dashboard deployed to
+  `https://rotherweb.vercel.app`. Build fixes: `@types/node` added to devDeps,
+  `vercel.json` build command = `npx next build` (bypasses Tauri `build.mjs`),
+  `next.config.ts` conditional `output: "standalone"` only for local/Tauri
+  (skipped on Vercel via `VERCEL` env var). `.vercelignore` excludes Python
+  scraper + Tauri artifacts. GitHub repo connected, auto-deploys on push to
+  `main`. **Phase 2 pending:** scraper integration via GitHub Actions → data
+  sync to Vercel (Blob Storage or data branch).
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a

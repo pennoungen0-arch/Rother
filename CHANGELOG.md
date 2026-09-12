@@ -1,5 +1,22 @@
 # Changelog — Rother
 
+## 2026-09-12T23:05:17+07:00 — Vercel Web Deployment (Phase 1 Complete)
+
+- **Files:** `package.json`, `vercel.json` (new), `next.config.ts`, `.vercelignore` (new), `.github/workflows/` (pending)
+- **Reason:** Deploy the Next.js dashboard to Vercel for universal browser access (zero-cost, any OS/device).
+- **Changes:**
+  1. **Added `@types/node` ^22 to devDependencies** — was completely missing, causing `ENOENT` build failure on Vercel (`npx next build` requires TypeScript types).
+  2. **Fixed `vercel.json` build command** — changed from `npm run build` (runs Tauri-specific `build.mjs`) to `npx next build` directly. `build.mjs` copies standalone output to `src-tauri/frontend-dist` which Vercel doesn't need.
+  3. **Conditional `output: "standalone"` in `next.config.ts`** — now `output: process.env.VERCEL ? undefined : "standalone"`. Vercel auto-sets `VERCEL=true`, so it uses default serverless mode. Local/Tauri builds keep standalone output for `build.mjs` to copy to `src-tauri/frontend-dist`.
+  4. **Created `.vercelignore`** — excludes `gbp-monitor/`, `src-tauri/`, `docs/`, `rother02-archive/`, `prisma/`, `node_modules/` from deployment (reduces upload size, scraper runs separately).
+  5. **Created Vercel project `rotherweb`** — connected to GitHub `pennoungen0-arch/Rother`, production branch `main`, region `sin1` (Singapore). Auto-deploys on push to `main`.
+  6. **Deployment live at `https://rotherweb.vercel.app`** — dashboard loads, onboarding screen renders, all 29 API routes registered.
+- **Problems Solved:**
+  - `ENOENT: no such file or directory, open '/vercel/path0/.next/next-server.js.nft.json'` → caused by `output: "standalone"` incompatible with Vercel serverless deployment.
+  - `Please install @types/node by running: npm install --save-dev @types/node` → missing from package.json entirely.
+  - Build command running Tauri wrapper (`build.mjs`) → Vercel only needs `next build`.
+- **Status:** PROVEN — local `npx next build` succeeds, Vercel build succeeds, dashboard accessible at production URL.
+
 ## 2026-09-09T06:00:00+07:00 — GMB Everywhere-inspired presentation improvements (Phase 1)
 
 - **Files:** `src/components/dashboard/reviews-section.tsx`, `src/components/dashboard/review-word-cloud.tsx`,

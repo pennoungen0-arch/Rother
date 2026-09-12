@@ -1,0 +1,59 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Build
+.next
+out
+
+# Misc
+.DS_Store
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development
+*.log
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Python scraper (not needed for frontend)
+gbp-monitor/
+*.pyc
+__pycache__/
+*.pyo
+
+# Tauri (desktop app, not web)
+src-tauri/
+*.dmg
+*.exe
+*.msi
+*.AppImage
+
+# Archives
+*.zip
+*.tar.gz
+*.rar

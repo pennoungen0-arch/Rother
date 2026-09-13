@@ -1,5 +1,32 @@
 # Changelog — Rother
 
+## 2026-09-13T14:43:50+07:00 — Phase 2: GitHub Actions Scraper + Vercel Remote Data Layer
+
+- **Files:** `.github/workflows/scraper.yml` (new), `src/lib/gbp/remote-data.ts` (new), `src/lib/gbp/data-source.ts` (new), `src/lib/gbp/server-data.ts`, `src/lib/gbp/types.ts`
+- **Reason:** Enable automatic scheduled scraping via GitHub Actions and serve scraped data to Vercel-hosted dashboard from GitHub data branch.
+- **Changes:**
+  1. **GitHub Actions workflow** (`.github/workflows/scraper.yml`):
+     - Runs daily at 02:00 UTC via cron + manual dispatch with competitor filter
+     - Installs Python deps, Playwright Chromium (cached), runs `python -m orchestration.run_all --schedule`
+     - Commits `gbp-monitor/data/` to `data` branch on push
+     - Uploads run_summary.json and run.log as artifacts (30-day retention)
+  2. **Remote data fetcher** (`src/lib/gbp/remote-data.ts`):
+     - Fetches from `https://raw.githubusercontent.com/pennoungen0-arch/Rother/data/gbp-monitor/...`
+     - Covers: listings.json, selectors.json, run_summary.json, run.log, snapshots/, reviews_new/
+     - 60-second in-memory cache with Next.js `next: { revalidate: 60 }` for CDN caching
+  3. **Unified data source** (`src/lib/gbp/data-source.ts`):
+     - Single abstraction switching between local filesystem (dev/Tauri) and remote GitHub (Vercel)
+     - Auto-detects Vercel via `process.env.VERCEL === "1"` or `USE_REMOTE_DATA=true`
+     - Implements all 18 data access functions: readListings, readSelectors, readRunSummary, readAllSnapshots, readHarvestInfo, listSnapshots, readSnapshotAt, readAllDeltas, readLatestDelta, tailLog, assessDataStatus, resolveMonitoredConfig, readActiveBusinessBranches, writeActiveBusinessBranches, writeEffectiveListings, readCategoryScan, readActiveBusiness
+  4. **Server-data refactor**: Now pure re-exports from data-source.ts — all 25 API routes work unchanged
+  5. **Types**: Added `HarvestInfo` and `SnapshotEntry` exports to types.ts
+- **Problems Solved:**
+  - Vercel has no persistent filesystem → data now served from GitHub data branch
+  - Scraper must run on schedule → GitHub Actions cron + manual dispatch
+  - Zero cost → GitHub Actions free tier (2000 min/mo) + Vercel free tier
+  - No manual client steps → fully automatic, client just opens `rotherweb.vercel.app`
+- **Status:** PROVEN — local build succeeds, all 134 vitest tests pass, tsc 0 errors, eslint only pre-existing issues. GitHub Actions workflow ready to trigger.
+
 ## 2026-09-12T23:05:17+07:00 — Vercel Web Deployment (Phase 1 Complete)
 
 - **Files:** `package.json`, `vercel.json` (new), `next.config.ts`, `.vercelignore` (new), `.github/workflows/` (pending)

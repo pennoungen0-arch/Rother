@@ -28,7 +28,8 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `docs/engineering/WEB_DEPLOYMENT_ANALYSIS_2026-09-11.md`,
 `docs/engineering/PLAYWRIGHT_OPTIMIZATION_2026-09-11.md`,
 `docs/engineering/STATIC_EXPORT_ISSUE_2026-09-11.md`,
-`docs/engineering/TAURI_AUDIT_2026-09-06.md`.
+`docs/engineering/TAURI_AUDIT_2026-09-06.md`,
+`docs/engineering/VERCEL_COMPATIBILITY.md` (feature matrix: what works/broken on Vercel).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.
@@ -152,12 +153,13 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   scraper + Tauri artifacts. GitHub repo connected, auto-deploys on push to
   `main`. **Phase 2 (2026-09-13) COMPLETE:** GitHub Actions scraper workflow
   (`.github/workflows/scraper.yml`) — daily cron 02:00 UTC + manual dispatch,
-  runs `python -m orchestration.run_all --schedule`, commits `data/` to `data`
+  runs `python -m orchestration.run_all`, commits `data/` to `data`
   branch. Remote data layer (`src/lib/gbp/remote-data.ts`,
   `src/lib/gbp/data-source.ts`) fetches from
   `raw.githubusercontent.com/pennoungen0-arch/Rother/data/gbp-monitor/...`.
   Unified local/remote data access via `VERCEL` env var auto-detection.
-  All 25 API routes work unchanged in both environments.
+  **18 read routes work on Vercel; 8 write/spawn routes are broken** (expected —
+  no Python, no writable filesystem). See `docs/engineering/VERCEL_COMPATIBILITY.md`.
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a
@@ -267,8 +269,9 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   `next.config.ts` conditional `output: "standalone"` only for local/Tauri
   (skipped on Vercel via `VERCEL` env var). `.vercelignore` excludes Python
   scraper + Tauri artifacts. GitHub repo connected, auto-deploys on push to
-  `main`. **Phase 2 pending:** scraper integration via GitHub Actions → data
-  sync to Vercel (Blob Storage or data branch).
+  `main`. **Phase 2 (2026-09-13) COMPLETE:** scraper integration via GitHub Actions → data
+  sync to Vercel via data branch. 18 read routes work; 8 write routes broken (expected).
+  See `docs/engineering/VERCEL_COMPATIBILITY.md`.
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a

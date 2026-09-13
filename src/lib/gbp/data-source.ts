@@ -146,7 +146,10 @@ let _snapshotsCache: { value: Map<string, Review[]>; ts: number } | null = null;
 
 export async function readAllSnapshots(businessId?: string): Promise<Map<string, Review[]>> {
   if (isRemoteMode()) {
-    return remoteFetchAllSnapshots();
+    const remote = await remoteFetchAllSnapshots();
+    const cleaned = new Map<string, Review[]>();
+    for (const [k, v] of remote) cleaned.set(k, cleanReviewNames(v));
+    return cleaned;
   }
   const { readActiveBusiness } = await import("./server-data");
   const active = await readActiveBusiness();
@@ -228,7 +231,7 @@ export async function listSnapshots(competitorId: string): Promise<SnapshotEntry
 
 export async function readSnapshotAt(competitorId: string, timestamp: string): Promise<Review[]> {
   if (isRemoteMode()) {
-    return remoteFetchSnapshot(competitorId);
+    return cleanReviewNames(await remoteFetchSnapshot(competitorId));
   }
   validateCompetitorId(competitorId);
   if (timestamp === "latest") {

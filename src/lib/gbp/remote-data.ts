@@ -70,10 +70,7 @@ export async function fetchAllSnapshots(): Promise<Map<string, Review[]>> {
     for (const comp of branch.competitors ?? []) {
       const competitorId = comp.competitor_id;
       if (!competitorId) continue;
-      const reviews = await fetchJson<Review[]>(
-        `${DATA_BASE_URL}/data/snapshots/${competitorId}/latest.json`,
-        []
-      );
+      const reviews = await fetchSnapshot(competitorId);
       if (reviews.length > 0) {
         out.set(competitorId, reviews);
       }
@@ -83,12 +80,28 @@ export async function fetchAllSnapshots(): Promise<Map<string, Review[]>> {
 }
 
 export async function fetchSnapshot(competitorId: string): Promise<Review[]> {
-  return fetchJson<Review[]>(`${DATA_BASE_URL}/data/snapshots/${competitorId}/latest.json`, []);
+  // latest.json is a pointer to the actual snapshot file (e.g. "2026-09-13T11-32-32Z.json")
+  const filename = await fetchJson<string | null>(
+    `${DATA_BASE_URL}/data/snapshots/${competitorId}/latest.json`,
+    null
+  );
+  if (!filename || typeof filename !== "string") return [];
+  return fetchJson<Review[]>(
+    `${DATA_BASE_URL}/data/snapshots/${competitorId}/${filename}`,
+    []
+  );
 }
 
 export async function fetchHarvestInfo(competitorId: string): Promise<HarvestInfo | null> {
+  // Get the actual snapshot filename from the pointer, then fetch its metadata
+  const filename = await fetchJson<string | null>(
+    `${DATA_BASE_URL}/data/snapshots/${competitorId}/latest.json`,
+    null
+  );
+  if (!filename || typeof filename !== "string") return null;
+  const metaFilename = filename.replace(/\.json$/, ".metadata.json");
   return fetchJson<HarvestInfo | null>(
-    `${DATA_BASE_URL}/data/snapshots/${competitorId}/latest.metadata.json`,
+    `${DATA_BASE_URL}/data/snapshots/${competitorId}/${metaFilename}`,
     null
   );
 }

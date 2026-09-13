@@ -99,8 +99,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           # Create or update data branch
+          # Use -f to override .gitignore which ignores all data/ dirs
           git checkout -B data
-          git add gbp-monitor/data/
+          git add -f gbp-monitor/data/
           git commit -m "chore(data): auto-update scraped data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           
           # Push data branch

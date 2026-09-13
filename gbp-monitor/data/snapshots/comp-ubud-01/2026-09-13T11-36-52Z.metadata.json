@@ -1,0 +1,50 @@
+{
+  "address": "Address: Jl. Sri Wedari No.5, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571, Indonesia",
+  "category": "Coffee shop",
+  "phone": "+6281283386641",
+  "website": "http://www.senimancoffee.com/",
+  "opening_hours": [
+    {
+      "day": "Sunday",
+      "hours": "7:30 AM to 10 PM",
+      "today": true
+    },
+    {
+      "day": "Monday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    },
+    {
+      "day": "Tuesday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    },
+    {
+      "day": "Wednesday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    },
+    {
+      "day": "Thursday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    },
+    {
+      "day": "Friday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    },
+    {
+      "day": "Saturday",
+      "hours": "7:30 AM to 10 PM",
+      "today": false
+    }
+  ],
+  "hours_status": "Open · Closes 10 PM",
+  "google_rating": "4.6",
+  "google_review_count": "5,173",
+  "business_name": "Seniman Coffee",
+  "sort_applied": true,
+  "harvest_status": "reduced",
+  "harvest_detail": "480 of 5173 reviews harvested — partial newest window (Google panel virtualization)"
+}

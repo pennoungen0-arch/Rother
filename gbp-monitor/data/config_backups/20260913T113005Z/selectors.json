@@ -1,0 +1,285 @@
+{
+  "verified_by": "browser_agent",
+  "last_verified": "20260817T150808Z",
+  "_verification_note": "M18-SelectorCertification (2026-08-17): re-certified all schema-v5 selectors against 12 live competitors (data/verify/20260817T150808Z/selector_cert/evidence.json). reviews_tab_button 12/12, review_like_selector 11/12 (0 on comp-uluwatu-02), review_list_container 12/12. Business-metadata probe corrected: phone = a[href^='tel:'] (10/12), website = a[data-item-id='authority'] (11/12), opening_hours = table.eK4R0e (9/12), hours_status semi-stable (5/12). See SELECTOR_CERTIFICATION.md M18.",
+  "_meta": {
+    "last_verified": "20260817T150808Z",
+    "verified_by": "browser_agent",
+    "schema_version": 5,
+    "_verification_note": "M18-SelectorCertification (2026-08-17): re-certified all schema-v5 selectors against 12 live competitors (data/verify/20260817T150808Z/selector_cert/evidence.json). reviews_tab_button 12/12, review_like_selector 11/12 (0 on comp-uluwatu-02), review_list_container 12/12. Business-metadata probe corrected: phone = a[href^='tel:'] (10/12), website = a[data-item-id='authority'] (11/12), opening_hours = table.eK4R0e (9/12), hours_status semi-stable (5/12). See SELECTOR_CERTIFICATION.md M18.",
+    "_documentation_url": "https://github.com/anomalyco/gbp-monitor/wiki/Selector-Maintenance",
+    "descriptions": {
+      "review_container": "Scrollable review list container (feed region)",
+      "review_item": "Individual review card element (seed for parser locator tier 5)",
+      "review_id_attr": "HTML attribute holding the unique review ID (data-review-id)",
+      "reviewer_name_attr": "HTML attribute holding the reviewer display name",
+      "review_text_selector": "CSS selector for review text content span",
+      "rating_selector": "CSS selector for star rating element",
+      "rating_attr": "HTML attribute holding numeric star rating value",
+      "relative_date_selector": "CSS selector for relative date text (e.g. '2 weeks ago')",
+      "expand_text_button": "Expand/See-more button on truncated review cards",
+      "reviews_tab_button": "Reviews tab button that opens the full virtualized review list",
+      "review_like_selector": "Review like button element (aria-label or inner text carries the count)",
+      "review_list_container": "Tab-view review list container class (JS-hunt resolution, documented for reference)"
+    },
+    "selector_types": {
+      "review_container": "css",
+      "review_item": "css",
+      "review_id_attr": "attribute",
+      "reviewer_name_attr": "attribute",
+      "review_text_selector": "css",
+      "rating_selector": "css",
+      "rating_attr": "attribute",
+      "relative_date_selector": "css",
+      "expand_text_button": "css",
+      "reviews_tab_button": "css",
+      "review_like_selector": "css",
+      "review_list_container": "css"
+    },
+    "fallback_notes": {
+      "review_container": "Tier 0 uses role='region' (semantic, stable across redesigns). Tier 1 uses the 2023-vintage CSS class triple (may change — demoted from tier 0 after auto-generated class fragility was confirmed in M10 audit).",
+      "expand_text_button": "Tier 0 targets known class; tier 1 uses text content matching as the W3C accessibility tree approach recommends"
+    },
+    "selector_health": {
+      "review_container": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "div.m6QErb[role='region']",
+            "status": "live",
+            "confidence": "high",
+            "matches": 2
+          },
+          {
+            "tier": 1,
+            "selector": "div.m6QErb.DxyBCb.kA9KIf.dS8AEf",
+            "status": "live",
+            "confidence": "medium",
+            "matches": 1
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "div.m6QErb[role='region']"
+      },
+      "review_item": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "div.jftiEf.fontBodyMedium",
+            "status": "live",
+            "confidence": "high",
+            "matches": 3
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "div.jftiEf.fontBodyMedium"
+      },
+      "review_id_attr": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "data-review-id",
+            "status": "live",
+            "confidence": "high",
+            "matches": 33
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "data-review-id"
+      },
+      "reviewer_name_attr": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "aria-label",
+            "status": "live",
+            "confidence": "high",
+            "matches": 301
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "aria-label"
+      },
+      "review_text_selector": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "span.wiI7pd",
+            "status": "live",
+            "confidence": "high",
+            "matches": 3
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "span.wiI7pd"
+      },
+      "rating_selector": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "span.kvMYJc",
+            "status": "live",
+            "confidence": "high",
+            "matches": 3
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "span.kvMYJc"
+      },
+      "rating_attr": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "aria-label",
+            "status": "live",
+            "confidence": "high",
+            "matches": 301
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "aria-label"
+      },
+      "relative_date_selector": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "span.rsqaWe",
+            "status": "live",
+            "confidence": "high",
+            "matches": 3
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "span.rsqaWe"
+      },
+      "expand_text_button": {
+        "verified_by": "M10-SelectorAudit",
+        "last_verified": "20260724T200000Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "button.w8nwRe.kyuRq",
+            "status": "live",
+            "confidence": "medium",
+            "matches": 5
+          },
+          {
+            "tier": 1,
+            "selector": "button:has-text('More')",
+            "status": "live",
+            "confidence": "medium",
+            "matches": 3
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "medium",
+        "active_tier": 0,
+        "active_selector": "button.w8nwRe.kyuRq"
+      },
+      "reviews_tab_button": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "button[role='tab'][aria-label^='Ulasan']",
+            "status": "live",
+            "confidence": "high",
+            "matches": "1/1 per competitor, 12/12 live"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "button[role='tab'][aria-label^='Ulasan']"
+      },
+      "review_like_selector": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "button.gllhef",
+            "status": "live",
+            "confidence": "high",
+            "matches": "6 on 11/12; 0 on comp-uluwatu-02"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "button.gllhef"
+      },
+      "review_list_container": {
+        "verified_by": "M18-SelectorCertification",
+        "last_verified": "20260817T150808Z",
+        "tiers": [
+          {
+            "tier": 0,
+            "selector": "div.m6QErb.XiKgde",
+            "status": "live",
+            "confidence": "high",
+            "matches": "12/12 (14-23 per page)"
+          }
+        ],
+        "overall_status": "live",
+        "overall_confidence": "high",
+        "active_tier": 0,
+        "active_selector": "div.m6QErb.XiKgde"
+      }
+    }
+  },
+  "review_container": [
+    "div.m6QErb[role='region']",
+    "div.m6QErb.DxyBCb.kA9KIf.dS8AEf"
+  ],
+  "review_item": "div.jftiEf.fontBodyMedium",
+  "review_id_attr": "data-review-id",
+  "reviewer_name_attr": "aria-label",
+  "review_text_selector": "span.wiI7pd",
+  "rating_selector": "span.kvMYJc",
+  "rating_attr": "aria-label",
+  "relative_date_selector": "span.rsqaWe",
+  "expand_text_button": [
+    "button.w8nwRe.kyuRq",
+    "button:has-text('More')"
+  ],
+  "reviews_tab_button": [
+    "button[role='tab'][aria-label^='Ulasan']",
+    "button[role='tab'][aria-label^='Reviews']"
+  ],
+  "review_like_selector": "button.gllhef",
+  "review_list_container": "div.m6QErb.XiKgde"
+}

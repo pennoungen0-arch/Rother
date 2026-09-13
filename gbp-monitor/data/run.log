@@ -1,0 +1,797 @@
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "run_start", "ts": "2026-09-13T11:30:05.851212+00:00", "mode": "live"}
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all ============================================================
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all ROTH RUN STARTING — mode=live run_id=20260913T113005Z
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all   Rother v0.3.3 — Google Business Profile review monitor
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all   Pipeline: Playwright capture → Parse → Variance-proof delta → Store
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all   Harvest window: newest ~500 reviews (Google's virtualized panel)
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all   Delta base: cumulative ever-seen ID union + 30-day recency gate
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all ============================================================
+2026-09-13 11:30:05,851 INFO gbp-monitor.run_all Lock acquired (run_id=20260913T113005Z, pid=2806)
+2026-09-13 11:30:07,754 WARNING gbp-monitor.run_all PREFLIGHT: All 3 competitors have real place_ids — ready for live scrape.
+2026-09-13 11:30:07,754 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "config_loaded", "ts": "2026-09-13T11:30:07.754348+00:00", "branches": 3, "competitors": 3}
+2026-09-13 11:30:08,139 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "browser_launch", "ts": "2026-09-13T11:30:08.139689+00:00", "duration_s": 0.38}
+2026-09-13 11:30:08,580 INFO gbp-monitor.acquisition ACQUISITION: NID cookie present after warm-up
+2026-09-13 11:30:08,632 INFO gbp-monitor.acquisition ACQUISITION: storage_state persisted to data/storage_state.json
+2026-09-13 11:30:08,632 INFO gbp-monitor.run_all ACQUISITION: NID warm-up succeeded in 0.4s — storage_state persisted for reuse
+2026-09-13 11:30:08,632 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "acquisition_warm_up", "ts": "2026-09-13T11:30:08.632248+00:00", "succeeded": true, "duration_s": 0.44}
+2026-09-13 11:30:08,632 INFO gbp-monitor.run_all ACQUISITION COMPLETE — browser context ready
+2026-09-13 11:30:08,632 INFO gbp-monitor.run_all   Config: 3 branch(es), 3 competitor(s) total
+2026-09-13 11:30:09,488 INFO gbp-monitor.capture REVIEWS_DIALOG[__probe__] detected via "div.m6QErb[role='region']"
+2026-09-13 11:30:17,489 WARNING gbp-monitor.capture REVIEWS_TAB[__probe__] all 2 candidate(s) failed: Page.wait_for_selector: Timeout 4000ms exceeded.
+Call log:
+  - waiting for locator("button[role='tab'][aria-label^='Reviews']") to be visible
+ — using embedded reviews
+2026-09-13 11:30:29,911 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "acquisition_probe", "ts": "2026-09-13T11:30:29.911319+00:00", "variant": "unknown", "cards": 0, "aggregate": null, "detail": "0 distinct cards (aggregate=None)"}
+2026-09-13 11:30:29,911 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_start", "ts": "2026-09-13T11:30:29.911517+00:00", "competitor": "comp-canggu-01", "branch": "test-canggu"}
+2026-09-13 11:30:30,234 INFO gbp-monitor.instrument PHASE[comp-canggu-01] navigation — starting
+2026-09-13 11:30:30,625 INFO gbp-monitor.instrument PHASE[comp-canggu-01] navigation — success (0.390s) — loaded https://www.google.com/maps/place/?q=place_id:ChIJOaEQDnk40i0Rzhou4NcRx-w...
+2026-09-13 11:30:30,627 INFO gbp-monitor.instrument PHASE[comp-canggu-01] reviews_dialog_verify — starting
+2026-09-13 11:30:31,004 INFO gbp-monitor.capture REVIEWS_DIALOG[comp-canggu-01] detected via "div.m6QErb[role='region']"
+2026-09-13 11:30:31,004 INFO gbp-monitor.instrument SELECTOR[comp-canggu-01] review_dialog primary=div.m6QErb[role='region'] fallback=False matched=True count=1 — Reviews dialog confirmed open
+2026-09-13 11:30:31,004 INFO gbp-monitor.instrument PHASE[comp-canggu-01] reviews_dialog_verify — success (0.377s)
+2026-09-13 11:30:31,066 INFO gbp-monitor.instrument PHASE[comp-canggu-01] open_reviews_tab — starting
+2026-09-13 11:30:35,068 WARNING gbp-monitor.instrument SELECTOR[comp-canggu-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=False count=0 — fallback 1/2: Page.wait_for_selector: Timeout 4000ms exceeded.
+Call log:
+  - waiting for locator("button[role='tab'][aria-label^='Ulasan']") to be visible
+
+2026-09-13 11:30:37,660 INFO gbp-monitor.capture REVIEWS_TAB[comp-canggu-01] opened via "button[role='tab'][aria-label^='Reviews']"
+2026-09-13 11:30:37,660 INFO gbp-monitor.instrument SELECTOR[comp-canggu-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=True count=1 — Reviews tab opened
+2026-09-13 11:30:37,660 INFO gbp-monitor.instrument PHASE[comp-canggu-01] open_reviews_tab — success (6.594s) — full Reviews list loaded
+2026-09-13 11:30:39,732 INFO gbp-monitor.capture JSONLOG: {"comp_id": "comp-canggu-01", "stage": "sort", "ts": "2026-09-13T11:30:39.732944+00:00", "outcome": "sort_applied", "selector": "button[aria-label*='sort' i]", "candidates": 3, "distance_px": 40}
+2026-09-13 11:30:39,733 INFO gbp-monitor.capture SORT_NEWEST[comp-canggu-01] applied via "button[aria-label*='sort' i]" (menu candidates=3, dist=40px)
+2026-09-13 11:30:39,733 INFO gbp-monitor.instrument SELECTOR[comp-canggu-01] reviews_sort_newest primary=button[aria-label*='sort' i] fallback=False matched=True count=1 — Newest ordering applied
+2026-09-13 11:30:39,733 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll — starting
+2026-09-13 11:30:39,733 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_resolve_container — starting
+2026-09-13 11:30:39,735 INFO gbp-monitor.instrument SELECTOR[comp-canggu-01] review_container primary=div.m6QErb[role='region'] fallback=False matched=True count=10 — JS hunt: 10 distinct review ids (scrollable=True)
+2026-09-13 11:30:39,735 INFO gbp-monitor.scroll review_container[comp-canggu-01] resolved via JS hunt: 'div.g2LZJb:nth-of-type(10) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf.dS8AEf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(2)' (10 ids)
+2026-09-13 11:30:39,735 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_resolve_container — success (0.002s)
+2026-09-13 11:30:39,751 INFO gbp-monitor.scroll SCROLL[comp-canggu-01] initial viewport harvested 10 review(s) before scrolling
+2026-09-13 11:30:39,751 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_1 — starting
+2026-09-13 11:30:40,996 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=1 height=9139 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:30:40,996 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_1 — success (1.245s) — height=9139 visible_cards=3 dom_nodes=20 harvested=20 stable=0/3
+2026-09-13 11:30:40,996 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_2 — starting
+2026-09-13 11:30:42,249 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=2 height=15117 visible=3 dom=30 harvested=30 stable=0
+2026-09-13 11:30:42,249 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_2 — success (1.253s) — height=15117 visible_cards=3 dom_nodes=30 harvested=30 stable=0/3
+2026-09-13 11:30:42,249 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_3 — starting
+2026-09-13 11:30:43,510 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=3 height=20396 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:30:43,511 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_3 — success (1.262s) — height=20396 visible_cards=2 dom_nodes=40 harvested=40 stable=0/3
+2026-09-13 11:30:43,511 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_4 — starting
+2026-09-13 11:30:44,778 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=4 height=25805 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:30:44,778 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_4 — success (1.267s) — height=25805 visible_cards=3 dom_nodes=50 harvested=50 stable=0/3
+2026-09-13 11:30:44,778 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_5 — starting
+2026-09-13 11:30:46,054 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=5 height=30497 visible=2 dom=60 harvested=60 stable=0
+2026-09-13 11:30:46,054 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_5 — success (1.276s) — height=30497 visible_cards=2 dom_nodes=60 harvested=60 stable=0/3
+2026-09-13 11:30:46,054 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_6 — starting
+2026-09-13 11:30:47,336 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=6 height=35983 visible=3 dom=70 harvested=70 stable=0
+2026-09-13 11:30:47,336 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_6 — success (1.282s) — height=35983 visible_cards=3 dom_nodes=70 harvested=70 stable=0/3
+2026-09-13 11:30:47,336 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_7 — starting
+2026-09-13 11:30:48,626 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=7 height=41227 visible=3 dom=80 harvested=80 stable=0
+2026-09-13 11:30:48,626 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_7 — success (1.289s) — height=41227 visible_cards=3 dom_nodes=80 harvested=80 stable=0/3
+2026-09-13 11:30:48,626 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_8 — starting
+2026-09-13 11:30:49,941 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=8 height=46442 visible=3 dom=90 harvested=90 stable=0
+2026-09-13 11:30:49,941 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_8 — success (1.315s) — height=46442 visible_cards=3 dom_nodes=90 harvested=90 stable=0/3
+2026-09-13 11:30:49,941 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_9 — starting
+2026-09-13 11:30:51,248 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=9 height=51571 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:30:51,248 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_9 — success (1.307s) — height=51571 visible_cards=3 dom_nodes=100 harvested=100 stable=0/3
+2026-09-13 11:30:51,248 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_10 — starting
+2026-09-13 11:30:52,561 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=10 height=56919 visible=2 dom=110 harvested=110 stable=0
+2026-09-13 11:30:52,561 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_10 — success (1.313s) — height=56919 visible_cards=2 dom_nodes=110 harvested=110 stable=0/3
+2026-09-13 11:30:52,561 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_11 — starting
+2026-09-13 11:30:53,903 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=11 height=62377 visible=2 dom=120 harvested=120 stable=0
+2026-09-13 11:30:53,903 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_11 — success (1.342s) — height=62377 visible_cards=2 dom_nodes=120 harvested=120 stable=0/3
+2026-09-13 11:30:53,903 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_12 — starting
+2026-09-13 11:30:55,229 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=12 height=67090 visible=3 dom=130 harvested=130 stable=0
+2026-09-13 11:30:55,229 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_12 — success (1.326s) — height=67090 visible_cards=3 dom_nodes=130 harvested=130 stable=0/3
+2026-09-13 11:30:55,229 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_13 — starting
+2026-09-13 11:30:56,563 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=13 height=72894 visible=2 dom=140 harvested=140 stable=0
+2026-09-13 11:30:56,563 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_13 — success (1.334s) — height=72894 visible_cards=2 dom_nodes=140 harvested=140 stable=0/3
+2026-09-13 11:30:56,564 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_14 — starting
+2026-09-13 11:30:57,908 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=14 height=78248 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:30:57,908 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_14 — success (1.345s) — height=78248 visible_cards=3 dom_nodes=150 harvested=150 stable=0/3
+2026-09-13 11:30:57,908 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_15 — starting
+2026-09-13 11:30:59,264 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=15 height=82823 visible=2 dom=160 harvested=160 stable=0
+2026-09-13 11:30:59,264 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_15 — success (1.356s) — height=82823 visible_cards=2 dom_nodes=160 harvested=160 stable=0/3
+2026-09-13 11:30:59,264 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_16 — starting
+2026-09-13 11:31:00,620 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=16 height=86935 visible=3 dom=170 harvested=170 stable=0
+2026-09-13 11:31:00,620 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_16 — success (1.356s) — height=86935 visible_cards=3 dom_nodes=170 harvested=170 stable=0/3
+2026-09-13 11:31:00,620 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_17 — starting
+2026-09-13 11:31:02,000 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=17 height=92958 visible=3 dom=180 harvested=180 stable=0
+2026-09-13 11:31:02,001 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_17 — success (1.381s) — height=92958 visible_cards=3 dom_nodes=180 harvested=180 stable=0/3
+2026-09-13 11:31:02,001 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_18 — starting
+2026-09-13 11:31:03,382 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=18 height=99305 visible=3 dom=190 harvested=190 stable=0
+2026-09-13 11:31:03,382 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_18 — success (1.381s) — height=99305 visible_cards=3 dom_nodes=190 harvested=190 stable=0/3
+2026-09-13 11:31:03,382 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_19 — starting
+2026-09-13 11:31:04,782 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=19 height=105011 visible=2 dom=200 harvested=200 stable=0
+2026-09-13 11:31:04,783 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_19 — success (1.401s) — height=105011 visible_cards=2 dom_nodes=200 harvested=200 stable=0/3
+2026-09-13 11:31:04,783 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_20 — starting
+2026-09-13 11:31:06,170 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=20 height=109951 visible=3 dom=210 harvested=210 stable=0
+2026-09-13 11:31:06,170 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_20 — success (1.388s) — height=109951 visible_cards=3 dom_nodes=210 harvested=210 stable=0/3
+2026-09-13 11:31:06,170 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_21 — starting
+2026-09-13 11:31:07,575 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=21 height=115707 visible=2 dom=220 harvested=220 stable=0
+2026-09-13 11:31:07,575 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_21 — success (1.405s) — height=115707 visible_cards=2 dom_nodes=220 harvested=220 stable=0/3
+2026-09-13 11:31:07,575 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_22 — starting
+2026-09-13 11:31:08,978 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=22 height=120971 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:31:08,978 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_22 — success (1.403s) — height=120971 visible_cards=2 dom_nodes=230 harvested=230 stable=0/3
+2026-09-13 11:31:08,978 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_23 — starting
+2026-09-13 11:31:10,401 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=23 height=124500 visible=2 dom=240 harvested=240 stable=0
+2026-09-13 11:31:10,401 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_23 — success (1.423s) — height=124500 visible_cards=2 dom_nodes=240 harvested=240 stable=0/3
+2026-09-13 11:31:10,401 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_24 — starting
+2026-09-13 11:31:11,814 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=24 height=128207 visible=3 dom=250 harvested=250 stable=0
+2026-09-13 11:31:11,814 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_24 — success (1.413s) — height=128207 visible_cards=3 dom_nodes=250 harvested=250 stable=0/3
+2026-09-13 11:31:11,814 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_25 — starting
+2026-09-13 11:31:13,243 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=25 height=131949 visible=4 dom=260 harvested=260 stable=0
+2026-09-13 11:31:13,243 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_25 — success (1.429s) — height=131949 visible_cards=4 dom_nodes=260 harvested=260 stable=0/3
+2026-09-13 11:31:13,243 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_26 — starting
+2026-09-13 11:31:14,688 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=26 height=137185 visible=2 dom=270 harvested=270 stable=0
+2026-09-13 11:31:14,689 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_26 — success (1.446s) — height=137185 visible_cards=2 dom_nodes=270 harvested=270 stable=0/3
+2026-09-13 11:31:14,689 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_27 — starting
+2026-09-13 11:31:16,175 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=27 height=140537 visible=2 dom=280 harvested=280 stable=0
+2026-09-13 11:31:16,175 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_27 — success (1.487s) — height=140537 visible_cards=2 dom_nodes=280 harvested=280 stable=0/3
+2026-09-13 11:31:16,175 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_28 — starting
+2026-09-13 11:31:17,634 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=28 height=145218 visible=3 dom=290 harvested=290 stable=0
+2026-09-13 11:31:17,634 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_28 — success (1.458s) — height=145218 visible_cards=3 dom_nodes=290 harvested=290 stable=0/3
+2026-09-13 11:31:17,634 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_29 — starting
+2026-09-13 11:31:19,108 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=29 height=149883 visible=2 dom=300 harvested=300 stable=0
+2026-09-13 11:31:19,108 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_29 — success (1.474s) — height=149883 visible_cards=2 dom_nodes=300 harvested=300 stable=0/3
+2026-09-13 11:31:19,108 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_30 — starting
+2026-09-13 11:31:20,583 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=30 height=154358 visible=4 dom=310 harvested=310 stable=0
+2026-09-13 11:31:20,583 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_30 — success (1.475s) — height=154358 visible_cards=4 dom_nodes=310 harvested=310 stable=0/3
+2026-09-13 11:31:20,583 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_31 — starting
+2026-09-13 11:31:22,369 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=31 height=158593 visible=2 dom=320 harvested=320 stable=0
+2026-09-13 11:31:22,369 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_31 — success (1.786s) — height=158593 visible_cards=2 dom_nodes=320 harvested=320 stable=0/3
+2026-09-13 11:31:22,369 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_32 — starting
+2026-09-13 11:31:23,859 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=32 height=163402 visible=4 dom=330 harvested=330 stable=0
+2026-09-13 11:31:23,859 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_32 — success (1.490s) — height=163402 visible_cards=4 dom_nodes=330 harvested=330 stable=0/3
+2026-09-13 11:31:23,859 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_33 — starting
+2026-09-13 11:31:25,361 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=33 height=167156 visible=3 dom=340 harvested=340 stable=0
+2026-09-13 11:31:25,361 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_33 — success (1.502s) — height=167156 visible_cards=3 dom_nodes=340 harvested=340 stable=0/3
+2026-09-13 11:31:25,361 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_34 — starting
+2026-09-13 11:31:26,865 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=34 height=171086 visible=4 dom=350 harvested=350 stable=0
+2026-09-13 11:31:26,865 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_34 — success (1.504s) — height=171086 visible_cards=4 dom_nodes=350 harvested=350 stable=0/3
+2026-09-13 11:31:26,865 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_35 — starting
+2026-09-13 11:31:28,373 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=35 height=174525 visible=3 dom=360 harvested=360 stable=0
+2026-09-13 11:31:28,373 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_35 — success (1.508s) — height=174525 visible_cards=3 dom_nodes=360 harvested=360 stable=0/3
+2026-09-13 11:31:28,373 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_36 — starting
+2026-09-13 11:31:29,891 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=36 height=178822 visible=3 dom=370 harvested=370 stable=0
+2026-09-13 11:31:29,891 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_36 — success (1.517s) — height=178822 visible_cards=3 dom_nodes=370 harvested=370 stable=0/3
+2026-09-13 11:31:29,891 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_37 — starting
+2026-09-13 11:31:31,432 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=37 height=183992 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:31:31,433 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_37 — success (1.542s) — height=183992 visible_cards=2 dom_nodes=380 harvested=380 stable=0/3
+2026-09-13 11:31:31,433 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_38 — starting
+2026-09-13 11:31:32,991 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=38 height=188467 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:31:32,992 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_38 — success (1.559s) — height=188467 visible_cards=2 dom_nodes=390 harvested=390 stable=0/3
+2026-09-13 11:31:32,992 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_39 — starting
+2026-09-13 11:31:34,554 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=39 height=192201 visible=4 dom=400 harvested=400 stable=0
+2026-09-13 11:31:34,555 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_39 — success (1.563s) — height=192201 visible_cards=4 dom_nodes=400 harvested=400 stable=0/3
+2026-09-13 11:31:34,555 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_40 — starting
+2026-09-13 11:31:36,174 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=40 height=197344 visible=3 dom=410 harvested=410 stable=0
+2026-09-13 11:31:36,174 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_40 — success (1.619s) — height=197344 visible_cards=3 dom_nodes=410 harvested=410 stable=0/3
+2026-09-13 11:31:36,174 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_41 — starting
+2026-09-13 11:31:37,792 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=41 height=201995 visible=3 dom=420 harvested=420 stable=0
+2026-09-13 11:31:37,792 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_41 — success (1.617s) — height=201995 visible_cards=3 dom_nodes=420 harvested=420 stable=0/3
+2026-09-13 11:31:37,792 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_42 — starting
+2026-09-13 11:31:39,400 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=42 height=206305 visible=4 dom=430 harvested=430 stable=0
+2026-09-13 11:31:39,401 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_42 — success (1.609s) — height=206305 visible_cards=4 dom_nodes=430 harvested=430 stable=0/3
+2026-09-13 11:31:39,401 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_43 — starting
+2026-09-13 11:31:41,018 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=43 height=211514 visible=2 dom=440 harvested=440 stable=0
+2026-09-13 11:31:41,018 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_43 — success (1.617s) — height=211514 visible_cards=2 dom_nodes=440 harvested=440 stable=0/3
+2026-09-13 11:31:41,018 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_44 — starting
+2026-09-13 11:31:42,743 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=44 height=216357 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:31:42,743 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_44 — success (1.725s) — height=216357 visible_cards=2 dom_nodes=450 harvested=450 stable=0/3
+2026-09-13 11:31:42,743 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_45 — starting
+2026-09-13 11:31:44,435 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=45 height=220752 visible=2 dom=460 harvested=460 stable=0
+2026-09-13 11:31:44,436 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_45 — success (1.693s) — height=220752 visible_cards=2 dom_nodes=460 harvested=460 stable=0/3
+2026-09-13 11:31:44,436 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_46 — starting
+2026-09-13 11:31:46,085 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=46 height=226297 visible=2 dom=470 harvested=470 stable=0
+2026-09-13 11:31:46,085 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_46 — success (1.649s) — height=226297 visible_cards=2 dom_nodes=470 harvested=470 stable=0/3
+2026-09-13 11:31:46,085 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_47 — starting
+2026-09-13 11:31:47,738 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=47 height=231002 visible=2 dom=480 harvested=480 stable=0
+2026-09-13 11:31:47,738 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_47 — success (1.653s) — height=231002 visible_cards=2 dom_nodes=480 harvested=480 stable=0/3
+2026-09-13 11:31:47,738 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_48 — starting
+2026-09-13 11:31:49,397 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=48 height=236364 visible=2 dom=490 harvested=490 stable=0
+2026-09-13 11:31:49,397 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_48 — success (1.659s) — height=236364 visible_cards=2 dom_nodes=490 harvested=490 stable=0/3
+2026-09-13 11:31:49,397 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_49 — starting
+2026-09-13 11:31:51,011 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=49 height=236364 visible=1 dom=490 harvested=490 stable=0 bottom=stable_scroll
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_iteration_49 — success (1.614s) — height=236364 visible_cards=1 dom_nodes=490 harvested=490 stable=0/3
+2026-09-13 11:31:51,012 INFO gbp-monitor.scroll SCROLL[comp-canggu-01] iteration 49 bottom detected: stable_scroll (height=236364, visible=1, dom=490, harvested=490, 1.57s)
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_complete — starting
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll_complete — success (0.000s) — 49 scrolls, max visible=4, max dom=490, harvested=490, bottom=stable_scroll
+2026-09-13 11:31:51,012 INFO gbp-monitor.scroll SCROLL_COMPLETE[comp-canggu-01] 49 scroll(s), max_visible=4, max_dom=490, harvested=490, final_height=236364, bottom=stable_scroll, 71.27s total
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument PHASE[comp-canggu-01] scroll — success (71.279s)
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=1 height=9139 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=2 height=15117 visible=3 dom=30 harvested=30 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=3 height=20396 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=4 height=25805 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=5 height=30497 visible=2 dom=60 harvested=60 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=6 height=35983 visible=3 dom=70 harvested=70 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=7 height=41227 visible=3 dom=80 harvested=80 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=8 height=46442 visible=3 dom=90 harvested=90 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=9 height=51571 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=10 height=56919 visible=2 dom=110 harvested=110 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=11 height=62377 visible=2 dom=120 harvested=120 stable=0
+2026-09-13 11:31:51,012 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=12 height=67090 visible=3 dom=130 harvested=130 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=13 height=72894 visible=2 dom=140 harvested=140 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=14 height=78248 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=15 height=82823 visible=2 dom=160 harvested=160 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=16 height=86935 visible=3 dom=170 harvested=170 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=17 height=92958 visible=3 dom=180 harvested=180 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=18 height=99305 visible=3 dom=190 harvested=190 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=19 height=105011 visible=2 dom=200 harvested=200 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=20 height=109951 visible=3 dom=210 harvested=210 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=21 height=115707 visible=2 dom=220 harvested=220 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=22 height=120971 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=23 height=124500 visible=2 dom=240 harvested=240 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=24 height=128207 visible=3 dom=250 harvested=250 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=25 height=131949 visible=4 dom=260 harvested=260 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=26 height=137185 visible=2 dom=270 harvested=270 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=27 height=140537 visible=2 dom=280 harvested=280 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=28 height=145218 visible=3 dom=290 harvested=290 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=29 height=149883 visible=2 dom=300 harvested=300 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=30 height=154358 visible=4 dom=310 harvested=310 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=31 height=158593 visible=2 dom=320 harvested=320 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=32 height=163402 visible=4 dom=330 harvested=330 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=33 height=167156 visible=3 dom=340 harvested=340 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=34 height=171086 visible=4 dom=350 harvested=350 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=35 height=174525 visible=3 dom=360 harvested=360 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=36 height=178822 visible=3 dom=370 harvested=370 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=37 height=183992 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=38 height=188467 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=39 height=192201 visible=4 dom=400 harvested=400 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=40 height=197344 visible=3 dom=410 harvested=410 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=41 height=201995 visible=3 dom=420 harvested=420 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=42 height=206305 visible=4 dom=430 harvested=430 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=43 height=211514 visible=2 dom=440 harvested=440 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=44 height=216357 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=45 height=220752 visible=2 dom=460 harvested=460 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=46 height=226297 visible=2 dom=470 harvested=470 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=47 height=231002 visible=2 dom=480 harvested=480 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=48 height=236364 visible=2 dom=490 harvested=490 stable=0
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument SCROLL_ITER[comp-canggu-01] iter=49 height=236364 visible=1 dom=490 harvested=490 stable=0 bottom=stable_scroll
+2026-09-13 11:31:51,013 INFO gbp-monitor.instrument PHASE[comp-canggu-01] expand_reviews — starting
+2026-09-13 11:32:31,722 INFO gbp-monitor.instrument SELECTOR[comp-canggu-01] expand_text_button primary=button.w8nwRe.kyuRq fallback=False matched=True count=482 — 482 button(s) clicked
+2026-09-13 11:32:31,722 INFO gbp-monitor.capture EXPAND[comp-canggu-01] expanded 482 truncated review(s) via button.w8nwRe.kyuRq
+2026-09-13 11:32:31,722 INFO gbp-monitor.instrument PHASE[comp-canggu-01] expand_reviews — success (40.708s)
+2026-09-13 11:32:31,722 INFO gbp-monitor.instrument PHASE[comp-canggu-01] html_capture — starting
+2026-09-13 11:32:32,092 INFO gbp-monitor.capture capture[comp-canggu-01]: 2723155 bytes captured
+2026-09-13 11:32:32,092 INFO gbp-monitor.instrument PHASE[comp-canggu-01] html_capture — success (0.371s) — 2723155 bytes captured (harvested 490 distinct review cards)
+2026-09-13 11:32:32,092 INFO gbp-monitor.instrument PHASE[comp-canggu-01] business_metadata — starting
+2026-09-13 11:32:32,179 INFO gbp-monitor.instrument BUSINESS_META[comp-canggu-01] name=Crate Cafe rating=4.2 reviews=5,301
+2026-09-13 11:32:32,179 INFO gbp-monitor.instrument PHASE[comp-canggu-01] business_metadata — success (0.087s)
+2026-09-13 11:32:32,179 INFO gbp-monitor.capture capture[comp-canggu-01] phases: goto=0.39s, open_reviews_tab=6.59s, scroll=71.28s, expand=40.71s
+2026-09-13 11:32:32,228 INFO gbp-monitor.instrument PHASE[comp-canggu-01] parse_locator — starting
+2026-09-13 11:32:32,247 INFO gbp-monitor.locator resolve_review_items[comp-canggu-01]: tier 1 succeeded with 4428 item(s) (selector='[data-review-id]'); tried tiers=[(1, 4428)]
+2026-09-13 11:32:32,247 INFO gbp-monitor.instrument PHASE[comp-canggu-01] parse_locator — success (0.019s) — tier 1 ([data-review-id]): 4428 items
+2026-09-13 11:32:32,364 INFO gbp-monitor.parser parse_reviews[comp-canggu-01]: 490 review(s) parsed from 4428 item(s) via tier 1 ('[data-review-id]')
+2026-09-13 11:32:32,364 INFO gbp-monitor.instrument REVIEW_STATS[comp-canggu-01] visible=490 unique_ids=490 ratings=490 text=390 missing_fields=0 skipped=0 parsed=490 exported=490
+2026-09-13 11:32:32,364 INFO gbp-monitor.parser REVIEW_STATS[comp-canggu-01] visible=490 unique=490 ratings=490 text=390 missing=0 skipped=0 parsed=490
+2026-09-13 11:32:32,380 INFO gbp-monitor.instrument PARSER_EFF[comp-canggu-01] google_count=5,301 dom_nodes=490 parsed=490 exported=490 pct=100.0%
+2026-09-13 11:32:32,380 INFO gbp-monitor.instrument VERDICT[comp-canggu-01] status=FAIL reason=Browser only collected 490 of 5301 Google reviews (9.24%) | All 490 DOM reviews parsed successfully
+2026-09-13 11:32:32,380 INFO gbp-monitor.instrument PARSER_EFF[comp-canggu-01] google_count=5,301 dom_nodes=490 parsed=490 exported=490 pct=100.0%
+2026-09-13 11:32:32,380 INFO gbp-monitor.instrument VERDICT[comp-canggu-01] status=FAIL reason=Browser only collected 490 of 5301 Google reviews (9.24%) | All 490 DOM reviews parsed successfully
+2026-09-13 11:32:32,385 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta_write", "ts": "2026-09-13T11:32:32.385451+00:00", "competitor": "comp-canggu-01", "count": 34, "path": "data/reviews_new/comp-canggu-01_20260913T113005Z.json"}
+2026-09-13 11:32:32,385 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta", "ts": "2026-09-13T11:32:32.385535+00:00", "competitor": "comp-canggu-01", "new_reviews": 34}
+2026-09-13 11:32:32,385 INFO gbp-monitor.run_all BACKFILL[comp-canggu-01]: 301 never-seen old review(s) merged silently
+2026-09-13 11:32:32,390 INFO gbp-monitor.storage save_snapshot[comp-canggu-01]: wrote 490 review(s) to data/snapshots/comp-canggu-01/2026-09-13T11-32-32Z.json (+ metadata)
+2026-09-13 11:32:32,390 INFO gbp-monitor.run_all LISTING COMPLETE[comp-canggu-01]: 490 reviews harvested (reduced — Google reports 5,301)
+2026-09-13 11:32:32,390 INFO gbp-monitor.run_all   ↳ 34 NEW review(s) detected (alert-worthy, posted within 30 days)
+2026-09-13 11:32:32,390 INFO gbp-monitor.run_all   ↳ 301 backfill review(s) silently merged (older reviews never seen before)
+2026-09-13 11:32:32,390 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_done", "ts": "2026-09-13T11:32:32.390850+00:00", "competitor": "comp-canggu-01", "reviews": 490, "delta": 34, "capture_s": 121.98, "parse_s": 0.19, "delta_s": 0.0, "save_s": 0.01}
+2026-09-13 11:32:32,392 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_result", "ts": "2026-09-13T11:32:32.392052+00:00", "competitor": "comp-canggu-01", "branch": "test-canggu", "duration_s": 122.48, "progress": "1/3"}
+2026-09-13 11:32:42,068 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_start", "ts": "2026-09-13T11:32:42.068431+00:00", "competitor": "comp-seminyak-01", "branch": "test-seminyak"}
+2026-09-13 11:32:42,251 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] navigation — starting
+2026-09-13 11:32:42,759 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] navigation — success (0.509s) — loaded https://www.google.com/maps/place/?q=place_id:ChIJ9fhCoBBH0i0R4h17JYdA484...
+2026-09-13 11:32:42,759 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] reviews_dialog_verify — starting
+2026-09-13 11:32:43,335 INFO gbp-monitor.capture REVIEWS_DIALOG[comp-seminyak-01] detected via "div.m6QErb[role='region']"
+2026-09-13 11:32:43,335 INFO gbp-monitor.instrument SELECTOR[comp-seminyak-01] review_dialog primary=div.m6QErb[role='region'] fallback=False matched=True count=1 — Reviews dialog confirmed open
+2026-09-13 11:32:43,335 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] reviews_dialog_verify — success (0.575s)
+2026-09-13 11:32:43,425 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] open_reviews_tab — starting
+2026-09-13 11:32:47,426 WARNING gbp-monitor.instrument SELECTOR[comp-seminyak-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=False count=0 — fallback 1/2: Page.wait_for_selector: Timeout 4000ms exceeded.
+Call log:
+  - waiting for locator("button[role='tab'][aria-label^='Ulasan']") to be visible
+
+2026-09-13 11:32:50,019 INFO gbp-monitor.capture REVIEWS_TAB[comp-seminyak-01] opened via "button[role='tab'][aria-label^='Reviews']"
+2026-09-13 11:32:50,019 INFO gbp-monitor.instrument SELECTOR[comp-seminyak-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=True count=1 — Reviews tab opened
+2026-09-13 11:32:50,019 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] open_reviews_tab — success (6.594s) — full Reviews list loaded
+2026-09-13 11:32:52,090 INFO gbp-monitor.capture JSONLOG: {"comp_id": "comp-seminyak-01", "stage": "sort", "ts": "2026-09-13T11:32:52.090001+00:00", "outcome": "sort_applied", "selector": "button[aria-label*='sort' i]", "candidates": 3, "distance_px": 40}
+2026-09-13 11:32:52,090 INFO gbp-monitor.capture SORT_NEWEST[comp-seminyak-01] applied via "button[aria-label*='sort' i]" (menu candidates=3, dist=40px)
+2026-09-13 11:32:52,090 INFO gbp-monitor.instrument SELECTOR[comp-seminyak-01] reviews_sort_newest primary=button[aria-label*='sort' i] fallback=False matched=True count=1 — Newest ordering applied
+2026-09-13 11:32:52,090 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll — starting
+2026-09-13 11:32:52,090 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_resolve_container — starting
+2026-09-13 11:32:52,092 INFO gbp-monitor.instrument SELECTOR[comp-seminyak-01] review_container primary=div.m6QErb[role='region'] fallback=False matched=True count=10 — JS hunt: 10 distinct review ids (scrollable=True)
+2026-09-13 11:32:52,092 INFO gbp-monitor.scroll review_container[comp-seminyak-01] resolved via JS hunt: 'div.g2LZJb:nth-of-type(10) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf.dS8AEf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(4)' (10 ids)
+2026-09-13 11:32:52,092 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_resolve_container — success (0.002s)
+2026-09-13 11:32:52,109 INFO gbp-monitor.scroll SCROLL[comp-seminyak-01] initial viewport harvested 10 review(s) before scrolling
+2026-09-13 11:32:52,109 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_1 — starting
+2026-09-13 11:32:53,352 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=1 height=8903 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:32:53,352 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_1 — success (1.243s) — height=8903 visible_cards=3 dom_nodes=20 harvested=20 stable=0/3
+2026-09-13 11:32:53,352 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_2 — starting
+2026-09-13 11:32:54,603 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=2 height=13706 visible=3 dom=30 harvested=30 stable=0
+2026-09-13 11:32:54,604 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_2 — success (1.251s) — height=13706 visible_cards=3 dom_nodes=30 harvested=30 stable=0/3
+2026-09-13 11:32:54,604 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_3 — starting
+2026-09-13 11:32:55,860 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=3 height=17077 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:32:55,860 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_3 — success (1.256s) — height=17077 visible_cards=2 dom_nodes=40 harvested=40 stable=0/3
+2026-09-13 11:32:55,860 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_4 — starting
+2026-09-13 11:32:57,124 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=4 height=20721 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:32:57,124 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_4 — success (1.264s) — height=20721 visible_cards=3 dom_nodes=50 harvested=50 stable=0/3
+2026-09-13 11:32:57,124 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_5 — starting
+2026-09-13 11:32:58,394 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=5 height=25423 visible=3 dom=60 harvested=60 stable=0
+2026-09-13 11:32:58,394 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_5 — success (1.270s) — height=25423 visible_cards=3 dom_nodes=60 harvested=60 stable=0/3
+2026-09-13 11:32:58,394 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_6 — starting
+2026-09-13 11:32:59,673 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=6 height=30058 visible=3 dom=70 harvested=70 stable=0
+2026-09-13 11:32:59,673 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_6 — success (1.279s) — height=30058 visible_cards=3 dom_nodes=70 harvested=70 stable=0/3
+2026-09-13 11:32:59,673 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_7 — starting
+2026-09-13 11:33:00,955 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=7 height=33383 visible=2 dom=80 harvested=80 stable=0
+2026-09-13 11:33:00,955 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_7 — success (1.282s) — height=33383 visible_cards=2 dom_nodes=80 harvested=80 stable=0/3
+2026-09-13 11:33:00,955 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_8 — starting
+2026-09-13 11:33:02,247 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=8 height=38188 visible=2 dom=90 harvested=90 stable=0
+2026-09-13 11:33:02,248 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_8 — success (1.292s) — height=38188 visible_cards=2 dom_nodes=90 harvested=90 stable=0/3
+2026-09-13 11:33:02,248 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_9 — starting
+2026-09-13 11:33:03,548 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=9 height=42778 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:33:03,548 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_9 — success (1.300s) — height=42778 visible_cards=3 dom_nodes=100 harvested=100 stable=0/3
+2026-09-13 11:33:03,548 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_10 — starting
+2026-09-13 11:33:04,869 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=10 height=47463 visible=3 dom=110 harvested=110 stable=0
+2026-09-13 11:33:04,869 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_10 — success (1.321s) — height=47463 visible_cards=3 dom_nodes=110 harvested=110 stable=0/3
+2026-09-13 11:33:04,869 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_11 — starting
+2026-09-13 11:33:06,180 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=11 height=52738 visible=3 dom=120 harvested=120 stable=0
+2026-09-13 11:33:06,180 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_11 — success (1.310s) — height=52738 visible_cards=3 dom_nodes=120 harvested=120 stable=0/3
+2026-09-13 11:33:06,180 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_12 — starting
+2026-09-13 11:33:07,499 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=12 height=57487 visible=2 dom=130 harvested=130 stable=0
+2026-09-13 11:33:07,499 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_12 — success (1.320s) — height=57487 visible_cards=2 dom_nodes=130 harvested=130 stable=0/3
+2026-09-13 11:33:07,499 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_13 — starting
+2026-09-13 11:33:08,843 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=13 height=62036 visible=3 dom=140 harvested=140 stable=0
+2026-09-13 11:33:08,843 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_13 — success (1.344s) — height=62036 visible_cards=3 dom_nodes=140 harvested=140 stable=0/3
+2026-09-13 11:33:08,843 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_14 — starting
+2026-09-13 11:33:10,175 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=14 height=66476 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:33:10,175 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_14 — success (1.332s) — height=66476 visible_cards=3 dom_nodes=150 harvested=150 stable=0/3
+2026-09-13 11:33:10,175 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_15 — starting
+2026-09-13 11:33:11,514 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=15 height=70141 visible=3 dom=160 harvested=160 stable=0
+2026-09-13 11:33:11,514 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_15 — success (1.339s) — height=70141 visible_cards=3 dom_nodes=160 harvested=160 stable=0/3
+2026-09-13 11:33:11,514 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_16 — starting
+2026-09-13 11:33:12,861 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=16 height=73675 visible=3 dom=170 harvested=170 stable=0
+2026-09-13 11:33:12,861 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_16 — success (1.347s) — height=73675 visible_cards=3 dom_nodes=170 harvested=170 stable=0/3
+2026-09-13 11:33:12,861 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_17 — starting
+2026-09-13 11:33:14,217 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=17 height=78509 visible=3 dom=180 harvested=180 stable=0
+2026-09-13 11:33:14,217 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_17 — success (1.355s) — height=78509 visible_cards=3 dom_nodes=180 harvested=180 stable=0/3
+2026-09-13 11:33:14,217 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_18 — starting
+2026-09-13 11:33:15,582 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=18 height=83063 visible=2 dom=190 harvested=190 stable=0
+2026-09-13 11:33:15,582 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_18 — success (1.365s) — height=83063 visible_cards=2 dom_nodes=190 harvested=190 stable=0/3
+2026-09-13 11:33:15,582 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_19 — starting
+2026-09-13 11:33:16,971 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=19 height=88583 visible=3 dom=200 harvested=200 stable=0
+2026-09-13 11:33:16,971 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_19 — success (1.388s) — height=88583 visible_cards=3 dom_nodes=200 harvested=200 stable=0/3
+2026-09-13 11:33:16,971 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_20 — starting
+2026-09-13 11:33:18,355 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=20 height=92654 visible=2 dom=210 harvested=210 stable=0
+2026-09-13 11:33:18,355 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_20 — success (1.384s) — height=92654 visible_cards=2 dom_nodes=210 harvested=210 stable=0/3
+2026-09-13 11:33:18,355 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_21 — starting
+2026-09-13 11:33:19,754 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=21 height=97275 visible=2 dom=220 harvested=220 stable=0
+2026-09-13 11:33:19,754 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_21 — success (1.399s) — height=97275 visible_cards=2 dom_nodes=220 harvested=220 stable=0/3
+2026-09-13 11:33:19,754 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_22 — starting
+2026-09-13 11:33:21,142 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=22 height=100655 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:33:21,143 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_22 — success (1.388s) — height=100655 visible_cards=2 dom_nodes=230 harvested=230 stable=0/3
+2026-09-13 11:33:21,143 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_23 — starting
+2026-09-13 11:33:22,540 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=23 height=104488 visible=4 dom=240 harvested=240 stable=0
+2026-09-13 11:33:22,540 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_23 — success (1.397s) — height=104488 visible_cards=4 dom_nodes=240 harvested=240 stable=0/3
+2026-09-13 11:33:22,540 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_24 — starting
+2026-09-13 11:33:23,950 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=24 height=108134 visible=3 dom=250 harvested=250 stable=0
+2026-09-13 11:33:23,950 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_24 — success (1.410s) — height=108134 visible_cards=3 dom_nodes=250 harvested=250 stable=0/3
+2026-09-13 11:33:23,950 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_25 — starting
+2026-09-13 11:33:25,370 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=25 height=112657 visible=3 dom=260 harvested=260 stable=0
+2026-09-13 11:33:25,370 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_25 — success (1.420s) — height=112657 visible_cards=3 dom_nodes=260 harvested=260 stable=0/3
+2026-09-13 11:33:25,370 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_26 — starting
+2026-09-13 11:33:26,792 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=26 height=116372 visible=3 dom=270 harvested=270 stable=0
+2026-09-13 11:33:26,792 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_26 — success (1.422s) — height=116372 visible_cards=3 dom_nodes=270 harvested=270 stable=0/3
+2026-09-13 11:33:26,792 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_27 — starting
+2026-09-13 11:33:28,217 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=27 height=121349 visible=3 dom=280 harvested=280 stable=0
+2026-09-13 11:33:28,217 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_27 — success (1.425s) — height=121349 visible_cards=3 dom_nodes=280 harvested=280 stable=0/3
+2026-09-13 11:33:28,217 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_28 — starting
+2026-09-13 11:33:29,659 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=28 height=124572 visible=2 dom=290 harvested=290 stable=0
+2026-09-13 11:33:29,659 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_28 — success (1.442s) — height=124572 visible_cards=2 dom_nodes=290 harvested=290 stable=0/3
+2026-09-13 11:33:29,659 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_29 — starting
+2026-09-13 11:33:31,108 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=29 height=127851 visible=3 dom=300 harvested=300 stable=0
+2026-09-13 11:33:31,108 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_29 — success (1.450s) — height=127851 visible_cards=3 dom_nodes=300 harvested=300 stable=0/3
+2026-09-13 11:33:31,109 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_30 — starting
+2026-09-13 11:33:32,564 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=30 height=132372 visible=3 dom=310 harvested=310 stable=0
+2026-09-13 11:33:32,564 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_30 — success (1.456s) — height=132372 visible_cards=3 dom_nodes=310 harvested=310 stable=0/3
+2026-09-13 11:33:32,564 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_31 — starting
+2026-09-13 11:33:34,037 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=31 height=136623 visible=3 dom=320 harvested=320 stable=0
+2026-09-13 11:33:34,037 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_31 — success (1.473s) — height=136623 visible_cards=3 dom_nodes=320 harvested=320 stable=0/3
+2026-09-13 11:33:34,037 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_32 — starting
+2026-09-13 11:33:35,499 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=32 height=140766 visible=3 dom=330 harvested=330 stable=0
+2026-09-13 11:33:35,499 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_32 — success (1.461s) — height=140766 visible_cards=3 dom_nodes=330 harvested=330 stable=0/3
+2026-09-13 11:33:35,499 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_33 — starting
+2026-09-13 11:33:36,985 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=33 height=144012 visible=2 dom=340 harvested=340 stable=0
+2026-09-13 11:33:36,985 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_33 — success (1.486s) — height=144012 visible_cards=2 dom_nodes=340 harvested=340 stable=0/3
+2026-09-13 11:33:36,985 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_34 — starting
+2026-09-13 11:33:38,487 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=34 height=149758 visible=3 dom=350 harvested=350 stable=0
+2026-09-13 11:33:38,487 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_34 — success (1.502s) — height=149758 visible_cards=3 dom_nodes=350 harvested=350 stable=0/3
+2026-09-13 11:33:38,487 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_35 — starting
+2026-09-13 11:33:39,967 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=35 height=154124 visible=3 dom=360 harvested=360 stable=0
+2026-09-13 11:33:39,967 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_35 — success (1.479s) — height=154124 visible_cards=3 dom_nodes=360 harvested=360 stable=0/3
+2026-09-13 11:33:39,967 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_36 — starting
+2026-09-13 11:33:41,483 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=36 height=159768 visible=3 dom=370 harvested=370 stable=0
+2026-09-13 11:33:41,483 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_36 — success (1.516s) — height=159768 visible_cards=3 dom_nodes=370 harvested=370 stable=0/3
+2026-09-13 11:33:41,483 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_37 — starting
+2026-09-13 11:33:43,029 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=37 height=164404 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:33:43,030 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_37 — success (1.547s) — height=164404 visible_cards=2 dom_nodes=380 harvested=380 stable=0/3
+2026-09-13 11:33:43,030 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_38 — starting
+2026-09-13 11:33:44,568 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=38 height=169277 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:33:44,568 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_38 — success (1.539s) — height=169277 visible_cards=2 dom_nodes=390 harvested=390 stable=0/3
+2026-09-13 11:33:44,568 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_39 — starting
+2026-09-13 11:33:46,129 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=39 height=173462 visible=3 dom=400 harvested=400 stable=0
+2026-09-13 11:33:46,129 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_39 — success (1.561s) — height=173462 visible_cards=3 dom_nodes=400 harvested=400 stable=0/3
+2026-09-13 11:33:46,129 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_40 — starting
+2026-09-13 11:33:47,731 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=40 height=177828 visible=3 dom=410 harvested=410 stable=0
+2026-09-13 11:33:47,731 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_40 — success (1.601s) — height=177828 visible_cards=3 dom_nodes=410 harvested=410 stable=0/3
+2026-09-13 11:33:47,731 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_41 — starting
+2026-09-13 11:33:49,328 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=41 height=183000 visible=3 dom=420 harvested=420 stable=0
+2026-09-13 11:33:49,328 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_41 — success (1.597s) — height=183000 visible_cards=3 dom_nodes=420 harvested=420 stable=0/3
+2026-09-13 11:33:49,328 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_42 — starting
+2026-09-13 11:33:50,940 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=42 height=186820 visible=3 dom=430 harvested=430 stable=0
+2026-09-13 11:33:50,940 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_42 — success (1.612s) — height=186820 visible_cards=3 dom_nodes=430 harvested=430 stable=0/3
+2026-09-13 11:33:50,940 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_43 — starting
+2026-09-13 11:33:52,601 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=43 height=190760 visible=3 dom=440 harvested=440 stable=0
+2026-09-13 11:33:52,601 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_43 — success (1.661s) — height=190760 visible_cards=3 dom_nodes=440 harvested=440 stable=0/3
+2026-09-13 11:33:52,601 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_44 — starting
+2026-09-13 11:33:54,281 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=44 height=194282 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:33:54,281 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_44 — success (1.680s) — height=194282 visible_cards=2 dom_nodes=450 harvested=450 stable=0/3
+2026-09-13 11:33:54,281 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_45 — starting
+2026-09-13 11:33:55,894 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=45 height=198045 visible=3 dom=460 harvested=460 stable=0
+2026-09-13 11:33:55,894 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_45 — success (1.613s) — height=198045 visible_cards=3 dom_nodes=460 harvested=460 stable=0/3
+2026-09-13 11:33:55,894 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_46 — starting
+2026-09-13 11:33:57,503 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=46 height=202389 visible=3 dom=470 harvested=470 stable=0
+2026-09-13 11:33:57,503 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_46 — success (1.609s) — height=202389 visible_cards=3 dom_nodes=470 harvested=470 stable=0/3
+2026-09-13 11:33:57,503 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_47 — starting
+2026-09-13 11:33:59,140 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=47 height=207224 visible=3 dom=480 harvested=480 stable=0
+2026-09-13 11:33:59,140 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_47 — success (1.637s) — height=207224 visible_cards=3 dom_nodes=480 harvested=480 stable=0/3
+2026-09-13 11:33:59,140 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_48 — starting
+2026-09-13 11:34:00,775 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=48 height=211294 visible=3 dom=490 harvested=490 stable=0
+2026-09-13 11:34:00,775 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_48 — success (1.635s) — height=211294 visible_cards=3 dom_nodes=490 harvested=490 stable=0/3
+2026-09-13 11:34:00,775 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_49 — starting
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=49 height=211294 visible=1 dom=490 harvested=490 stable=0 bottom=stable_scroll
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_iteration_49 — success (1.714s) — height=211294 visible_cards=1 dom_nodes=490 harvested=490 stable=0/3
+2026-09-13 11:34:02,489 INFO gbp-monitor.scroll SCROLL[comp-seminyak-01] iteration 49 bottom detected: stable_scroll (height=211294, visible=1, dom=490, harvested=490, 1.58s)
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_complete — starting
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll_complete — success (0.000s) — 49 scrolls, max visible=4, max dom=490, harvested=490, bottom=stable_scroll
+2026-09-13 11:34:02,489 INFO gbp-monitor.scroll SCROLL_COMPLETE[comp-seminyak-01] 49 scroll(s), max_visible=4, max_dom=490, harvested=490, final_height=211294, bottom=stable_scroll, 70.39s total
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] scroll — success (70.400s)
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=1 height=8903 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=2 height=13706 visible=3 dom=30 harvested=30 stable=0
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=3 height=17077 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=4 height=20721 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=5 height=25423 visible=3 dom=60 harvested=60 stable=0
+2026-09-13 11:34:02,489 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=6 height=30058 visible=3 dom=70 harvested=70 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=7 height=33383 visible=2 dom=80 harvested=80 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=8 height=38188 visible=2 dom=90 harvested=90 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=9 height=42778 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=10 height=47463 visible=3 dom=110 harvested=110 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=11 height=52738 visible=3 dom=120 harvested=120 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=12 height=57487 visible=2 dom=130 harvested=130 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=13 height=62036 visible=3 dom=140 harvested=140 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=14 height=66476 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=15 height=70141 visible=3 dom=160 harvested=160 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=16 height=73675 visible=3 dom=170 harvested=170 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=17 height=78509 visible=3 dom=180 harvested=180 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=18 height=83063 visible=2 dom=190 harvested=190 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=19 height=88583 visible=3 dom=200 harvested=200 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=20 height=92654 visible=2 dom=210 harvested=210 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=21 height=97275 visible=2 dom=220 harvested=220 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=22 height=100655 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=23 height=104488 visible=4 dom=240 harvested=240 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=24 height=108134 visible=3 dom=250 harvested=250 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=25 height=112657 visible=3 dom=260 harvested=260 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=26 height=116372 visible=3 dom=270 harvested=270 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=27 height=121349 visible=3 dom=280 harvested=280 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=28 height=124572 visible=2 dom=290 harvested=290 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=29 height=127851 visible=3 dom=300 harvested=300 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=30 height=132372 visible=3 dom=310 harvested=310 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=31 height=136623 visible=3 dom=320 harvested=320 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=32 height=140766 visible=3 dom=330 harvested=330 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=33 height=144012 visible=2 dom=340 harvested=340 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=34 height=149758 visible=3 dom=350 harvested=350 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=35 height=154124 visible=3 dom=360 harvested=360 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=36 height=159768 visible=3 dom=370 harvested=370 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=37 height=164404 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=38 height=169277 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=39 height=173462 visible=3 dom=400 harvested=400 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=40 height=177828 visible=3 dom=410 harvested=410 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=41 height=183000 visible=3 dom=420 harvested=420 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=42 height=186820 visible=3 dom=430 harvested=430 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=43 height=190760 visible=3 dom=440 harvested=440 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=44 height=194282 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=45 height=198045 visible=3 dom=460 harvested=460 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=46 height=202389 visible=3 dom=470 harvested=470 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=47 height=207224 visible=3 dom=480 harvested=480 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=48 height=211294 visible=3 dom=490 harvested=490 stable=0
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument SCROLL_ITER[comp-seminyak-01] iter=49 height=211294 visible=1 dom=490 harvested=490 stable=0 bottom=stable_scroll
+2026-09-13 11:34:02,490 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] expand_reviews — starting
+2026-09-13 11:34:41,602 INFO gbp-monitor.instrument SELECTOR[comp-seminyak-01] expand_text_button primary=button.w8nwRe.kyuRq fallback=False matched=True count=458 — 458 button(s) clicked
+2026-09-13 11:34:41,602 INFO gbp-monitor.capture EXPAND[comp-seminyak-01] expanded 458 truncated review(s) via button.w8nwRe.kyuRq
+2026-09-13 11:34:41,602 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] expand_reviews — success (39.112s)
+2026-09-13 11:34:41,602 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] html_capture — starting
+2026-09-13 11:34:41,942 INFO gbp-monitor.capture capture[comp-seminyak-01]: 2640258 bytes captured
+2026-09-13 11:34:41,943 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] html_capture — success (0.340s) — 2640258 bytes captured (harvested 490 distinct review cards)
+2026-09-13 11:34:41,943 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] business_metadata — starting
+2026-09-13 11:34:42,041 INFO gbp-monitor.instrument BUSINESS_META[comp-seminyak-01] name=Revolver Seminyak rating=4.7 reviews=8,505
+2026-09-13 11:34:42,041 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] business_metadata — success (0.098s)
+2026-09-13 11:34:42,041 INFO gbp-monitor.capture capture[comp-seminyak-01] phases: goto=0.51s, open_reviews_tab=6.59s, scroll=70.4s, expand=39.11s
+2026-09-13 11:34:42,077 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] parse_locator — starting
+2026-09-13 11:34:42,107 INFO gbp-monitor.locator resolve_review_items[comp-seminyak-01]: tier 1 succeeded with 4260 item(s) (selector='[data-review-id]'); tried tiers=[(1, 4260)]
+2026-09-13 11:34:42,107 INFO gbp-monitor.instrument PHASE[comp-seminyak-01] parse_locator — success (0.031s) — tier 1 ([data-review-id]): 4260 items
+2026-09-13 11:34:42,226 INFO gbp-monitor.parser parse_reviews[comp-seminyak-01]: 490 review(s) parsed from 4260 item(s) via tier 1 ('[data-review-id]')
+2026-09-13 11:34:42,226 INFO gbp-monitor.instrument REVIEW_STATS[comp-seminyak-01] visible=490 unique_ids=490 ratings=490 text=430 missing_fields=0 skipped=0 parsed=490 exported=490
+2026-09-13 11:34:42,226 INFO gbp-monitor.parser REVIEW_STATS[comp-seminyak-01] visible=490 unique=490 ratings=490 text=430 missing=0 skipped=0 parsed=490
+2026-09-13 11:34:42,245 INFO gbp-monitor.instrument PARSER_EFF[comp-seminyak-01] google_count=8,505 dom_nodes=490 parsed=490 exported=490 pct=100.0%
+2026-09-13 11:34:42,245 INFO gbp-monitor.instrument VERDICT[comp-seminyak-01] status=FAIL reason=Browser only collected 490 of 8505 Google reviews (5.76%) | All 490 DOM reviews parsed successfully
+2026-09-13 11:34:42,245 INFO gbp-monitor.instrument PARSER_EFF[comp-seminyak-01] google_count=8,505 dom_nodes=490 parsed=490 exported=490 pct=100.0%
+2026-09-13 11:34:42,245 INFO gbp-monitor.instrument VERDICT[comp-seminyak-01] status=FAIL reason=Browser only collected 490 of 8505 Google reviews (5.76%) | All 490 DOM reviews parsed successfully
+2026-09-13 11:34:42,249 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta_write", "ts": "2026-09-13T11:34:42.249208+00:00", "competitor": "comp-seminyak-01", "count": 100, "path": "data/reviews_new/comp-seminyak-01_20260913T113005Z.json"}
+2026-09-13 11:34:42,249 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta", "ts": "2026-09-13T11:34:42.249298+00:00", "competitor": "comp-seminyak-01", "new_reviews": 100}
+2026-09-13 11:34:42,249 INFO gbp-monitor.run_all BACKFILL[comp-seminyak-01]: 373 never-seen old review(s) merged silently
+2026-09-13 11:34:42,254 INFO gbp-monitor.storage save_snapshot[comp-seminyak-01]: wrote 490 review(s) to data/snapshots/comp-seminyak-01/2026-09-13T11-34-42Z.json (+ metadata)
+2026-09-13 11:34:42,254 INFO gbp-monitor.run_all LISTING COMPLETE[comp-seminyak-01]: 490 reviews harvested (reduced — Google reports 8,505)
+2026-09-13 11:34:42,254 INFO gbp-monitor.run_all   ↳ 100 NEW review(s) detected (alert-worthy, posted within 30 days)
+2026-09-13 11:34:42,254 INFO gbp-monitor.run_all   ↳ 373 backfill review(s) silently merged (older reviews never seen before)
+2026-09-13 11:34:42,254 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_done", "ts": "2026-09-13T11:34:42.254382+00:00", "competitor": "comp-seminyak-01", "reviews": 490, "delta": 100, "capture_s": 119.82, "parse_s": 0.2, "delta_s": 0.0, "save_s": 0.01}
+2026-09-13 11:34:42,256 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_result", "ts": "2026-09-13T11:34:42.256094+00:00", "competitor": "comp-seminyak-01", "branch": "test-seminyak", "duration_s": 120.19, "progress": "2/3"}
+2026-09-13 11:34:49,559 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_start", "ts": "2026-09-13T11:34:49.559500+00:00", "competitor": "comp-ubud-01", "branch": "test-ubud"}
+2026-09-13 11:34:49,786 INFO gbp-monitor.instrument PHASE[comp-ubud-01] navigation — starting
+2026-09-13 11:34:50,194 INFO gbp-monitor.instrument PHASE[comp-ubud-01] navigation — success (0.408s) — loaded https://www.google.com/maps/place/?q=place_id:ChIJu5hbBmo90i0R4po77axHom8...
+2026-09-13 11:34:50,194 INFO gbp-monitor.instrument PHASE[comp-ubud-01] reviews_dialog_verify — starting
+2026-09-13 11:34:50,632 INFO gbp-monitor.capture REVIEWS_DIALOG[comp-ubud-01] detected via "div.m6QErb[role='region']"
+2026-09-13 11:34:50,632 INFO gbp-monitor.instrument SELECTOR[comp-ubud-01] review_dialog primary=div.m6QErb[role='region'] fallback=False matched=True count=1 — Reviews dialog confirmed open
+2026-09-13 11:34:50,632 INFO gbp-monitor.instrument PHASE[comp-ubud-01] reviews_dialog_verify — success (0.438s)
+2026-09-13 11:34:50,668 INFO gbp-monitor.instrument PHASE[comp-ubud-01] open_reviews_tab — starting
+2026-09-13 11:34:54,669 WARNING gbp-monitor.instrument SELECTOR[comp-ubud-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=False count=0 — fallback 1/2: Page.wait_for_selector: Timeout 4000ms exceeded.
+Call log:
+  - waiting for locator("button[role='tab'][aria-label^='Ulasan']") to be visible
+
+2026-09-13 11:34:57,264 INFO gbp-monitor.capture REVIEWS_TAB[comp-ubud-01] opened via "button[role='tab'][aria-label^='Reviews']"
+2026-09-13 11:34:57,264 INFO gbp-monitor.instrument SELECTOR[comp-ubud-01] reviews_tab_button primary=button[role='tab'][aria-label^='Ulasan'] fallback=True matched=True count=1 — Reviews tab opened
+2026-09-13 11:34:57,264 INFO gbp-monitor.instrument PHASE[comp-ubud-01] open_reviews_tab — success (6.597s) — full Reviews list loaded
+2026-09-13 11:34:59,335 INFO gbp-monitor.capture JSONLOG: {"comp_id": "comp-ubud-01", "stage": "sort", "ts": "2026-09-13T11:34:59.335880+00:00", "outcome": "sort_applied", "selector": "button[aria-label*='sort' i]", "candidates": 3, "distance_px": 40}
+2026-09-13 11:34:59,336 INFO gbp-monitor.capture SORT_NEWEST[comp-ubud-01] applied via "button[aria-label*='sort' i]" (menu candidates=3, dist=40px)
+2026-09-13 11:34:59,336 INFO gbp-monitor.instrument SELECTOR[comp-ubud-01] reviews_sort_newest primary=button[aria-label*='sort' i] fallback=False matched=True count=1 — Newest ordering applied
+2026-09-13 11:34:59,336 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll — starting
+2026-09-13 11:34:59,336 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_resolve_container — starting
+2026-09-13 11:34:59,337 INFO gbp-monitor.instrument SELECTOR[comp-ubud-01] review_container primary=div.m6QErb[role='region'] fallback=False matched=True count=10 — JS hunt: 10 distinct review ids (scrollable=True)
+2026-09-13 11:34:59,337 INFO gbp-monitor.scroll review_container[comp-ubud-01] resolved via JS hunt: 'div.g2LZJb:nth-of-type(10) > div > div.XltNde.tTVLSc > div.w6VYqd:nth-of-type(1) > div.bJzME.DsGVEb.IJUlqd:nth-of-type(2) > div.k7jAl.miFGmb.PLbyfe > div.e07Vkf.kA9KIf.dS8AEf:nth-of-type(1) > div.aIFcqe > div.m6QErb.WNBkOb.XiKgde > div.m6QErb.DxyBCb.kA9KIf:nth-of-type(4)' (10 ids)
+2026-09-13 11:34:59,337 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_resolve_container — success (0.002s)
+2026-09-13 11:34:59,353 INFO gbp-monitor.scroll SCROLL[comp-ubud-01] initial viewport harvested 10 review(s) before scrolling
+2026-09-13 11:34:59,353 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_1 — starting
+2026-09-13 11:35:00,597 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=1 height=9184 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:35:00,597 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_1 — success (1.244s) — height=9184 visible_cards=3 dom_nodes=20 harvested=20 stable=0/3
+2026-09-13 11:35:00,597 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_2 — starting
+2026-09-13 11:35:01,848 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=2 height=13596 visible=2 dom=30 harvested=30 stable=0
+2026-09-13 11:35:01,848 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_2 — success (1.251s) — height=13596 visible_cards=2 dom_nodes=30 harvested=30 stable=0/3
+2026-09-13 11:35:01,849 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_3 — starting
+2026-09-13 11:35:03,108 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=3 height=18162 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:35:03,108 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_3 — success (1.260s) — height=18162 visible_cards=2 dom_nodes=40 harvested=40 stable=0/3
+2026-09-13 11:35:03,108 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_4 — starting
+2026-09-13 11:35:04,372 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=4 height=22146 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:35:04,372 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_4 — success (1.264s) — height=22146 visible_cards=3 dom_nodes=50 harvested=50 stable=0/3
+2026-09-13 11:35:04,372 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_5 — starting
+2026-09-13 11:35:05,671 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=5 height=27518 visible=2 dom=60 harvested=60 stable=0
+2026-09-13 11:35:05,671 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_5 — success (1.299s) — height=27518 visible_cards=2 dom_nodes=60 harvested=60 stable=0/3
+2026-09-13 11:35:05,671 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_6 — starting
+2026-09-13 11:35:06,960 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=6 height=31069 visible=2 dom=70 harvested=70 stable=0
+2026-09-13 11:35:06,960 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_6 — success (1.289s) — height=31069 visible_cards=2 dom_nodes=70 harvested=70 stable=0/3
+2026-09-13 11:35:06,960 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_7 — starting
+2026-09-13 11:35:08,257 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=7 height=34735 visible=3 dom=80 harvested=80 stable=0
+2026-09-13 11:35:08,257 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_7 — success (1.297s) — height=34735 visible_cards=3 dom_nodes=80 harvested=80 stable=0/3
+2026-09-13 11:35:08,257 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_8 — starting
+2026-09-13 11:35:09,554 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=8 height=39270 visible=4 dom=90 harvested=90 stable=0
+2026-09-13 11:35:09,554 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_8 — success (1.296s) — height=39270 visible_cards=4 dom_nodes=90 harvested=90 stable=0/3
+2026-09-13 11:35:09,554 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_9 — starting
+2026-09-13 11:35:10,874 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=9 height=43715 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:35:10,874 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_9 — success (1.320s) — height=43715 visible_cards=3 dom_nodes=100 harvested=100 stable=0/3
+2026-09-13 11:35:10,874 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_10 — starting
+2026-09-13 11:35:12,184 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=10 height=48211 visible=2 dom=110 harvested=110 stable=0
+2026-09-13 11:35:12,184 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_10 — success (1.310s) — height=48211 visible_cards=2 dom_nodes=110 harvested=110 stable=0/3
+2026-09-13 11:35:12,184 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_11 — starting
+2026-09-13 11:35:13,500 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=11 height=52156 visible=3 dom=120 harvested=120 stable=0
+2026-09-13 11:35:13,500 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_11 — success (1.315s) — height=52156 visible_cards=3 dom_nodes=120 harvested=120 stable=0/3
+2026-09-13 11:35:13,500 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_12 — starting
+2026-09-13 11:35:14,833 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=12 height=55876 visible=3 dom=130 harvested=130 stable=0
+2026-09-13 11:35:14,833 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_12 — success (1.333s) — height=55876 visible_cards=3 dom_nodes=130 harvested=130 stable=0/3
+2026-09-13 11:35:14,833 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_13 — starting
+2026-09-13 11:35:16,174 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=13 height=60514 visible=3 dom=140 harvested=140 stable=0
+2026-09-13 11:35:16,174 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_13 — success (1.341s) — height=60514 visible_cards=3 dom_nodes=140 harvested=140 stable=0/3
+2026-09-13 11:35:16,174 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_14 — starting
+2026-09-13 11:35:17,532 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=14 height=65713 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:35:17,532 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_14 — success (1.358s) — height=65713 visible_cards=3 dom_nodes=150 harvested=150 stable=0/3
+2026-09-13 11:35:17,532 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_15 — starting
+2026-09-13 11:35:18,882 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=15 height=70428 visible=2 dom=160 harvested=160 stable=0
+2026-09-13 11:35:18,882 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_15 — success (1.350s) — height=70428 visible_cards=2 dom_nodes=160 harvested=160 stable=0/3
+2026-09-13 11:35:18,882 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_16 — starting
+2026-09-13 11:35:20,255 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=16 height=75471 visible=2 dom=170 harvested=170 stable=0
+2026-09-13 11:35:20,255 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_16 — success (1.373s) — height=75471 visible_cards=2 dom_nodes=170 harvested=170 stable=0/3
+2026-09-13 11:35:20,255 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_17 — starting
+2026-09-13 11:35:21,641 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=17 height=79419 visible=2 dom=180 harvested=180 stable=0
+2026-09-13 11:35:21,641 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_17 — success (1.386s) — height=79419 visible_cards=2 dom_nodes=180 harvested=180 stable=0/3
+2026-09-13 11:35:21,641 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_18 — starting
+2026-09-13 11:35:23,057 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=18 height=83689 visible=2 dom=190 harvested=190 stable=0
+2026-09-13 11:35:23,057 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_18 — success (1.416s) — height=83689 visible_cards=2 dom_nodes=190 harvested=190 stable=0/3
+2026-09-13 11:35:23,057 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_19 — starting
+2026-09-13 11:35:24,435 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=19 height=88202 visible=4 dom=200 harvested=200 stable=0
+2026-09-13 11:35:24,435 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_19 — success (1.378s) — height=88202 visible_cards=4 dom_nodes=200 harvested=200 stable=0/3
+2026-09-13 11:35:24,435 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_20 — starting
+2026-09-13 11:35:25,829 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=20 height=91052 visible=3 dom=210 harvested=210 stable=0
+2026-09-13 11:35:25,829 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_20 — success (1.394s) — height=91052 visible_cards=3 dom_nodes=210 harvested=210 stable=0/3
+2026-09-13 11:35:25,829 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_21 — starting
+2026-09-13 11:35:27,223 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=21 height=96186 visible=3 dom=220 harvested=220 stable=0
+2026-09-13 11:35:27,223 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_21 — success (1.394s) — height=96186 visible_cards=3 dom_nodes=220 harvested=220 stable=0/3
+2026-09-13 11:35:27,223 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_22 — starting
+2026-09-13 11:35:28,643 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=22 height=100908 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:35:28,643 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_22 — success (1.420s) — height=100908 visible_cards=2 dom_nodes=230 harvested=230 stable=0/3
+2026-09-13 11:35:28,643 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_23 — starting
+2026-09-13 11:35:30,051 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=23 height=104805 visible=2 dom=240 harvested=240 stable=0
+2026-09-13 11:35:30,051 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_23 — success (1.408s) — height=104805 visible_cards=2 dom_nodes=240 harvested=240 stable=0/3
+2026-09-13 11:35:30,051 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_24 — starting
+2026-09-13 11:35:31,469 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=24 height=109887 visible=2 dom=250 harvested=250 stable=0
+2026-09-13 11:35:31,469 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_24 — success (1.418s) — height=109887 visible_cards=2 dom_nodes=250 harvested=250 stable=0/3
+2026-09-13 11:35:31,469 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_25 — starting
+2026-09-13 11:35:32,891 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=25 height=113924 visible=2 dom=260 harvested=260 stable=0
+2026-09-13 11:35:32,891 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_25 — success (1.421s) — height=113924 visible_cards=2 dom_nodes=260 harvested=260 stable=0/3
+2026-09-13 11:35:32,891 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_26 — starting
+2026-09-13 11:35:34,332 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=26 height=118955 visible=3 dom=270 harvested=270 stable=0
+2026-09-13 11:35:34,332 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_26 — success (1.441s) — height=118955 visible_cards=3 dom_nodes=270 harvested=270 stable=0/3
+2026-09-13 11:35:34,332 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_27 — starting
+2026-09-13 11:35:35,774 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=27 height=124009 visible=2 dom=280 harvested=280 stable=0
+2026-09-13 11:35:35,774 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_27 — success (1.441s) — height=124009 visible_cards=2 dom_nodes=280 harvested=280 stable=0/3
+2026-09-13 11:35:35,774 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_28 — starting
+2026-09-13 11:35:37,246 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=28 height=128491 visible=2 dom=290 harvested=290 stable=0
+2026-09-13 11:35:37,246 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_28 — success (1.472s) — height=128491 visible_cards=2 dom_nodes=290 harvested=290 stable=0/3
+2026-09-13 11:35:37,246 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_29 — starting
+2026-09-13 11:35:38,730 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=29 height=133435 visible=2 dom=300 harvested=300 stable=0
+2026-09-13 11:35:38,730 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_29 — success (1.484s) — height=133435 visible_cards=2 dom_nodes=300 harvested=300 stable=0/3
+2026-09-13 11:35:38,730 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_30 — starting
+2026-09-13 11:35:40,259 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=30 height=138071 visible=2 dom=310 harvested=310 stable=0
+2026-09-13 11:35:40,259 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_30 — success (1.529s) — height=138071 visible_cards=2 dom_nodes=310 harvested=310 stable=0/3
+2026-09-13 11:35:40,259 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_31 — starting
+2026-09-13 11:35:41,739 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=31 height=143693 visible=2 dom=320 harvested=320 stable=0
+2026-09-13 11:35:41,739 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_31 — success (1.480s) — height=143693 visible_cards=2 dom_nodes=320 harvested=320 stable=0/3
+2026-09-13 11:35:41,739 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_32 — starting
+2026-09-13 11:35:43,230 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=32 height=148558 visible=2 dom=330 harvested=330 stable=0
+2026-09-13 11:35:43,230 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_32 — success (1.491s) — height=148558 visible_cards=2 dom_nodes=330 harvested=330 stable=0/3
+2026-09-13 11:35:43,230 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_33 — starting
+2026-09-13 11:35:44,748 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=33 height=152612 visible=3 dom=340 harvested=340 stable=0
+2026-09-13 11:35:44,748 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_33 — success (1.518s) — height=152612 visible_cards=3 dom_nodes=340 harvested=340 stable=0/3
+2026-09-13 11:35:44,748 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_34 — starting
+2026-09-13 11:35:46,282 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=34 height=157369 visible=3 dom=350 harvested=350 stable=0
+2026-09-13 11:35:46,282 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_34 — success (1.534s) — height=157369 visible_cards=3 dom_nodes=350 harvested=350 stable=0/3
+2026-09-13 11:35:46,282 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_35 — starting
+2026-09-13 11:35:47,797 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=35 height=162124 visible=2 dom=360 harvested=360 stable=0
+2026-09-13 11:35:47,797 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_35 — success (1.515s) — height=162124 visible_cards=2 dom_nodes=360 harvested=360 stable=0/3
+2026-09-13 11:35:47,797 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_36 — starting
+2026-09-13 11:35:49,408 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=36 height=166326 visible=2 dom=370 harvested=370 stable=0
+2026-09-13 11:35:49,408 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_36 — success (1.611s) — height=166326 visible_cards=2 dom_nodes=370 harvested=370 stable=0/3
+2026-09-13 11:35:49,408 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_37 — starting
+2026-09-13 11:35:50,958 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=37 height=171444 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:35:50,958 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_37 — success (1.550s) — height=171444 visible_cards=2 dom_nodes=380 harvested=380 stable=0/3
+2026-09-13 11:35:50,958 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_38 — starting
+2026-09-13 11:35:52,518 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=38 height=176570 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:35:52,519 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_38 — success (1.561s) — height=176570 visible_cards=2 dom_nodes=390 harvested=390 stable=0/3
+2026-09-13 11:35:52,519 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_39 — starting
+2026-09-13 11:35:54,140 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=39 height=181110 visible=2 dom=400 harvested=400 stable=0
+2026-09-13 11:35:54,140 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_39 — success (1.621s) — height=181110 visible_cards=2 dom_nodes=400 harvested=400 stable=0/3
+2026-09-13 11:35:54,140 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_40 — starting
+2026-09-13 11:35:55,716 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=40 height=185981 visible=2 dom=410 harvested=410 stable=0
+2026-09-13 11:35:55,716 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_40 — success (1.576s) — height=185981 visible_cards=2 dom_nodes=410 harvested=410 stable=0/3
+2026-09-13 11:35:55,716 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_41 — starting
+2026-09-13 11:35:57,390 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=41 height=190638 visible=2 dom=420 harvested=420 stable=0
+2026-09-13 11:35:57,390 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_41 — success (1.674s) — height=190638 visible_cards=2 dom_nodes=420 harvested=420 stable=0/3
+2026-09-13 11:35:57,390 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_42 — starting
+2026-09-13 11:35:58,999 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=42 height=195199 visible=2 dom=430 harvested=430 stable=0
+2026-09-13 11:35:59,000 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_42 — success (1.609s) — height=195199 visible_cards=2 dom_nodes=430 harvested=430 stable=0/3
+2026-09-13 11:35:59,000 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_43 — starting
+2026-09-13 11:36:00,614 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=43 height=200184 visible=2 dom=440 harvested=440 stable=0
+2026-09-13 11:36:00,614 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_43 — success (1.615s) — height=200184 visible_cards=2 dom_nodes=440 harvested=440 stable=0/3
+2026-09-13 11:36:00,614 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_44 — starting
+2026-09-13 11:36:02,235 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=44 height=205181 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:36:02,235 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_44 — success (1.621s) — height=205181 visible_cards=2 dom_nodes=450 harvested=450 stable=0/3
+2026-09-13 11:36:02,235 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_45 — starting
+2026-09-13 11:36:03,871 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=45 height=210491 visible=2 dom=460 harvested=460 stable=0
+2026-09-13 11:36:03,871 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_45 — success (1.635s) — height=210491 visible_cards=2 dom_nodes=460 harvested=460 stable=0/3
+2026-09-13 11:36:03,871 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_46 — starting
+2026-09-13 11:36:05,523 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=46 height=215193 visible=2 dom=470 harvested=470 stable=0
+2026-09-13 11:36:05,523 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_46 — success (1.652s) — height=215193 visible_cards=2 dom_nodes=470 harvested=470 stable=0/3
+2026-09-13 11:36:05,523 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_47 — starting
+2026-09-13 11:36:07,201 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=47 height=219766 visible=2 dom=480 harvested=480 stable=0
+2026-09-13 11:36:07,201 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_47 — success (1.678s) — height=219766 visible_cards=2 dom_nodes=480 harvested=480 stable=0/3
+2026-09-13 11:36:07,201 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_48 — starting
+2026-09-13 11:36:08,829 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=48 height=219766 visible=1 dom=480 harvested=480 stable=0 bottom=stable_scroll
+2026-09-13 11:36:08,829 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_iteration_48 — success (1.628s) — height=219766 visible_cards=1 dom_nodes=480 harvested=480 stable=0/3
+2026-09-13 11:36:08,829 INFO gbp-monitor.scroll SCROLL[comp-ubud-01] iteration 48 bottom detected: stable_scroll (height=219766, visible=1, dom=480, harvested=480, 1.59s)
+2026-09-13 11:36:08,829 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_complete — starting
+2026-09-13 11:36:08,829 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll_complete — success (0.000s) — 48 scrolls, max visible=4, max dom=480, harvested=480, bottom=stable_scroll
+2026-09-13 11:36:08,829 INFO gbp-monitor.scroll SCROLL_COMPLETE[comp-ubud-01] 48 scroll(s), max_visible=4, max_dom=480, harvested=480, final_height=219766, bottom=stable_scroll, 69.49s total
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument PHASE[comp-ubud-01] scroll — success (69.494s)
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=1 height=9184 visible=3 dom=20 harvested=20 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=2 height=13596 visible=2 dom=30 harvested=30 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=3 height=18162 visible=2 dom=40 harvested=40 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=4 height=22146 visible=3 dom=50 harvested=50 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=5 height=27518 visible=2 dom=60 harvested=60 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=6 height=31069 visible=2 dom=70 harvested=70 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=7 height=34735 visible=3 dom=80 harvested=80 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=8 height=39270 visible=4 dom=90 harvested=90 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=9 height=43715 visible=3 dom=100 harvested=100 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=10 height=48211 visible=2 dom=110 harvested=110 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=11 height=52156 visible=3 dom=120 harvested=120 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=12 height=55876 visible=3 dom=130 harvested=130 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=13 height=60514 visible=3 dom=140 harvested=140 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=14 height=65713 visible=3 dom=150 harvested=150 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=15 height=70428 visible=2 dom=160 harvested=160 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=16 height=75471 visible=2 dom=170 harvested=170 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=17 height=79419 visible=2 dom=180 harvested=180 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=18 height=83689 visible=2 dom=190 harvested=190 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=19 height=88202 visible=4 dom=200 harvested=200 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=20 height=91052 visible=3 dom=210 harvested=210 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=21 height=96186 visible=3 dom=220 harvested=220 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=22 height=100908 visible=2 dom=230 harvested=230 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=23 height=104805 visible=2 dom=240 harvested=240 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=24 height=109887 visible=2 dom=250 harvested=250 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=25 height=113924 visible=2 dom=260 harvested=260 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=26 height=118955 visible=3 dom=270 harvested=270 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=27 height=124009 visible=2 dom=280 harvested=280 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=28 height=128491 visible=2 dom=290 harvested=290 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=29 height=133435 visible=2 dom=300 harvested=300 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=30 height=138071 visible=2 dom=310 harvested=310 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=31 height=143693 visible=2 dom=320 harvested=320 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=32 height=148558 visible=2 dom=330 harvested=330 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=33 height=152612 visible=3 dom=340 harvested=340 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=34 height=157369 visible=3 dom=350 harvested=350 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=35 height=162124 visible=2 dom=360 harvested=360 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=36 height=166326 visible=2 dom=370 harvested=370 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=37 height=171444 visible=2 dom=380 harvested=380 stable=0
+2026-09-13 11:36:08,830 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=38 height=176570 visible=2 dom=390 harvested=390 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=39 height=181110 visible=2 dom=400 harvested=400 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=40 height=185981 visible=2 dom=410 harvested=410 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=41 height=190638 visible=2 dom=420 harvested=420 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=42 height=195199 visible=2 dom=430 harvested=430 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=43 height=200184 visible=2 dom=440 harvested=440 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=44 height=205181 visible=2 dom=450 harvested=450 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=45 height=210491 visible=2 dom=460 harvested=460 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=46 height=215193 visible=2 dom=470 harvested=470 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=47 height=219766 visible=2 dom=480 harvested=480 stable=0
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument SCROLL_ITER[comp-ubud-01] iter=48 height=219766 visible=1 dom=480 harvested=480 stable=0 bottom=stable_scroll
+2026-09-13 11:36:08,831 INFO gbp-monitor.instrument PHASE[comp-ubud-01] expand_reviews — starting
+2026-09-13 11:36:51,746 INFO gbp-monitor.instrument SELECTOR[comp-ubud-01] expand_text_button primary=button.w8nwRe.kyuRq fallback=False matched=True count=461 — 461 button(s) clicked
+2026-09-13 11:36:51,746 INFO gbp-monitor.capture EXPAND[comp-ubud-01] expanded 461 truncated review(s) via button.w8nwRe.kyuRq
+2026-09-13 11:36:51,746 INFO gbp-monitor.instrument PHASE[comp-ubud-01] expand_reviews — success (42.915s)
+2026-09-13 11:36:51,746 INFO gbp-monitor.instrument PHASE[comp-ubud-01] html_capture — starting
+2026-09-13 11:36:52,117 INFO gbp-monitor.capture capture[comp-ubud-01]: 2757552 bytes captured
+2026-09-13 11:36:52,118 INFO gbp-monitor.instrument PHASE[comp-ubud-01] html_capture — success (0.371s) — 2757552 bytes captured (harvested 480 distinct review cards)
+2026-09-13 11:36:52,118 INFO gbp-monitor.instrument PHASE[comp-ubud-01] business_metadata — starting
+2026-09-13 11:36:52,199 INFO gbp-monitor.instrument BUSINESS_META[comp-ubud-01] name=Seniman Coffee rating=4.6 reviews=5,173
+2026-09-13 11:36:52,199 INFO gbp-monitor.instrument PHASE[comp-ubud-01] business_metadata — success (0.082s)
+2026-09-13 11:36:52,199 INFO gbp-monitor.capture capture[comp-ubud-01] phases: goto=0.41s, open_reviews_tab=6.6s, scroll=69.49s, expand=42.92s
+2026-09-13 11:36:52,237 INFO gbp-monitor.instrument PHASE[comp-ubud-01] parse_locator — starting
+2026-09-13 11:36:52,255 INFO gbp-monitor.locator resolve_review_items[comp-ubud-01]: tier 1 succeeded with 4549 item(s) (selector='[data-review-id]'); tried tiers=[(1, 4549)]
+2026-09-13 11:36:52,255 INFO gbp-monitor.instrument PHASE[comp-ubud-01] parse_locator — success (0.019s) — tier 1 ([data-review-id]): 4549 items
+2026-09-13 11:36:52,382 INFO gbp-monitor.parser parse_reviews[comp-ubud-01]: 480 review(s) parsed from 4549 item(s) via tier 1 ('[data-review-id]')
+2026-09-13 11:36:52,382 INFO gbp-monitor.instrument REVIEW_STATS[comp-ubud-01] visible=480 unique_ids=480 ratings=480 text=374 missing_fields=0 skipped=0 parsed=480 exported=480
+2026-09-13 11:36:52,383 INFO gbp-monitor.parser REVIEW_STATS[comp-ubud-01] visible=480 unique=480 ratings=480 text=374 missing=0 skipped=0 parsed=480
+2026-09-13 11:36:52,398 INFO gbp-monitor.instrument PARSER_EFF[comp-ubud-01] google_count=5,173 dom_nodes=480 parsed=480 exported=480 pct=100.0%
+2026-09-13 11:36:52,398 INFO gbp-monitor.instrument VERDICT[comp-ubud-01] status=FAIL reason=Browser only collected 480 of 5173 Google reviews (9.28%) | All 480 DOM reviews parsed successfully
+2026-09-13 11:36:52,398 INFO gbp-monitor.instrument PARSER_EFF[comp-ubud-01] google_count=5,173 dom_nodes=480 parsed=480 exported=480 pct=100.0%
+2026-09-13 11:36:52,398 INFO gbp-monitor.instrument VERDICT[comp-ubud-01] status=FAIL reason=Browser only collected 480 of 5173 Google reviews (9.28%) | All 480 DOM reviews parsed successfully
+2026-09-13 11:36:52,400 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta_write", "ts": "2026-09-13T11:36:52.400462+00:00", "competitor": "comp-ubud-01", "count": 46, "path": "data/reviews_new/comp-ubud-01_20260913T113005Z.json"}
+2026-09-13 11:36:52,400 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "delta", "ts": "2026-09-13T11:36:52.400551+00:00", "competitor": "comp-ubud-01", "new_reviews": 46}
+2026-09-13 11:36:52,400 INFO gbp-monitor.run_all BACKFILL[comp-ubud-01]: 425 never-seen old review(s) merged silently
+2026-09-13 11:36:52,405 INFO gbp-monitor.storage save_snapshot[comp-ubud-01]: wrote 480 review(s) to data/snapshots/comp-ubud-01/2026-09-13T11-36-52Z.json (+ metadata)
+2026-09-13 11:36:52,405 INFO gbp-monitor.run_all LISTING COMPLETE[comp-ubud-01]: 480 reviews harvested (reduced — Google reports 5,173)
+2026-09-13 11:36:52,405 INFO gbp-monitor.run_all   ↳ 46 NEW review(s) detected (alert-worthy, posted within 30 days)
+2026-09-13 11:36:52,405 INFO gbp-monitor.run_all   ↳ 425 backfill review(s) silently merged (older reviews never seen before)
+2026-09-13 11:36:52,405 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_done", "ts": "2026-09-13T11:36:52.405327+00:00", "competitor": "comp-ubud-01", "reviews": 480, "delta": 46, "capture_s": 122.44, "parse_s": 0.19, "delta_s": 0.0, "save_s": 0.01}
+2026-09-13 11:36:52,406 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "listing_result", "ts": "2026-09-13T11:36:52.406911+00:00", "competitor": "comp-ubud-01", "branch": "test-ubud", "duration_s": 122.85, "progress": "3/3"}
+2026-09-13 11:36:57,678 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "browser_teardown", "ts": "2026-09-13T11:36:57.677993+00:00", "duration_s": 0.07}
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "selector_report", "ts": "2026-09-13T11:36:57.679005+00:00", "healthy": 2, "degraded": 0, "broken": 0}
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "run_summary", "ts": "2026-09-13T11:36:57.679128+00:00", "mode": "live", "success": 3, "failed": 0, "skipped": 0, "new_reviews": 180, "total_reviews": 1460, "total_competitors": 3, "duration_s": 411.8, "error_count": 0}
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all JSONLOG: {"run_id": "20260913T113005Z", "stage": "summary_written", "ts": "2026-09-13T11:36:57.679342+00:00", "path": "data/run_summary.json"}
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all ============================================================
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all ROTH RUN COMPLETE — 20260913T113005Z
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all   Mode: live | Duration: 412s | Browser launch: 0.4s
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all   Results: 3 succeeded, 0 failed, 0 skipped
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all   Reviews: 1460 total harvested, 180 new (alert-worthy), 1099 backfill (silent)
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all   ALERT: 180 new review(s) detected — notifications pending
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all ============================================================
+2026-09-13 11:36:57,679 INFO gbp-monitor.run_all Lock released

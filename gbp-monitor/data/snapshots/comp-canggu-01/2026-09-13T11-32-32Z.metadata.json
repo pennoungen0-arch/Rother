@@ -1,0 +1,48 @@
+{
+  "address": "Address: Jl. Sempol No.8, Pererenan, Kec. Mengwi, Kabupaten Badung, Bali 80351, Indonesia",
+  "category": "Cafe",
+  "website": "http://lifescrate.com/",
+  "opening_hours": [
+    {
+      "day": "Sunday",
+      "hours": "6 AM to 9 PM",
+      "today": true
+    },
+    {
+      "day": "Monday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    },
+    {
+      "day": "Tuesday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    },
+    {
+      "day": "Wednesday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    },
+    {
+      "day": "Thursday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    },
+    {
+      "day": "Friday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    },
+    {
+      "day": "Saturday",
+      "hours": "6 AM to 9 PM",
+      "today": false
+    }
+  ],
+  "google_rating": "4.2",
+  "google_review_count": "5,301",
+  "business_name": "Crate Cafe",
+  "sort_applied": true,
+  "harvest_status": "reduced",
+  "harvest_detail": "490 of 5301 reviews harvested — partial newest window (Google panel virtualization)"
+}

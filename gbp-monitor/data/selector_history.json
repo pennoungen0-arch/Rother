@@ -82,5 +82,19 @@
       "healthy_delta": 0,
       "confidence_delta": 0.0
     }
+  },
+  {
+    "run_id": "20260913T113005Z",
+    "timestamp": "2026-09-13T11:30:05.851188+00:00",
+    "healthy": 2,
+    "degraded": 0,
+    "broken": 0,
+    "not_evaluated": 10,
+    "avg_confidence": 1.0,
+    "selectors": {},
+    "trend": {
+      "healthy_delta": 1,
+      "confidence_delta": 0.072
+    }
   }
 ]

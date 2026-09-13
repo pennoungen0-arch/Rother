@@ -1,0 +1,50 @@
+{
+  "address": "Address: Jl. Kayu Aya No.51, Seminyak, Kec. Kuta Utara, Kabupaten Badung, Bali 80361, Indonesia",
+  "category": "Cafe",
+  "phone": "+6281238428343",
+  "website": "https://revolverbali.com/",
+  "opening_hours": [
+    {
+      "day": "Sunday",
+      "hours": "7 AM to 11 PM",
+      "today": true
+    },
+    {
+      "day": "Monday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    },
+    {
+      "day": "Tuesday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    },
+    {
+      "day": "Wednesday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    },
+    {
+      "day": "Thursday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    },
+    {
+      "day": "Friday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    },
+    {
+      "day": "Saturday",
+      "hours": "7 AM to 11 PM",
+      "today": false
+    }
+  ],
+  "hours_status": "Open · Closes 11 PM",
+  "google_rating": "4.7",
+  "google_review_count": "8,505",
+  "business_name": "Revolver Seminyak",
+  "sort_applied": true,
+  "harvest_status": "reduced",
+  "harvest_detail": "490 of 8505 reviews harvested — partial newest window (Google panel virtualization)"
+}

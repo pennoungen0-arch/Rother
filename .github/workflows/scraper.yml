@@ -10,11 +10,10 @@ on:
         required: false
         type: string
       mode:
-        description: 'Scrape mode'
+        description: 'Scrape mode (manual = run all, verify = run verification)'
         required: false
         type: choice
         options:
-          - scheduled
           - manual
           - verify
         default: 'manual'
@@ -80,7 +79,7 @@ jobs:
           elif [ -n "${{ github.event.inputs.competitors }}" ]; then
             python -m orchestration.run_all --competitors "${{ github.event.inputs.competitors }}"
           else
-            python -m orchestration.run_all --schedule
+            python -m orchestration.run_all
           fi
 
       - name: Check for data changes

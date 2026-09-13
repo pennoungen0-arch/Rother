@@ -1,0 +1,122 @@
+name: Scraper — Scheduled Review Collection
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      competitors:
+        description: 'Comma-separated competitor IDs to scrape (empty = all)'
+        required: false
+        type: string
+      mode:
+        description: 'Scrape mode'
+        required: false
+        type: choice
+        options:
+          - scheduled
+          - manual
+          - verify
+        default: 'manual'
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    name: Run Review Scraper
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GBP_ROOT: ${{ github.workspace }}/gbp-monitor
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+
+    steps:
+      - name: Checkout repository (main branch)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          cd gbp-monitor
+          pip install -r requirements.txt
+
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('gbp-monitor/requirements.txt') }}
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
+          cd gbp-monitor
+          playwright install chromium --with-deps
+
+      - name: Create config files from examples
+        run: |
+          cd gbp-monitor
+          python -m orchestration.run_all --init-config
+
+      - name: Validate config
+        run: |
+          cd gbp-monitor
+          python -m orchestration.run_all --validate-config
+
+      - name: Run scraper
+        id: scrape
+        run: |
+          cd gbp-monitor
+          if [ "${{ github.event.inputs.mode }}" = "verify" ]; then
+            python -m orchestration.run_all --verify
+          elif [ -n "${{ github.event.inputs.competitors }}" ]; then
+            python -m orchestration.run_all --competitors "${{ github.event.inputs.competitors }}"
+          else
+            python -m orchestration.run_all --schedule
+          fi
+
+      - name: Check for data changes
+        id: changes
+        run: |
+          cd gbp-monitor
+          if git status --porcelain data/ | grep -q .; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push data to data branch
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create or update data branch
+          git checkout -B data
+          git add gbp-monitor/data/
+          git commit -m "chore(data): auto-update scraped data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          
+          # Push data branch
+          git push origin data --force
+
+      - name: Upload run summary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-summary
+          path: gbp-monitor/data/run_summary.json
+          retention-days: 30
+
+      - name: Upload run log as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-log
+          path: gbp-monitor/data/run.log
+          retention-days: 30

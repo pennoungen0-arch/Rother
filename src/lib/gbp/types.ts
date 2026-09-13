@@ -722,3 +722,25 @@ export interface HealthResponse {
   health: { level: string; success: number; failed: number; skipped: number } | null;
   dataStatus: string;
 }
+
+/** Harvest honesty info + business metadata (HARVEST_FIX_PLAN Phase 3). */
+export interface HarvestInfo {
+  harvest_status?: string;
+  harvest_detail?: string;
+  google_review_count?: string;
+  sort_applied?: boolean;
+  business_name?: string;
+  category?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  opening_hours?: OpeningHour[];
+  hours_status?: string | null;
+}
+
+/** Snapshot entry metadata for listing available snapshots. */
+export interface SnapshotEntry {
+  timestamp: string;
+  filename: string;
+  review_count: number;
+}

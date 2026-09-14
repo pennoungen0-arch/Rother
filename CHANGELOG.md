@@ -1,5 +1,49 @@
 # Changelog — Rother
 
+## 2026-09-13T16:30:00+07:00 — Vercel Web UI: Status Indicators + Hide Broken Features
+
+- **Files:** `vercel.json`, `src/lib/vercel.ts` (new), `src/components/shell/app-shell.tsx`, `src/features/t-config.tsx`, `src/features/t-setup.tsx`, `src/features/t-scheduler.tsx`, `src/features/today.tsx`
+- **Reason:** Make rotherweb.vercel.app usable for non-technical clients — show real-time scraping status and hide features that can't work on Vercel (no Python, no Playwright, no writable filesystem).
+- **Changes:**
+  1. **New `src/lib/vercel.ts` utility** — `isVercel()` and `isVercelOnlyFeature()` for client-side Vercel detection via `NEXT_PUBLIC_VERCEL` env var
+  2. **vercel.json env** — added `NEXT_PUBLIC_VERCEL: "1"` so client knows it's on web
+  3. **TopBar (every page)** — On Vercel, shows "Last scrape: 22m ago" + "+N new" badge + "Trigger Scrape" link to GitHub Actions (replaces broken Refresh button)
+  4. **Today page** — New prominent green "Scraping is running automatically · Live" banner with last scrape time, competitors scraped, new reviews, next run, and "View on GitHub" link
+  5. **Config page** — Hidden "Run scan again" button on Vercel, replaced with "Trigger manually →" link to GitHub Actions
+  6. **Scraper Setup page** — Shows "This feature is not available on the web version" with explanation
+  7. **Scheduler page** — Shows "GitHub Actions Cron is Active" with manual trigger link
+  8. **Startup banner** — On Vercel, shows info card pointing to GitHub Actions instead of polling broken API
+  9. **useScrapeStatus hook** — On Vercel, polls `/api/overview` for `runSummary` instead of broken `/api/scrape/status`; shows "Scraping runs on GitHub Actions" toast if user tries to trigger
+- **Problems Solved:**
+  - Non-technical clients couldn't tell if scraping was happening on Vercel
+  - Broken UI elements (Refresh, Run scan, Scheduler toggle) gave "Failed" toasts with no explanation
+  - No clear path to trigger a scrape from the web UI
+- **Status:** PROVEN — tsc 0 errors, vitest 134/134, next build OK, Vercel auto-deploy triggered
+
+## 2026-09-13T15:30:00+07:00 — Vercel Remote Data Layer: Fix latest.json Pointer + Workflow Bugs
+
+- **Files:** `.github/workflows/scraper.yml`, `src/lib/gbp/remote-data.ts`, `src/lib/gbp/data-source.ts`, `.gitignore`
+- **Reason:** Dashboard showed "Anonymous / N/A / (no text)" for all reviews; scraper workflow had two silent-failure bugs.
+- **Changes:**
+  1. **Fixed remote data layer pointer logic** (`src/lib/gbp/remote-data.ts`):
+     - `fetchSnapshot()` now reads `latest.json` as a string (filename pointer) and fetches the actual snapshot file
+     - `fetchAllSnapshots()` delegates to `fetchSnapshot()` (removed duplicate broken logic)
+     - `fetchHarvestInfo()` reads `latest.json` pointer, then constructs `<filename>.metadata.json`
+  2. **Applied `cleanReviewNames()` in remote mode** (`src/lib/gbp/data-source.ts`):
+     - `readAllSnapshots()` and `readSnapshotAt()` strip `, original` suffix on remote data
+  3. **Fixed workflow `--schedule` bug** (`.github/workflows/scraper.yml`):
+     - Old: `python -m orchestration.run_all --schedule` → silently exits when `schedule.json` is missing on CI runner
+     - New: `python -m orchestration.run_all` → runs all competitors unconditionally
+  4. **Fixed workflow `git add` .gitignore bug** (`.github/workflows/scraper.yml`):
+     - Root `.gitignore` line 74 ignores all `data/` directories
+     - Added `-f` flag to force-add on data branch
+  5. **Synced main branch** — remote `origin/main` was missing all Vercel/Phase 2 commits; force-pushed to align
+- **Problems Solved:**
+  - Reviews showed "Anonymous / N/A / (no text)" because `latest.json` (a pointer) was parsed as `Review[]`
+  - Scraper workflow ran Python but never committed any data (silent failure)
+  - Data branch existed but was empty (git add blocked by .gitignore)
+- **Status:** PROVEN — Workflow #2 ran successfully (7m32s, 3 competitors, 1460 reviews), data branch populated, dashboard now shows real reviewer names and text
+
 ## 2026-09-13T14:43:50+07:00 — Phase 2: GitHub Actions Scraper + Vercel Remote Data Layer
 
 - **Files:** `.github/workflows/scraper.yml` (new), `src/lib/gbp/remote-data.ts` (new), `src/lib/gbp/data-source.ts` (new), `src/lib/gbp/server-data.ts`, `src/lib/gbp/types.ts`

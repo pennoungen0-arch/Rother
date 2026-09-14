@@ -1,6 +1,6 @@
 # Vercel Compatibility Matrix
 
-**Last updated:** 2026-09-13  
+**Last updated:** 2026-09-13T16:30:00+07:00  
 **Scope:** rotherweb.vercel.app (Vercel deployment) vs localhost (Tauri/desktop)  
 **Context:** Vercel runs serverless Next.js — no Python, no Playwright, no writable filesystem.
 
@@ -122,13 +122,55 @@ GitHub Actions (cron/manual)
 
 ---
 
+## Phase 3: UI Polish for Non-Technical Users (2026-09-13)
+
+To prevent confusing error toasts and give clients visibility into scraping status, the following UI changes were made:
+
+### TopBar (every page)
+- **Vercel:** Shows "Last scrape: 22m ago" badge with "+N new" + "Trigger Scrape" link to GitHub Actions
+- **Local:** Original Refresh button + active scrape indicator (unchanged)
+- **Detection:** `isVercel()` from `src/lib/vercel.ts` checks `NEXT_PUBLIC_VERCEL === "1"`
+
+### Today page (main dashboard)
+- **Vercel:** New prominent green "Scraping is running automatically · Live" banner
+  - Shows last scrape time, competitors scraped, new reviews, next run time
+  - "View on GitHub" link for manual trigger
+- **Local:** Original StartupBanner (unchanged)
+
+### Config page
+- **Vercel:** "Run scan again" button hidden, replaced with "Trigger manually →" link
+- **Local:** Original button (unchanged)
+
+### Scraper Setup page
+- **Vercel:** Shows "This feature is not available on the web version" + link to GitHub Actions
+- **Local:** Original Scraper Setup Wizard (unchanged)
+
+### Scheduler page
+- **Vercel:** Shows "GitHub Actions Cron is Active" with link to manual trigger
+- **Local:** Original scheduler with toggle (unchanged)
+
+### useScrapeStatus hook
+- **Vercel:** Polls `/api/overview` for `runSummary` every 30s
+- **Local:** Polls `/api/scrape/status` every 3s (unchanged)
+- **Vercel:** If `start()` is called, shows "Scraping runs on GitHub Actions" toast (not an error)
+
+---
+
 ## Files
 
 | File | Role |
 |---|---|
 | `src/lib/gbp/remote-data.ts` | Fetches from GitHub data branch |
 | `src/lib/gbp/data-source.ts` | Switches between local/remote based on `VERCEL` env |
-| `.github/workflows/scraper.yml` | GitHub Actions scraper workflow |
+| `src/lib/vercel.ts` | Client-side `isVercel()` detector (Phase 3) |
+| `src/lib/gbp/run-summary.ts` | Normalizes v1 `run_summary.json` to v2 contract |
+| `.github/workflows/scraper.yml` | GitHub Actions scraper workflow (cron + manual) |
 | `.vercelignore` | Excludes `gbp-monitor/`, `src-tauri/`, `docs/` |
-| `vercel.json` | Build config (`npx next build`) |
+| `vercel.json` | Build config (`npx next build`) + `NEXT_PUBLIC_VERCEL=1` |
 | `next.config.ts` | Conditional `output: "standalone"` (skipped on Vercel) |
+| `src/components/shell/app-shell.tsx` | TopBar with Vercel status indicator (Phase 3) |
+| `src/features/today.tsx` | Today page with Vercel live banner (Phase 3) |
+| `src/features/t-config.tsx` | Config with hidden "Run scan" on Vercel (Phase 3) |
+| `src/features/t-setup.tsx` | Setup with "not available" message on Vercel (Phase 3) |
+| `src/features/t-scheduler.tsx` | Scheduler with "GitHub Actions Active" on Vercel (Phase 3) |
+| `docs/engineering/VERCEL_WEB_GUIDE.md` | Non-technical client guide (Phase 3) |

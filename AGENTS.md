@@ -1,7 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-13T14:43:50+07:00 (v0.4.7 — Phase 2: GitHub Actions scraper + Vercel remote data layer complete).**
+**Last updated: 2026-09-13T16:30:00+07:00 (v0.4.7 — Vercel web UI: status indicators + broken-feature hiding complete).**
 For full detail see `gbp-monitor/CHANGELOG.md`,
 `gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
 `gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
@@ -159,7 +159,17 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   `raw.githubusercontent.com/pennoungen0-arch/Rother/data/gbp-monitor/...`.
   Unified local/remote data access via `VERCEL` env var auto-detection.
   **18 read routes work on Vercel; 8 write/spawn routes are broken** (expected —
-  no Python, no writable filesystem). See `docs/engineering/VERCEL_COMPATIBILITY.md`.
+  no Python, no writable filesystem). **Phase 3 (2026-09-13) Vercel UI polish:**
+  Non-technical client visibility — `src/lib/vercel.ts` adds `isVercel()` client
+  detector via `NEXT_PUBLIC_VERCEL=1`. TopBar shows "Last scrape: 22m ago" +
+  "Trigger Scrape" link to GitHub Actions (instead of broken Refresh button).
+  Today page shows prominent green "Scraping is running automatically · Live"
+  banner with last scrape time, competitors, new reviews, next run, GitHub link.
+  Config page hides "Run scan again" (replaced with "Trigger manually →" link).
+  Scraper Setup and Scheduler pages show "GitHub Actions Cron is Active" cards
+  instead of broken Python detection. `useScrapeStatus()` polls `/api/overview`
+  for `runSummary` on Vercel (instead of broken `/api/scrape/status`).
+  See `docs/engineering/VERCEL_COMPATIBILITY.md` + `docs/engineering/VERCEL_WEB_GUIDE.md`.
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a
@@ -271,7 +281,17 @@ Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_
   scraper + Tauri artifacts. GitHub repo connected, auto-deploys on push to
   `main`. **Phase 2 (2026-09-13) COMPLETE:** scraper integration via GitHub Actions → data
   sync to Vercel via data branch. 18 read routes work; 8 write routes broken (expected).
-  See `docs/engineering/VERCEL_COMPATIBILITY.md`.
+  **Phase 3 (2026-09-13) Vercel UI polish:** non-technical client visibility —
+  `src/lib/vercel.ts` adds `isVercel()` client detector via `NEXT_PUBLIC_VERCEL=1`.
+  TopBar shows "Last scrape: 22m ago" + "Trigger Scrape" link to GitHub Actions
+  (instead of broken Refresh button). Today page shows prominent green
+  "Scraping is running automatically · Live" banner with last scrape time,
+  competitors, new reviews, next run, GitHub link. Config page hides
+  "Run scan again" (replaced with "Trigger manually →" link). Scraper Setup
+  and Scheduler pages show "GitHub Actions Cron is Active" cards instead of
+  broken Python detection. `useScrapeStatus()` polls `/api/overview` for
+  `runSummary` on Vercel (instead of broken `/api/scrape/status`).
+  See `docs/engineering/VERCEL_COMPATIBILITY.md` + `docs/engineering/VERCEL_WEB_GUIDE.md`.
 - **Roadmap status:** ALL 8 productization milestones DONE + **Discovery-first
   product vision (Phases A–D) IMPLEMENTED & VERIFIED (2026-08-22)** + **v0.3.2
   self-monitoring fix (2026-08-24)**: the active business itself is always a

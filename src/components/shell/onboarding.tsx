@@ -15,6 +15,7 @@ import { AutocompleteInput, AddressAutocomplete } from "@/components/shell/Autoc
 import { PlaceConfirmCard } from "@/components/shell/PlaceConfirmCard";
 import { PasteFromMapsParser, type ResolvedMaps } from "@/components/shell/PasteFromMapsParser";
 import { toast } from "sonner";
+import { isVercel } from "@/lib/vercel";
 
 function slugify(value: string): string {
   return (
@@ -407,50 +408,82 @@ export function Onboarding() {
   const startMonitoring = React.useCallback(async () => {
     setBusy(true);
     try {
-      // First, ensure business and branches are persisted
-      await finish(true);
-      
-      // Then trigger the scrape
-      const cat = getCategory(categoryId);
-      const place = selectedPlace ?? manualPlace(`${manualName.trim()}, ${manualLocation.trim()}`);
-
-      // P0-1 Fix A: same auto-branch fallback as finish() so the scrape
-      // trigger carries competitors even when the user skipped Step 2.
-      const bizId = slugify(place.name ?? place.formatted_address);
-      const bizName = place.name ?? place.formatted_address;
-      const branchesForTrigger = buildBranchesToPersist(
-        bizId,
-        bizName,
-        branchList,
-        competitorList,
-        branchList.map(() => undefined),
-      );
-
-      const body = {
-        name: place.name ?? place.formatted_address,
-        location: place.formatted_address,
-        category: cat?.label,
-        categoryId: cat?.id,
-        place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
-        osm_place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
-        gmaps_place_id: gmapsBusinessId ?? null,
-        lat: place.lat,
-        lng: place.lng,
-        city: place.city,
-        country: place.country,
-        postcode: place.postcode,
-        unverified: place.unverified ?? false,
-        branches: branchesForTrigger,
-      };
-
-      const res = await fetch("/api/scrape/trigger", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      
-      if (res.ok) {
+      if (isVercel()) {
+        // Vercel: add competitors via GitHub API bridge
+        let added = 0;
+        let failed = 0;
+        for (const comp of competitorList) {
+          try {
+            const res = await fetch("/api/add-competitor", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: comp.gmaps_url }),
+            });
+            if (res.ok) {
+              added++;
+            } else {
+              const data = await res.json().catch(() => ({}));
+              if (res.status === 409) {
+                toast.info("Already monitored", { description: data.error });
+              } else {
+                toast.error("Failed to add competitor", { description: data.error ?? "Unknown error" });
+                failed++;
+              }
+            }
+          } catch {
+            failed++;
+          }
+        }
+        if (added > 0) {
+          toast.success("Competitors added!", {
+            description: `${added} competitor${added > 1 ? "s" : ""} added. First scrape will run within 10 minutes.`,
+          });
+        }
+        // Transition to the dashboard
         startRun();
+      } else {
+        // Local: persist business + trigger scrape directly
+        await finish(true);
+
+        const cat = getCategory(categoryId);
+        const place = selectedPlace ?? manualPlace(`${manualName.trim()}, ${manualLocation.trim()}`);
+
+        const bizId = slugify(place.name ?? place.formatted_address);
+        const bizName = place.name ?? place.formatted_address;
+        const branchesForTrigger = buildBranchesToPersist(
+          bizId,
+          bizName,
+          branchList,
+          competitorList,
+          branchList.map(() => undefined),
+        );
+
+        const body = {
+          name: place.name ?? place.formatted_address,
+          location: place.formatted_address,
+          category: cat?.label,
+          categoryId: cat?.id,
+          place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
+          osm_place_id: place.place_id.startsWith("manual/") ? undefined : place.place_id,
+          gmaps_place_id: gmapsBusinessId ?? null,
+          lat: place.lat,
+          lng: place.lng,
+          city: place.city,
+          country: place.country,
+          postcode: place.postcode,
+          unverified: place.unverified ?? false,
+          branches: branchesForTrigger,
+        };
+
+        const res = await fetch("/api/scrape/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+          startRun();
+        }
       }
     } catch (err) {
       console.error("Failed to start monitoring:", err);

@@ -166,51 +166,66 @@ export default function ConfigFeature() {
     if (!competitorInput.trim() || addingCompetitor) return;
     setAddingCompetitor(true);
     try {
-      const res = await fetch(`/api/places?q=${encodeURIComponent(competitorInput.trim())}`);
-      const data = await res.json();
-      if (data.places?.length > 0) {
-        const place = data.places[0];
-        const compId = place.name
-          ? place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-          : "competitor";
-        const newCompetitor: CompetitorConfig = {
-          competitor_id: compId,
-          name: place.name ?? competitorInput.trim(),
-          gmaps_url: competitorInput.trim(),
-          place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
-          gmaps_place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
-          osm_place_id: place.place_id?.startsWith("coord/") || place.place_id?.startsWith("osm/") ? place.place_id : null,
-          lat: place.lat,
-          lng: place.lng,
-          category: place.category,
-          verified: place.provider === "gmaps",
-        };
-        // Dedupe FIRST (before any state update): never add the same
-        // competitor_id twice.
-        if (branches.some((b) => (b.competitors ?? []).some((c) => c.competitor_id === compId))) {
-          toast.info("Already added", { description: `${place.name ?? "Competitor"} is already in your list` });
-          setCompetitorInput("");
-          return;
-        }
-        // Persist updated branches. NOTE: compute the next state from the
-        // current `branches` value — passing a state-updater FUNCTION into
-        // JSON.stringify silently serializes to `{}` (functions are
-        // omitted), which 400s on the server and persists nothing. The
-        // optimistic setBranches must use the SAME `next` as the POST.
-        const next = branches.map((b) => ({
-          ...b,
-          competitors: [...(b.competitors ?? []), newCompetitor],
-        }));
-        setBranches(next);
-        await fetch("/api/business/branches", {
+      if (isVercel()) {
+        // Vercel: add via GitHub API bridge
+        const res = await fetch("/api/add-competitor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ branches: next }),
+          body: JSON.stringify({ url: competitorInput.trim() }),
         });
-        setCompetitorInput("");
-        toast.success("Competitor added", { description: place.name ?? "Added to monitoring list" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          toast.success("Competitor added!", {
+            description: data.message ?? `${data.competitor?.name ?? "Competitor"} added. First scrape will run within 10 minutes.`,
+          });
+          setCompetitorInput("");
+        } else if (res.status === 409) {
+          toast.info("Already monitored", { description: data.error });
+          setCompetitorInput("");
+        } else {
+          toast.error("Failed to add competitor", { description: data.error ?? "Unknown error" });
+        }
       } else {
-        toast.error("Could not resolve link", { description: "Try a different Google Maps link" });
+        // Local: resolve and persist directly
+        const res = await fetch(`/api/places?q=${encodeURIComponent(competitorInput.trim())}`);
+        const data = await res.json();
+        if (data.places?.length > 0) {
+          const place = data.places[0];
+          const compId = place.name
+            ? place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+            : "competitor";
+          const newCompetitor: CompetitorConfig = {
+            competitor_id: compId,
+            name: place.name ?? competitorInput.trim(),
+            gmaps_url: competitorInput.trim(),
+            place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+            gmaps_place_id: place.place_id?.startsWith("gmaps/") ? place.place_id.slice(6) : null,
+            osm_place_id: place.place_id?.startsWith("coord/") || place.place_id?.startsWith("osm/") ? place.place_id : null,
+            lat: place.lat,
+            lng: place.lng,
+            category: place.category,
+            verified: place.provider === "gmaps",
+          };
+          if (branches.some((b) => (b.competitors ?? []).some((c) => c.competitor_id === compId))) {
+            toast.info("Already added", { description: `${place.name ?? "Competitor"} is already in your list` });
+            setCompetitorInput("");
+            return;
+          }
+          const next = branches.map((b) => ({
+            ...b,
+            competitors: [...(b.competitors ?? []), newCompetitor],
+          }));
+          setBranches(next);
+          await fetch("/api/business/branches", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ branches: next }),
+          });
+          setCompetitorInput("");
+          toast.success("Competitor added", { description: place.name ?? "Added to monitoring list" });
+        } else {
+          toast.error("Could not resolve link", { description: "Try a different Google Maps link" });
+        }
       }
     } catch {
       toast.error("Failed to add competitor", { description: "Network error" });

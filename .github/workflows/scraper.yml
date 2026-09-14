@@ -60,6 +60,18 @@ jobs:
           cd gbp-monitor
           playwright install chromium --with-deps
 
+      - name: Overlay config from data branch
+        run: |
+          # Fetch config from data branch so competitors added via web UI are included.
+          # Falls back to main's config if data branch doesn't exist yet.
+          git fetch origin data 2>/dev/null || true
+          if git show origin/data:gbp-monitor/config/listings.json > /dev/null 2>&1; then
+            git show origin/data:gbp-monitor/config/listings.json > gbp-monitor/config/listings.json
+            echo "Using listings.json from data branch"
+          else
+            echo "Data branch has no listings.json — using main's config"
+          fi
+
       - name: Create config files from examples
         run: |
           cd gbp-monitor

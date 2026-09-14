@@ -1,6 +1,6 @@
 {
   "_comment": "Minimal test config for 3 competitors with real place_ids",
-  "branches": [
+  "branches": []
     {
       "branch_id": "test-canggu",
       "branch_name": "Test - Canggu",

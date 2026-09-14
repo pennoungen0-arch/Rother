@@ -6,6 +6,7 @@ import { Loader2, ToggleLeft, ToggleRight, Play, Calendar, CheckCircle, AlertCir
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { isVercel } from "@/lib/vercel";
 
 interface ScheduleConfig {
   enabled: boolean;
@@ -16,6 +17,48 @@ interface ScheduleConfig {
 }
 
 export default function SchedulerFeature() {
+  // On Vercel, show a message that this feature is not available
+  if (isVercel()) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-primary">
+            <Calendar className="size-4" />
+            Scheduler
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            The Scheduler feature manages automatic scraping schedules by writing to
+            a local <code>schedule.json</code> file and triggering local Python
+            scrapes — neither works on Vercel's read-only serverless platform.
+          </p>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                <span>GitHub Actions Cron</span>
+                <span className="ml-2 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide border border-emerald-500/40 bg-emerald-500/10 rounded">
+                  Active
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                Scraping runs automatically every day at 02:00 UTC (06:00 WITA).
+              </p>
+            </div>
+
+            <a
+              href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary underline hover:no-underline"
+            >
+              Trigger manual scrape on GitHub Actions →
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [config, setConfig] = React.useState<ScheduleConfig>({
     enabled: false,
     intervalHours: 24,

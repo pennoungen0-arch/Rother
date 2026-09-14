@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useApiQuery } from "@/lib/gbp/use-api-query";
 import { useApiMutation } from "@/lib/gbp/use-api-mutation";
 import { useAppState } from "@/lib/app-state";
+import { isVercel } from "@/lib/vercel";
 
 interface DetectionStatus {
   python: {
@@ -44,6 +45,46 @@ type InstallStep = "packages" | "chromium";
 
 export default function SetupWizard() {
   const { openFeature } = useAppState();
+
+  // On Vercel, show a message that this feature is not available
+  if (isVercel()) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Scraper Setup Wizard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            This feature is not available on the web version.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-amber-600">
+              <span className="font-medium">Web version runs on Vercel</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              The Scraper Setup Wizard checks for Python, installs dependencies, and
+              verifies Chromium — all of which require a local environment.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              On the web version (rotherweb.vercel.app), scraping runs automatically
+              via GitHub Actions every day at 02:00 UTC (06:00 WITA).
+            </p>
+            <div className="mt-4">
+              <a
+                href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                View GitHub Actions workflow →
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const [activeStep, setActiveStep] = React.useState<InstallStep | null>(null);
   const [installLog, setInstallLog] = React.useState<string[]>([]);
   const [elapsed, setElapsed] = React.useState(0);

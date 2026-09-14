@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { LogOut, Search, UserCircle2, LayoutGrid, RefreshCw, Square, Loader2 } from "lucide-react";
+import { LogOut, Search, UserCircle2, LayoutGrid, RefreshCw, Square, Loader2, ExternalLink } from "lucide-react";
 
 import { useAppState } from "@/lib/app-state";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
@@ -15,6 +15,7 @@ import { Hub } from "./hub";
 import { SectionView } from "./section-view";
 import { CommandPalette } from "./command-palette";
 import TodayFeature from "@/features/today";
+import { isVercel } from "@/lib/vercel";
 
 /** P3-UI: Persistent scrape status — polled at the TopBar level so every
  *  screen (hubs, sections, today) sees the same "scraping in progress"
@@ -27,16 +28,47 @@ interface ScrapeState {
   currentCompetitor: string | null;
 }
 
+interface RunSummaryLite {
+  finished_at: string | null;
+  new_reviews: number;
+  total_reviews: number;
+  total_competitors: number;
+  success: number;
+  failed: number;
+  run_id: string;
+}
+
 function useScrapeStatus(): {
   state: ScrapeState;
   start: (body: Record<string, unknown>) => Promise<string | null>;
   stop: () => Promise<void>;
+  runSummary: RunSummaryLite | null;
 } {
   const [state, setState] = React.useState<ScrapeState>({
     active: false, runId: null, completed: 0, total: 0, currentCompetitor: null,
   });
+  const [runSummary, setRunSummary] = React.useState<RunSummaryLite | null>(null);
 
+  const onVercel = isVercel();
+
+  // On Vercel: fetch run summary from /api/overview (which reads from data branch)
+  // On Local: poll the active scrape status API
   const poll = React.useCallback(async () => {
+    if (onVercel) {
+      try {
+        const res = await fetch("/api/overview", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.runSummary) {
+          setRunSummary(data.runSummary);
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    // Local mode: poll active scrape
     try {
       const r = await fetch("/api/scrape/status?active=1");
       if (!r.ok) return;
@@ -84,16 +116,21 @@ function useScrapeStatus(): {
     } catch {
       // ignore polling errors
     }
-  }, []);
+  }, [onVercel]);
 
-  // Poll every 3s while there's an active run.
+  // Poll every 3s while there's an active run (local) or every 30s on Vercel
   React.useEffect(() => {
     void poll();
-    const id = setInterval(poll, 3000);
+    const intervalMs = onVercel ? 30_000 : 3000;
+    const id = setInterval(poll, intervalMs);
     return () => clearInterval(id);
-  }, [poll]);
+  }, [poll, onVercel]);
 
   const start = React.useCallback(async (body: Record<string, unknown>): Promise<string | null> => {
+    if (onVercel) {
+      toast.error("Scraping runs on GitHub Actions. Use the 'Trigger Scrape' link below to run manually.");
+      return null;
+    }
     try {
       const res = await fetch("/api/scrape/trigger", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -112,23 +149,25 @@ function useScrapeStatus(): {
       toast.error("Network error");
       return null;
     }
-  }, []);
+  }, [onVercel]);
 
   const stop = React.useCallback(async () => {
+    if (onVercel) return;
     if (!state.runId) return;
     try {
       await fetch(`/api/scrape/stop?runId=${state.runId}`, { method: "DELETE" });
     } catch {}
     setState({ active: false, runId: null, completed: 0, total: 0, currentCompetitor: null });
     toast.info("Scrape stopped");
-  }, [state.runId]);
+  }, [state.runId, onVercel]);
 
-  return { state, start, stop };
+  return { state, start, stop, runSummary };
 }
 
 function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
   const { user, business, mode, logout, setPaletteOpen } = useAppState();
   const scrape = useScrapeStatus();
+  const onVercel = isVercel();
   const targetLabel =
     mode === "fixed" ? "Competitor list" : business?.name ?? user?.email ?? "";
 
@@ -142,6 +181,28 @@ function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
     };
     await scrape.start(body);
   };
+
+  // Format ISO timestamp for display
+  const formatLastRun = (iso: string | null) => {
+    if (!iso) return "Never";
+    try {
+      const date = new Date(iso);
+      const now = Date.now();
+      const diffMs = now - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    } catch {
+      return iso;
+    }
+  };
+
+  // GitHub Actions URL for manual trigger
+  const githubActionsUrl = "https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -181,43 +242,74 @@ function TopBar({ onShowHubs }: { onShowHubs: () => void }) {
           <span className="hidden sm:inline">Hubs</span>
         </Button>
 
-        {/* P3-UI: Persistent scraping indicator — visible at all times when active */}
-        {scrape.state.active && (
-          <button
-            type="button"
-            onClick={scrape.stop}
-            className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-            aria-label="Scrape in progress — click to stop"
-            title={scrape.state.currentCompetitor
-              ? `Scraping ${scrape.state.currentCompetitor} (${scrape.state.completed}/${scrape.state.total}) — click to stop`
-              : `Scraping in progress (${scrape.state.completed}/${scrape.state.total}) — click to stop`}
-          >
-            <Loader2 className="size-3 animate-spin" />
-            <span className="hidden sm:inline">
-              {scrape.state.currentCompetitor
-                ? `Scraping ${scrape.state.currentCompetitor}`
-                : "Scraping…"}
-            </span>
-            {scrape.state.total > 0 && (
-              <span className="tabular-nums text-primary/70">
-                {scrape.state.completed}/{scrape.state.total}
+        {/* Vercel: Show scraping status from run_summary + link to GitHub Actions */}
+        {onVercel && scrape.runSummary && (
+          <div className="ml-2 hidden sm:flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5">
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                Last scrape: {formatLastRun(scrape.runSummary.finished_at)}
               </span>
-            )}
-            <Square className="size-2.5 fill-current" />
-          </button>
+              {scrape.runSummary.new_reviews > 0 && (
+                <span className="ml-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  +{scrape.runSummary.new_reviews} new
+                </span>
+              )}
+            </div>
+            <a
+              href={githubActionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+              title="Trigger manual scrape on GitHub Actions"
+            >
+              <ExternalLink className="size-3" />
+              <span className="hidden sm:inline">Trigger Scrape</span>
+            </a>
+          </div>
         )}
 
-        {!scrape.state.active && (
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-1.5"
-            onClick={runScrape}
-            aria-label="Refresh data"
-          >
-            <RefreshCw className="size-3.5" />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
+        {/* Local: Show active scrape indicator + Refresh button */}
+        {!onVercel && (
+          <>
+            {/* P3-UI: Persistent scraping indicator — visible at all times when active */}
+            {scrape.state.active && (
+              <button
+                type="button"
+                onClick={scrape.stop}
+                className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                aria-label="Scrape in progress — click to stop"
+                title={scrape.state.currentCompetitor
+                  ? `Scraping ${scrape.state.currentCompetitor} (${scrape.state.completed}/${scrape.state.total}) — click to stop`
+                  : `Scraping in progress (${scrape.state.completed}/${scrape.state.total}) — click to stop`}
+              >
+                <Loader2 className="size-3 animate-spin" />
+                <span className="hidden sm:inline">
+                  {scrape.state.currentCompetitor
+                    ? `Scraping ${scrape.state.currentCompetitor}`
+                    : "Scraping…"}
+                </span>
+                {scrape.state.total > 0 && (
+                  <span className="tabular-nums text-primary/70">
+                    {scrape.state.completed}/{scrape.state.total}
+                  </span>
+                )}
+                <Square className="size-2.5 fill-current" />
+              </button>
+            )}
+
+            {!scrape.state.active && (
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-1.5"
+                onClick={runScrape}
+                aria-label="Refresh data"
+              >
+                <RefreshCw className="size-3.5" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            )}
+          </>
         )}
 
         <div className="ml-auto flex items-center gap-2">

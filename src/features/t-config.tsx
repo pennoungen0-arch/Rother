@@ -10,6 +10,7 @@ import { getCategory } from "@/lib/categories";
 import type { BranchConfig, CompetitorConfig } from "@/lib/gbp/types";
 import SchedulerFeature from "./t-scheduler";
 import { toast } from "sonner";
+import { isVercel } from "@/lib/vercel";
 
 /**
  * Tools › Config.
@@ -262,24 +263,39 @@ export default function ConfigFeature() {
             </ul>
           )}
 
-          <Button
-            className="mt-6 w-full"
-            onClick={runAgain}
-            disabled={scanning}
-            variant="outline"
-          >
-            {scanning ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Scanning…
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-4" />
-                Run scan again
-              </>
-            )}
-          </Button>
+          {!isVercel() && (
+            <Button
+              className="mt-6 w-full"
+              onClick={runAgain}
+              disabled={scanning}
+              variant="outline"
+            >
+              {scanning ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Scanning…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="size-4" />
+                  Run scan again
+                </>
+              )}
+            </Button>
+          )}
+          {isVercel() && (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Scraping runs on GitHub Actions.{" "}
+              <a
+                href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Trigger manually →
+              </a>
+            </p>
+          )}
           {scanning && runId && (
             <Button
               className="mt-2 w-full"
@@ -320,24 +336,39 @@ export default function ConfigFeature() {
           <Row label="Category" value={category?.label ?? business.category ?? "—"} />
         </dl>
 
-        <Button
-          className="mt-6 w-full"
-          onClick={runAgain}
-          disabled={scanning}
-          variant="outline"
-        >
-          {scanning ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Scanning…
-            </>
-          ) : (
-            <>
-              <RefreshCw className="size-4" />
-              Run scan again
-            </>
-          )}
-        </Button>
+        {!isVercel() && (
+          <Button
+            className="mt-6 w-full"
+            onClick={runAgain}
+            disabled={scanning}
+            variant="outline"
+          >
+            {scanning ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Scanning…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="size-4" />
+                Run scan again
+              </>
+            )}
+          </Button>
+        )}
+        {isVercel() && (
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Scraping runs on GitHub Actions.{" "}
+            <a
+              href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Trigger manually →
+            </a>
+          </p>
+        )}
         {scanning && runId && (
           <Button
             className="mt-2 w-full"

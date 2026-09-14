@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, ArrowLeft, Bell, BarChart3, Building2, ChevronDown, ChevronRight, Clock, Loader2, MapPin, MessageSquare, Settings2, Star, Store, Trophy, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, Bell, BarChart3, Building2, ChevronDown, ChevronRight, Clock, ExternalLink, Loader2, MapPin, MessageSquare, Settings2, Star, Store, Trophy, TrendingUp } from "lucide-react";
 
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
@@ -15,6 +15,7 @@ import { useOverview } from "@/lib/gbp/use-overview";
 import { useAppState } from "@/lib/app-state";
 import { FEATURES } from "@/lib/features";
 import { useBranches } from "@/lib/gbp/use-branches";
+import { isVercel } from "@/lib/vercel";
 
 const QUICK_LINKS = [
   { id: "i-kpis", label: "KPIs", icon: BarChart3 },
@@ -113,6 +114,32 @@ function ExpandableMetricCard({
  * and shows a non-blocking progress banner so users know data is arriving.
  */
 function StartupBanner() {
+  const onVercel = isVercel();
+
+  // On Vercel, the scrape status API doesn't work — show a simple info card
+  // pointing to GitHub Actions instead.
+  if (onVercel) {
+    return (
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="flex items-center gap-3 p-4">
+          <Activity className="size-4 text-primary" />
+          <div className="text-sm flex-1">
+            <span className="font-medium text-primary">Web version (Vercel)</span>
+            <span className="text-muted-foreground"> — scraping runs on GitHub Actions every day at 02:00 UTC.</span>
+            <a
+              href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 inline-flex items-center gap-1 text-primary underline"
+            >
+              View workflow <ExternalLink className="size-3" />
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const [active, setActive] = React.useState<null | {
     runId: string; progress?: { completed: number; total: number }
   }>(null);
@@ -301,6 +328,49 @@ export default function TodayFeature() {
           )}
         </div>
       </div>
+
+      {/* Vercel: Prominent scraping status banner — always visible */}
+      {isVercel() && data?.runSummary && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="flex flex-wrap items-center gap-4 p-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+              <Activity className="size-5 text-emerald-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Scraping is running automatically</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 rounded">
+                  <span className="relative flex size-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+                  </span>
+                  Live
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Last scrape: {data.runSummary.finished_at
+                  ? new Date(data.runSummary.finished_at).toLocaleString()
+                  : "Never"}
+                {" · "}
+                {data.runSummary.success ?? 0} competitors scraped
+                {(data.runSummary.new_reviews ?? 0) > 0 && (
+                  <span className="font-medium text-amber-600"> · {data.runSummary.new_reviews} new reviews</span>
+                )}
+                {" · "}
+                Next run: tomorrow 02:00 UTC
+              </p>
+            </div>
+            <a
+              href="https://github.com/pennoungen0-arch/Rother/actions/workflows/scraper.yml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              View on GitHub <ExternalLink className="size-3" />
+            </a>
+          </CardContent>
+        </Card>
+      )}
 
         {/* Quick navigation — moved from footer to header */}
         {hasData && (

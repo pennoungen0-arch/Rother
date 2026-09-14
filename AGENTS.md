@@ -1,11 +1,7 @@
 # AGENTS.md — Rother (GBP Monitor) agent reference
 
 State/version knowledge for AI agents (and humans) working on this repo.
-**Last updated: 2026-09-13T16:30:00+07:00 (v0.4.7 — Vercel web UI: status indicators + broken-feature hiding complete).**
-For full detail see `gbp-monitor/CHANGELOG.md`,
-`gbp-monitor/docs/engineering/PROJECT_SUMMARY.md`,
-`gbp-monitor/docs/engineering/CURRENT_STATE_2026-08-13.md`, and
-`docs/engineering/ROTHER02_ANALYSIS.md` (v1-vs-v2 reference).
+**Last updated: 2026-09-14T09:00:00+07:00 (v0.4.7 — Architecture decision: zero-budget web via Vercel + GitHub Actions + data branch; paste-link client flow confirmed).**
 **Planning docs:** `DISCOVERY_FIRST_PLAN.md` (✅ implemented — see phase reports),
 `VERSION_AUDIT_2026-08-22.md`, `DISCOVERY_DATAFLOW_AUDIT/FIX_PLAN.md`
 (✅ v0.3.1 seam fixes), `SELF_MONITORING_AUDIT_2026-08-22.md` +
@@ -29,7 +25,10 @@ see phase-reports/systems-*.txt), `HARVEST_AUDIT_2026-08-24.md` +
 `docs/engineering/PLAYWRIGHT_OPTIMIZATION_2026-09-11.md`,
 `docs/engineering/STATIC_EXPORT_ISSUE_2026-09-11.md`,
 `docs/engineering/TAURI_AUDIT_2026-09-06.md`,
-`docs/engineering/VERCEL_COMPATIBILITY.md` (feature matrix: what works/broken on Vercel).
+`docs/engineering/VERCEL_COMPATIBILITY.md` (feature matrix: what works/broken on Vercel),
+`docs/engineering/VERCEL_ARCHITECTURE.md` (zero-budget architecture, why Playwright needs separate runtime, data flow diagram),
+`docs/engineering/VERCEL_RUNBOOK.md` (step-by-step deployment + troubleshooting),
+`docs/engineering/VERCEL_WEB_GUIDE.md` (non-technical client guide with paste-link flow).
 Ops: `CLEAN_START_RUNBOOK.md` + `TROUBLESHOOTING.md` + `PRODUCTION_SETUP.md`.
 Releases: `RELEASE_NOTES_v0.3.0/1/3.md`.
 Session summaries: `SESSION_SUMMARY_2026-08-25.md`, `SESSION_SUMMARY_2026-08-27_PART2.md`.
@@ -516,6 +515,15 @@ From repo root:
 - GitHub Actions execution (workflows verified by construction only; no git remote configured — deferred, see POST_CONVERGENCE_PLAN).
 - `hours_status` full coverage (5/12 businesses render it; canonical source is the weekly `opening_hours` table).
 - Windows/Turbopack dev quirk: `.next` EBUSY after ungraceful kills — see `TROUBLESHOOTING.md` + `TURBOPACK_WINDOWS_EBUSY_FIX.md`.
+
+## Vercel web deployment limitations (zero-budget architecture)
+
+- **Single-tenant:** All clients see the same data (the `data` branch listings). No client accounts or isolation. For multi-tenant, need Supabase (free tier) or database.
+- **Read-only dashboard:** Clients cannot add/remove competitors from the web UI (Vercel filesystem is ephemeral). The current 3 competitors in `data/gbp-monitor/config/listings.json` are test data from validation — replace with real client businesses before production.
+- **No real-time scrape:** Scraping runs on schedule (daily 02:00 UTC) or manual GitHub trigger. Dashboard updates 2-5 min after scrape completes.
+- **GitHub Actions quotas:** 2,000 min/month free tier. ~5-7 min per competitor per scrape. For 10 competitors, ~70 min per run = 28 scrapes/month max.
+- **Browser cache:** After Vercel redeploys, users must hard-refresh (`Ctrl+Shift+R`) to see new code. Old JS is cached aggressively.
+- **Add competitor from web (future):** Planned via `/api/add-competitor` route using GitHub PAT. Requires `GITHUB_PAT` env var in Vercel. See `VERCEL_RUNBOOK.md` for setup.
 
 ## Recommended Audit Checklist (run before release)
 

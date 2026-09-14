@@ -1,5 +1,22 @@
 # Changelog — Rother
 
+## 2026-09-14T09:00:00+07:00 — Architecture Decision: Zero-Budget Web with GitHub API Bridge
+
+- **Files:** Documentation only (no code changes yet)
+- **Reason:** Clarify that ALL Vercel problems stem from Playwright requiring a full browser environment. Design zero-budget solution for client paste-link flow.
+- **Decision:**
+  1. **Root cause confirmed:** Playwright needs Chromium + Python (300-500MB RAM). Serverless platforms (Vercel, Netlify, Cloudflare Workers) cannot run this. Every workaround finds a place to run Playwright.
+  2. **Current architecture kept:** Vercel (dashboard) + GitHub Actions (scraper) + `data` branch (storage). Zero cost.
+  3. **Client flow simplified:** Client pastes Google Maps link → system handles the rest. No config from client side.
+  4. **Next step (proposed):** Add `/api/add-competitor` route that uses GitHub API to update `data/gbp-monitor/config/listings.json`. Client pastes link on Vercel → GitHub commits new config → workflow triggers → scraper runs → data syncs back to Vercel.
+  5. **Limitations documented:** Single-tenant (all clients see same data), no client accounts, no isolation. For multi-tenant, need Supabase (free tier) or database.
+- **Alternatives considered:**
+  - Google Places API (costs after $200/month free credit)
+  - Oracle Cloud Free Tier (full VM, always free, but requires Linux admin)
+  - Render Free Tier (sleeps after 15 min, 750 hours/month)
+  - Third-party scraper APIs (Apify, SerpApi — cost money)
+- **Status:** Architecture decided, implementation pending. See `docs/engineering/VERCEL_ARCHITECTURE.md`.
+
 ## 2026-09-13T16:30:00+07:00 — Vercel Web UI: Status Indicators + Hide Broken Features
 
 - **Files:** `vercel.json`, `src/lib/vercel.ts` (new), `src/components/shell/app-shell.tsx`, `src/features/t-config.tsx`, `src/features/t-setup.tsx`, `src/features/t-scheduler.tsx`, `src/features/today.tsx`

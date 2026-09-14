@@ -126,6 +126,33 @@ Any push to `main` triggers a Vercel redeploy:
 
 To check deployment status: Vercel dashboard → `rotherweb` → Deployments tab.
 
+### Client paste-link flow (Phase 4)
+
+Clients can add competitors directly from the web dashboard:
+
+1. Client opens `https://rotherweb.vercel.app`
+2. Onboarding Step 3: pastes a Google Maps link (e.g., `https://maps.app.goo.gl/...`)
+3. System resolves the link to a `place_id`
+4. System calls GitHub API to update `config/listings.json` on the `data` branch
+5. System triggers the scraper workflow via `workflow_dispatch`
+6. Scraper runs (5-10 min), commits data to `data` branch
+7. Dashboard updates automatically
+
+**Requirements:**
+- `GITHUB_PAT` env var must be set in Vercel (see above)
+- PAT must have `Contents: Read and write` permission on the `pennoungen0-arch/Rother` repo
+
+**How it works under the hood:**
+- `POST /api/add-competitor` route handles the GitHub API calls
+- Workflow's "Overlay config from data branch" step reads config from `data` branch (not `main`)
+- This ensures competitors added via web are included in the next scrape
+
+**Clearing test data:**
+To start with a clean slate (no test competitors):
+1. Edit `listings.json` on the `data` branch to have empty `branches: []`
+2. Delete `data/` directory on the `data` branch
+3. Trigger a new scrape to populate fresh data
+
 ---
 
 ## Troubleshooting
@@ -198,6 +225,19 @@ To check deployment status: Vercel dashboard → `rotherweb` → Deployments tab
 1. Edit `gbp-monitor/config/listings.json` on `main` branch
 2. Commit + push
 3. Trigger workflow manually
+
+**OR (if GITHUB_PAT is configured):** The form works! Clients can paste Google Maps links directly. The system commits to the `data` branch and triggers the scraper automatically.
+
+### "Add competitor shows 'Server not configured: GITHUB_PAT missing'"
+
+**Symptom:** Client tries to add a competitor and gets an error about GITHUB_PAT.
+
+**Cause:** The `GITHUB_PAT` environment variable is not set in Vercel.
+
+**Fix:**
+1. Create a GitHub Personal Access Token (see "Configure environment variables" above)
+2. Add it to Vercel as `GITHUB_PAT`
+3. Redeploy (or wait for next push)
 
 **OR (future):** Use the planned `/api/add-competitor` route with GitHub PAT.
 

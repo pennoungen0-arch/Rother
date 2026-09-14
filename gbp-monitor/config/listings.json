@@ -1,41 +1,4 @@
 {
-  "_comment": "Minimal test config for 3 competitors with real place_ids",
+  "_comment": "Monitored businesses (added via web dashboard via /api/add-competitor)",
   "branches": []
-    {
-      "branch_id": "test-canggu",
-      "branch_name": "Test - Canggu",
-      "competitors": [
-        {
-          "competitor_id": "comp-canggu-01",
-          "name": "Crate Cafe Canggu",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJOaEQDnk40i0Rzhou4NcRx-w",
-          "place_id": "ChIJOaEQDnk40i0Rzhou4NcRx-w"
-        }
-      ]
-    },
-    {
-      "branch_id": "test-seminyak",
-      "branch_name": "Test - Seminyak",
-      "competitors": [
-        {
-          "competitor_id": "comp-seminyak-01",
-          "name": "Revolver Seminyak",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ9fhCoBBH0i0R4h17JYdA484",
-          "place_id": "ChIJ9fhCoBBH0i0R4h17JYdA484"
-        }
-      ]
-    },
-    {
-      "branch_id": "test-ubud",
-      "branch_name": "Test - Ubud",
-      "competitors": [
-        {
-          "competitor_id": "comp-ubud-01",
-          "name": "Seniman Coffee Studio",
-          "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJu5hbBmo90i0R4po77axHom8",
-          "place_id": "ChIJu5hbBmo90i0R4po77axHom8"
-        }
-      ]
-    }
-  ]
 }
